@@ -2,8 +2,8 @@ package saGen
 
 import (
 	"fmt"
-	"gitee.com/go-utils/saData"
-	"gitee.com/go-utils/saHit"
+	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saHit"
 	"io/ioutil"
 	"os"
 	"reflect"

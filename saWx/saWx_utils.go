@@ -5,10 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
-	"gitee.com/go-utils/saData"
-	"gitee.com/go-utils/saLog"
-	"github.com/nanjishidu/gomini/gocrypto"
+	"github.com/saxon134/go-utils/saData"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -57,19 +54,20 @@ func WxSign(dic *map[string]string, appKey string) string {
 }
 
 func Aes256Decode(mchKey string, info string) string {
-	b, err := base64.StdEncoding.DecodeString(info)
-	if err != nil {
-		saLog.Err(b, err)
-		return ""
-	}
-
-	_ = gocrypto.SetAesKey(strings.ToLower(gocrypto.Md5(mchKey)))
-	plaintext, err := gocrypto.AesECBDecrypt(b)
-	if err != nil {
-		saLog.Err(err)
-		return ""
-	}
-	return string(plaintext)
+	//b, err := base64.StdEncoding.DecodeString(info)
+	//if err != nil {
+	//	saLog.Err(b, err)
+	//	return ""
+	//}
+	//
+	//_ = gocrypto.SetAesKey(strings.ToLower(gocrypto.Md5(mchKey)))
+	//plaintext, err := gocrypto.AesECBDecrypt(b)
+	//if err != nil {
+	//	saLog.Err(err)
+	//	return ""
+	//}
+	//return string(plaintext)
+	return ""
 }
 
 func KeyHttpsPost(url string, contentType string, body io.Reader) (*http.Response, error) {

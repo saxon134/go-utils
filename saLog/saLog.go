@@ -2,7 +2,7 @@ package saLog
 
 import (
 	"fmt"
-	"gitee.com/go-utils/saData"
+	"github.com/saxon134/go-utils/saData"
 	"time"
 )
 

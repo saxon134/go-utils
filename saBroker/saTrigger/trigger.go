@@ -2,7 +2,7 @@ package saTrigger
 
 import (
 	"encoding/json"
-	"gitee.com/go-utils/saBroker"
+	"github.com/saxon134/go-utils/saBroker"
 )
 
 func Remote(name string, params interface{}) error {

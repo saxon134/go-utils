@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"gitee.com/go-utils/saData"
+	"github.com/saxon134/go-utils/saData"
 )
 
 func {{FunDetail}}(c *gin.Context, args *map[string]interface{}) {

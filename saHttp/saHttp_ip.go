@@ -1,7 +1,7 @@
 package saHttp
 
 import (
-	"gitee.com/go-utils/saData"
+	"github.com/saxon134/go-utils/saData"
 	"regexp"
 )
 

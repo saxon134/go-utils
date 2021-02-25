@@ -2,8 +2,8 @@ package brokerTest
 
 import (
 	"fmt"
-	"gitee.com/go-utils/saBroker"
-	"gitee.com/go-utils/saBroker/saTrigger"
+	"github.com/saxon134/go-utils/saBroker"
+	"github.com/saxon134/go-utils/saBroker/saTrigger"
 	"testing"
 	"time"
 )

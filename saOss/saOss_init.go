@@ -1,9 +1,9 @@
 package saOss
 
 import (
-	"gitee.com/go-utils/saError"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/pkg/errors"
+	"github.com/saxon134/go-utils/saError"
 )
 
 func InitOss(ossType OssType, endpoint string, accessKeyId string, accessKeySecret string, bucket string) (SaOss, error) {

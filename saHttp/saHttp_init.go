@@ -1,11 +1,10 @@
 package saHttp
 
 import (
-	"git.efeng.co/server/yf-common/enum"
-	"git.efeng.co/server/yf-utils/yfData"
-	"git.efeng.co/server/yf-utils/yfError"
-	"git.efeng.co/server/yf-utils/yfLog"
 	"github.com/gin-gonic/gin"
+	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saError"
+	"github.com/saxon134/go-utils/saLog"
 	"strings"
 )
 
@@ -32,7 +31,7 @@ func InitRouters(g *gin.Engine, groups map[string]map[string]Router) {
 					g.POST(full+".update", _post)
 					g.POST(full+".update.status", _post)
 				} else {
-					panic(yfError.StackError("路由设置有误"))
+					panic(saError.StackError("路由设置有误"))
 				}
 			}
 		}
@@ -89,7 +88,7 @@ func _get(c *gin.Context) {
 	//权限校验
 	if r.Check != NullCheck {
 		if PrivilegeCheck(ctx, r.Check) == false {
-			err = yfError.Error{Code: 1104, Msg: ""}
+			err = saError.Error{Code: 1104, Msg: ""}
 			ResErr(ctx, err)
 			return
 		}
@@ -102,12 +101,12 @@ func _get(c *gin.Context) {
 	if s, ok := ctx.GetQuery("pageSize"); ok {
 		ctx.Paging.Valid = true
 
-		if ctx.Paging.Limit, _ = yfData.ToInt(s); ctx.Paging.Limit <= 0 {
+		if ctx.Paging.Limit, _ = saData.ToInt(s); ctx.Paging.Limit <= 0 {
 			ctx.Paging.Limit = 10
 		}
 
 		s, _ = ctx.GetQuery("pageNumber")
-		i, _ := yfData.ToInt(s)
+		i, _ := saData.ToInt(s)
 		if i < 1 {
 			i = 1
 		}
@@ -116,12 +115,12 @@ func _get(c *gin.Context) {
 	} else if s, ok := ctx.GetQuery("limit"); ok {
 		ctx.Paging.Valid = true
 
-		if ctx.Paging.Limit, _ = yfData.ToInt(s); ctx.Paging.Limit <= 0 {
+		if ctx.Paging.Limit, _ = saData.ToInt(s); ctx.Paging.Limit <= 0 {
 			ctx.Paging.Limit = 10
 		}
 
 		s, _ = ctx.GetQuery("offset")
-		ctx.Paging.Offset, _ = yfData.ToInt(s)
+		ctx.Paging.Offset, _ = saData.ToInt(s)
 		if ctx.Paging.Offset < 0 {
 			ctx.Paging.Offset = 0
 		}
@@ -146,7 +145,7 @@ func _get(c *gin.Context) {
 		}
 	}
 
-	ctx.Scene = enum.ToScene(ctx.GetInt("scene"))
+	ctx.Scene = ctx.GetInt("scene")
 	r.Handle(ctx)
 
 	//error时，打印请求参数
@@ -154,8 +153,8 @@ func _get(c *gin.Context) {
 		args := map[string]interface{}{}
 		_ = c.BindQuery(args)
 
-		yfLog.Err("Url:", c.Request.URL.Path)
-		yfLog.Err("Args:", args)
+		saLog.Err("Url:", c.Request.URL.Path)
+		saLog.Err("Args:", args)
 	}
 }
 
@@ -210,7 +209,7 @@ func _post(c *gin.Context) {
 			//权限校验
 			if ctx.Automatic != NullRouter {
 				if PrivilegeCheck(ctx, MsOrUserCheck) == false {
-					err = yfError.Error{Code: yfError.UnauthorizedErrorCode, Msg: ""}
+					err = saError.Error{Code: saError.UnauthorizedErrorCode, Msg: ""}
 					ResErr(ctx, err)
 					return
 				}
@@ -220,14 +219,14 @@ func _post(c *gin.Context) {
 		//权限校验
 		if r.Check != NullCheck {
 			if PrivilegeCheck(ctx, r.Check) == false {
-				err = yfError.Error{Code: yfError.UnauthorizedErrorCode}
+				err = saError.Error{Code: saError.UnauthorizedErrorCode}
 				ResErr(ctx, err)
 				return
 			}
 		}
 	}
 
-	ctx.Scene = enum.ToScene(ctx.GetInt("scene"))
+	ctx.Scene = ctx.GetInt("scene")
 	r.Handle(ctx)
 
 	//error时，打印请求参数
@@ -235,7 +234,7 @@ func _post(c *gin.Context) {
 		args := map[string]interface{}{}
 		_ = c.ShouldBind(args)
 
-		yfLog.Err("Url:", c.Request.URL.Path)
-		yfLog.Err("Args:", args)
+		saLog.Err("Url:", c.Request.URL.Path)
+		saLog.Err("Args:", args)
 	}
 }

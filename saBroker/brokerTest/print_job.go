@@ -2,7 +2,7 @@ package brokerTest
 
 import (
 	"fmt"
-	"gitee.com/go-utils/saBroker"
+	"github.com/saxon134/go-utils/saBroker"
 )
 
 type PrintJob struct {

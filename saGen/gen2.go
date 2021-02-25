@@ -3,7 +3,7 @@ package saGen
 import (
 	"errors"
 	"fmt"
-	"gitee.com/go-utils/saData"
+	"github.com/saxon134/go-utils/saData"
 	"io/ioutil"
 	"os"
 	"reflect"

@@ -3,7 +3,7 @@ package saOrm
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"gitee.com/go-utils/saData"
+	"github.com/saxon134/go-utils/saData"
 	"strings"
 )
 

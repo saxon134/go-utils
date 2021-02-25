@@ -2,10 +2,10 @@ package saHttp
 
 import (
 	"encoding/json"
-	"gitee.com/go-utils/saData"
-	"gitee.com/go-utils/saError"
-	"gitee.com/go-utils/saLog"
 	"github.com/gin-gonic/gin"
+	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saError"
+	"github.com/saxon134/go-utils/saLog"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -254,7 +254,7 @@ func ResErr(c *Context, err interface{}) {
 			}
 		}
 	}
-	yfLog.Err(code, caller, msg, errMsg)
+	saLog.Err(code, caller, msg, errMsg)
 
 	if code != 0 {
 		rsp_v := map[string]interface{}{"code": code}

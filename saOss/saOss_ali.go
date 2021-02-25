@@ -2,9 +2,9 @@ package saOss
 
 import (
 	"errors"
-	"gitee.com/go-utils/saData"
-	"gitee.com/go-utils/saError"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saError"
 	"io"
 	"io/ioutil"
 	"math/rand"

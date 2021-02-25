@@ -1,11 +1,9 @@
 package controller
 
 import (
-	"git.efeng.co/server/yf-api/jsonApi"
-	"git.efeng.co/server/yf-common/common"
-	"git.efeng.co/server/yf-utils/yfData"
-	"git.efeng.co/server/yf-utils/yfError"
-	"git.efeng.co/server/yf-utils/yfHttp"
+	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saError"
+	"github.com/saxon134/go-utils/saHttp"
 )
 
 func {{Struct}}(c *yfHttp.Context) {

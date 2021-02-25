@@ -2,8 +2,8 @@ package saWx
 
 import (
 	"errors"
-	"gitee.com/go-utils/saOss"
-	"gitee.com/go-utils/saRedis"
+	"github.com/saxon134/go-utils/saOss"
+	"github.com/saxon134/go-utils/saRedis"
 )
 
 var MApp MAppServer
