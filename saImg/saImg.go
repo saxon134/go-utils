@@ -5,13 +5,20 @@ import (
 	"strings"
 )
 
-var ImgUriRoot string
-var StyleStrAry = []string{
+var _imgUriRoot string
+var _styleStrAry = []string{
 	"?x-oss-process=style/default-style",
 	"?x-oss-process=style/small-style",
 	"?x-oss-process=style/cover-style",
 	"?x-oss-process=style/imgtxt-style",
 	"?x-oss-process=style/banner-style",
+}
+
+func Init(urlRoot string, styleAry []string) {
+	_imgUriRoot = urlRoot
+	if len(styleAry) > 0 {
+		_styleStrAry = styleAry
+	}
 }
 
 func AddDefaultUriRoot(s string) string {
@@ -24,7 +31,7 @@ func AddUriRoot(s string, style ImgStyle) string {
 	}
 
 	if strings.HasPrefix(s, "http") == false {
-		r := ImgUriRoot
+		r := _imgUriRoot
 		if r == "" {
 			return s
 		}
@@ -32,7 +39,7 @@ func AddUriRoot(s string, style ImgStyle) string {
 		s = r + s
 	}
 
-	for _, v := range StyleStrAry {
+	for _, v := range _styleStrAry {
 		s = strings.Replace(s, v, "", -1)
 	}
 
@@ -41,8 +48,8 @@ func AddUriRoot(s string, style ImgStyle) string {
 	}
 
 	var index = int(style) - 1
-	if index < len(StyleStrAry) {
-		return s + StyleStrAry[index]
+	if index < len(_styleStrAry) {
+		return s + _styleStrAry[index]
 	}
 	return s
 }
@@ -58,10 +65,10 @@ func DeleteUriRoot(s string) string {
 	}
 
 	root := u.Scheme + "://" + u.Host + "/"
-	if r := ImgUriRoot; r != "" {
+	if r := _imgUriRoot; r != "" {
 		if root == r {
 			s = strings.Replace(s, root, "", 1)
-			for _, v := range StyleStrAry {
+			for _, v := range _styleStrAry {
 				s = strings.Replace(s, v, "", -1)
 			}
 		}
