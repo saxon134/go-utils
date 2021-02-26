@@ -23,6 +23,9 @@ func InitRouters(g *gin.Engine, groups map[string]map[string]Router) {
 				g.GET(full, _get)
 			} else if r.Method == PostMethod {
 				g.POST(full, _post)
+			} else if r.Method == AnyMethod {
+				g.GET(full, _get)
+				g.POST(full, _post)
 			} else if r.Method == AutomaticMethod {
 				if strings.HasSuffix(path, "/") == false {
 					g.GET(full, _get)

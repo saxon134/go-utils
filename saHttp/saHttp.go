@@ -34,6 +34,7 @@ const (
 	NullApiMethod HttpMethod = iota
 	GetMethod
 	PostMethod
+	AnyMethod
 	AutomaticMethod
 )
 

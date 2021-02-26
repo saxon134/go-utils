@@ -6,7 +6,8 @@ import (
 	"github.com/saxon134/go-utils/saRedis"
 )
 
-var MApp MAppServer
+var Gzh GzhServer
+var Xcx XcxServer
 var Pay PayServer
 
 type Conf struct {
