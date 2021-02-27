@@ -6,35 +6,35 @@ import (
 	"github.com/saxon134/go-utils/saHttp"
 )
 
-func {{Struct}}(c *yfHttp.Context) {
+func {{Struct}}(c *saHttp.Context) {
 	switch c.Automatic {
-	case yfHttp.ListRouter:
+	case saHttp.ListRouter:
 		_{{StructLower}}List(c)
-	case yfHttp.AddRouter:
+	case saHttp.AddRouter:
 		_add{{Struct}}(c)
-	case yfHttp.UpdateRouter:
+	case saHttp.UpdateRouter:
 		_update{{Struct}}(c)
-	case yfHttp.UpdateStatusRouter:
+	case saHttp.UpdateStatusRouter:
 		_update{{Struct}}Status(c)
 	default:
-		yfHttp.ResErr(c, yfError.ErrorIo)
+		saHttp.ResErr(c, saError.ErrorIo)
 		return
 	}
 }
 
-func _{{StructLower}}List(c *yfHttp.Context) {
+func _{{StructLower}}List(c *saHttp.Context) {
 	db := common.DB.Model(&{{StructLower}}.{{TblModel}}{})
 	if c.Paging.Valid {
 		db.Offset(c.Paging.Offset).Limit(c.Paging.Limit)
 	}
 	if len(c.Order.Key) > 0 {
-		db.Order(c.Order.Key + " " + yfHit.Str(c.Order.Desc, "desc", "asc"))
+		db.Order(c.Order.Key + " " + saHit.Str(c.Order.Desc, "desc", "asc"))
 	}
 
-	var resp = json{{Struct}}.{{Struct}}List{}
+	var resp = httpIo.{{Struct}}ListResp{}
 	err := db.Find(&resp.Ary).Error
-	if yfError.DbErr(err) {
-		yfHttp.ResErr(c, err)
+	if saError.DbErr(err) {
+		saHttp.ResErr(c, err)
 		return
 	}
 
@@ -45,58 +45,58 @@ func _{{StructLower}}List(c *yfHttp.Context) {
 		}
 	}
 
-	yfHttp.ResAry(c, resp.Ary, resp.ListResponse)
+	saHttp.ResAry(c, resp.Ary, resp.ListResponse)
 }
 
-func _add{{Struct}}(c *yfHttp.Context) {
+func _add{{Struct}}(c *saHttp.Context) {
 	obj := new({{StructLower}}.{{TblModel}})
-	err := c.ShouldBindJSON(obj)
+	err := saHttp.Bind(c, obj)
 	if err != nil {
-		yfHttp.ResErr(c, err)
+		saHttp.ResErr(c, err)
 		return
 	}
 
 	if obj.Id > 0 {
-		yfHttp.ResErr(c, yfError.ErrorID)
+		saHttp.ResErr(c, saError.ErrorID)
 		return
 	}
 
 	err = common.DB.Create(obj).Error
 	if err != nil {
-		yfHttp.ResErr(c, err)
+		saHttp.ResErr(c, err)
 		return
 	}
 
-	yfHttp.Res(c, "ok", nil)
+	saHttp.Res(c, "ok", nil)
 }
 
-func _update{{Struct}}(c *yfHttp.Context) {
+func _update{{Struct}}(c *saHttp.Context) {
 	obj := new({{StructLower}}.{{TblModel}})
-	err := c.ShouldBindJSON(obj)
+	err := saHttp.Bind(c, obj)
 	if err != nil {
-		yfHttp.ResErr(c, err)
+		saHttp.ResErr(c, err)
 		return
 	}
 
 	if obj.Id <= 0 {
-		yfHttp.ResErr(c, yfError.ErrorID)
+		saHttp.ResErr(c, saError.ErrorID)
 		return
 	}
 
 	err = common.DB.Save(obj).Error
 	if err != nil {
-		yfHttp.ResErr(c, err)
+		saHttp.ResErr(c, err)
 		return
 	}
 
-	yfHttp.Res(c, "ok", nil)
+	saHttp.Res(c, "ok", nil)
 }
 
-func _update{{Struct}}Status(c *yfHttp.Context) {
-	in := new(jsonApi.UpdateStatusRequest)
-	err := c.ShouldBindJSON(in)
+func _update{{Struct}}Status(c *saHttp.Context) {
+	in := new(saHttp.UpdateStatusRequest)
+	err := saHttp.Bind(c, in)
 	if err != nil {
-		yfHttp.ResErr(c, err)
+		saHttp.ResErr(c, err)
 		return
 	}
 
@@ -104,9 +104,9 @@ func _update{{Struct}}Status(c *yfHttp.Context) {
 		Where("id in ?", in.IdAry).
 		Updates(map[string]int{"status": int(in.Status)}).Error
 	if err != nil {
-		yfHttp.ResErr(c, err)
+		saHttp.ResErr(c, err)
 		return
 	}
 
-	yfHttp.Res(c, "ok", nil)
+	saHttp.Res(c, "ok", nil)
 }

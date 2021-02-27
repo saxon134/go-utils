@@ -25,8 +25,8 @@ func GenerateTbl(set Set) {
 		set.Options = saHit.Str(set.Options == "", "controller;serve,;ms;doc;tbl", set.Options)
 		set.DB = saHit.Str(set.DB == "", "common.DB", set.DB)
 		set.PK = saHit.Str(set.PK == "", "Id", set.PK)
-		set.AddImgRootFun = saHit.Str(set.AddImgRootFun == "", "yfImg.AddDefaultUriRoot", set.AddImgRootFun)
-		set.DeleteImgRootFun = saHit.Str(set.DeleteImgRootFun == "", "yfImg.DeleteUriRoot", set.DeleteImgRootFun)
+		set.AddImgRootFun = saHit.Str(set.AddImgRootFun == "", "saImg.AddDefaultUriRoot", set.AddImgRootFun)
+		set.DeleteImgRootFun = saHit.Str(set.DeleteImgRootFun == "", "saImg.DeleteUriRoot", set.DeleteImgRootFun)
 	}
 
 	//反射，判断输入类型是否有误
@@ -54,18 +54,18 @@ func GenerateTbl(set Set) {
 		snake string
 		tags  []string
 	}
-	hasFromDB := false
-	hasToDB := false
+	hasFromDB := true
+	hasToDB := true
 	{
-		//钩子函数
-		{
-			if _, ok := reflectType.MethodByName("FromDB"); ok {
-				hasFromDB = true
-			}
-			if _, ok := reflectType.MethodByName("ToDB"); ok {
-				hasToDB = true
-			}
-		}
+		////钩子函数
+		//{
+		//	if _, ok := reflectType.MethodByName("FromDB"); ok {
+		//		hasFromDB = true
+		//	}
+		//	if _, ok := reflectType.MethodByName("ToDB"); ok {
+		//		hasToDB = true
+		//	}
+		//}
 
 		//获取结构体基本属性数据
 		{
@@ -336,7 +336,7 @@ func GenerateTbl(set Set) {
 		//生成tbl sql文件
 		{
 			//todo 换成网络地址
-			tpl_f, err := os.OpenFile("/Users/jiang/yf.com/techio/server/yf-utils/yfGen/template/tbl_sql.tpl", os.O_RDONLY, 0600)
+			tpl_f, err := os.OpenFile("/Users/jiang/go.yf/go-utils/saGen/template/tbl_sql.tpl", os.O_RDONLY, 0600)
 			if err != nil {
 				fmt.Println(err.Error())
 				return
@@ -352,21 +352,21 @@ func GenerateTbl(set Set) {
 
 			if hasFromDB {
 				fromDbSqlTxt += `
-				m.FromDB()
+	m.FromDB()
 				`
 			}
 			if hasToDB {
 				toDbSqlTxt += `
-				if err = m.ToDB(); err != nil {
-					return
-				}
+	if err = m.ToDB(); err != nil {
+		return
+	}
 				`
 			}
 
 			tplStr = strings.Replace(tplStr, "{{FromDBSql}}", fromDbSqlTxt, -1)
 			tplStr = strings.Replace(tplStr, "{{ToDBSql}}", toDbSqlTxt, -1)
 
-			f_n := "./models/" + pkgName + "/" + strings.TrimPrefix(saData.SnakeStr(tblName), "t_") + "_sql.go"
+			f_n := "./models/" + pkgName + "/" + saData.CamelStr(strings.TrimPrefix(structName, "Tbl")) + "_sql.go"
 			if err = createPath(f_n); err != nil {
 				fmt.Println(err.Error())
 				return
@@ -382,7 +382,7 @@ func GenerateTbl(set Set) {
 	// 生成controller代码
 	if strings.Contains(set.Options, "controller") {
 		//todo 换成网络地址
-		tpl_f, err := os.OpenFile("/Users/jiang/yf.com/techio/server/yf-utils/yfGen/template/controller.tpl", os.O_RDONLY, 0600)
+		tpl_f, err := os.OpenFile("/Users/jiang/go.yf/go-utils/saGen/template/controller.tpl", os.O_RDONLY, 0600)
 		if err != nil {
 			fmt.Println(err.Error())
 			return

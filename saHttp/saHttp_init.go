@@ -13,12 +13,10 @@ var _groups map[string]map[string]Router
 func InitRouters(g *gin.Engine, groups map[string]map[string]Router) {
 	_groups = groups
 	for k, conf := range _groups {
+		toAdd := map[string]Router{}
 		for path, r := range conf {
-			if path == "/" {
-				path = ""
-			}
+			full := ConnPath(k, path)
 
-			full := k + path
 			if r.Method == GetMethod {
 				g.GET(full, _get)
 			} else if r.Method == PostMethod {
@@ -29,14 +27,26 @@ func InitRouters(g *gin.Engine, groups map[string]map[string]Router) {
 			} else if r.Method == AutomaticMethod {
 				if strings.HasSuffix(path, "/") == false {
 					g.GET(full, _get)
+
 					g.GET(full+".list", _get)
+					toAdd[path+".list"] = Router{Method: r.Method, Check: r.Check, Handle: r.Handle}
+
 					g.POST(full+".add", _post)
+					toAdd[path+".add"] = Router{Method: r.Method, Check: MsOrUserCheck, Handle: r.Handle}
+
 					g.POST(full+".update", _post)
+					toAdd[path+".update"] = Router{Method: r.Method, Check: MsOrUserCheck, Handle: r.Handle}
+
 					g.POST(full+".update.status", _post)
+					toAdd[path+".update.status"] = Router{Method: r.Method, Check: MsOrUserCheck, Handle: r.Handle}
 				} else {
 					panic(saError.StackError("路由设置有误"))
 				}
 			}
+		}
+
+		for k, v := range toAdd {
+			conf[k] = v
 		}
 	}
 }
@@ -46,23 +56,16 @@ func _get(c *gin.Context) {
 
 	var r Router
 	for k, routerDic := range _groups {
-		if k == "/" {
-			for path, router := range routerDic {
-				if path == "/" && c.Request.URL.Path == "/" {
-					r = router
-					break
-				} else if k+path == c.Request.URL.Path {
-					r = router
-					break
-				}
+		for path, router := range routerDic {
+			full := ConnPath(k, path)
+			if full == c.Request.URL.Path {
+				r = router
+				break
 			}
-		} else {
-			for path, router := range routerDic {
-				if k+path == c.Request.URL.Path {
-					r = router
-					break
-				}
-			}
+		}
+
+		if r.Handle != nil {
+			break
 		}
 	}
 
@@ -165,23 +168,16 @@ func _post(c *gin.Context) {
 	var err error
 	var r Router
 	for k, routerDic := range _groups {
-		if k == "/" {
-			for path, router := range routerDic {
-				if path == "/" && c.Request.URL.Path == "/" {
-					r = router
-					break
-				} else if k+path == c.Request.URL.Path {
-					r = router
-					break
-				}
+		for path, router := range routerDic {
+			full := ConnPath(k, path)
+			if full == c.Request.URL.Path {
+				r = router
+				break
 			}
-		} else {
-			for path, router := range routerDic {
-				if k+path == c.Request.URL.Path {
-					r = router
-					break
-				}
-			}
+		}
+
+		if r.Handle != nil {
+			break
 		}
 	}
 
