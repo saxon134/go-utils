@@ -2,6 +2,7 @@ package saHttp
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saError"
@@ -62,6 +63,37 @@ type Context struct {
 	}
 	Me        JwtValue
 	Automatic RouterType //add、update时，一定做MsOrUserCheck，其他方法校验依据配置
+	RawData   []byte
+}
+
+/*Content-Type为application/json时，备份rawData
+目的是为了能够多次bind
+*/
+func Bind(c *Context, objPtr interface{}) (err error) {
+	if c.Request.Method == "GET" {
+		err = c.ShouldBindQuery(objPtr)
+		return err
+	} else if c.Request.Method == "POST" {
+		tp := c.Request.Header.Get("Content-Type")
+		if tp == "" {
+			tp = c.Request.Header.Get("content-type")
+		}
+
+		if tp == "application/json" {
+			if len(c.RawData) == 0 {
+				c.RawData, _ = c.GetRawData()
+			}
+			if len(c.RawData) > 0 {
+				err = saData.JsonToStruct(c.RawData, &objPtr)
+				return err
+			}
+			return nil
+		} else {
+			err = c.ShouldBind(objPtr)
+			return err
+		}
+	}
+	return errors.New("GET/POST之外不支持")
 }
 
 /**
@@ -232,7 +264,7 @@ func ResErr(c *Context, err interface{}) {
 
 		//如果是saError，则错误码、信息按emerror输出；否则全部按照敏感信息处理
 		yferr := new(saError.Error)
-		if saData.JsonToStruct(err_s, yferr) == nil && yferr.Code > 0 {
+		if saData.JsonToStruct([]byte(err_s), yferr) == nil && yferr.Code > 0 {
 			code = yferr.Code
 			msg = yferr.Msg
 			errMsg = yferr.Err

@@ -15,7 +15,7 @@ type zapLog struct {
 }
 
 func (m *zapLog) Log(a ...interface{}) {
-	m.logger.Info(fmt.Sprint(a))
+	m.logger.Info(fmt.Sprint(a...))
 }
 
 func initZapLog() *zapLog {
@@ -23,7 +23,7 @@ func initZapLog() *zapLog {
 
 	fileWriter, err := zaprotatelogs.New(
 		path.Join("log", "%Y-%m-%d.log"),
-		zaprotatelogs.WithLinkName("log"),
+		zaprotatelogs.WithLinkName("latest_log"),
 		zaprotatelogs.WithMaxAge(7*24*time.Hour),
 		zaprotatelogs.WithRotationTime(24*time.Hour),
 	)

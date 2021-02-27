@@ -12,6 +12,7 @@ require (
 	github.com/garyburd/redigo v1.6.0
 	github.com/gin-gonic/gin v1.6.3
 	github.com/jonboulle/clockwork v0.2.2 // indirect
+	github.com/json-iterator/go v1.1.10
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lestrrat-go/strftime v1.0.4 // indirect
 	github.com/micro/go-micro/v2 v2.9.1

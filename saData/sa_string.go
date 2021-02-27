@@ -2,6 +2,7 @@ package saData
 
 import (
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -72,15 +73,8 @@ func Btos(b bool) string {
 		return "0"
 	}
 }
-func TrimAllSpace(s string) string {
-	if s != "" {
-		//去除连续的空白（包括换行）
-		re, _ := regexp.Compile("\\s")
-		return string(re.ReplaceAllString(string(s), ""))
-	}
-	return ""
-}
 
+//去除 ' ' '\n' '\r' '\t'前缀，如果有多个也会去除
 func TrimPrefixSpace(s string) string {
 	if s != "" {
 		var start int = 0
@@ -96,6 +90,7 @@ func TrimPrefixSpace(s string) string {
 	return ""
 }
 
+//去除 ' ' '\n' '\r' '\t'后缀，如果有多个也会去除
 func TrimSuffixSpace(s string) string {
 	if s != "" {
 		var end int = StrLen(s)
@@ -156,9 +151,20 @@ func SubStr(s string, start int, cnt int) string {
 	return string(r[start : start+cnt])
 }
 
+//rune长度
 func StrLen(s string) int {
 	var r = []rune(string(s))
 	return len(r)
+}
+
+//rune长度，支持中文
+func LenCheck(m interface{}, max int) error {
+	str, _ := DataToJson(m)
+	if StrLen(str) <= max {
+		return nil
+	}
+
+	return errors.New("超出范围")
 }
 
 /* 去除字符串中H5的style、script；

@@ -60,8 +60,9 @@ func Err(a ...interface{}) {
 		}
 		return
 	}
-
-	logChan <- fmt.Sprint("E", saData.TimeStr(time.Now(), saData.TimeFormat_Default), a)
+	s := fmt.Sprint(a...)
+	s = "E " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " " + s
+	logChan <- s
 }
 
 func Warn(a ...interface{}) {
@@ -70,7 +71,9 @@ func Warn(a ...interface{}) {
 	}
 
 	if logLevel <= WarnLevel {
-		logChan <- fmt.Sprint("W", saData.TimeStr(time.Now(), saData.TimeFormat_Default), a)
+		s := fmt.Sprint(a...)
+		s = "W " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " " + s
+		logChan <- s
 
 		if len(logChan) >= 10 {
 			if logLevel == InfoLevel {
@@ -85,7 +88,9 @@ func Warn(a ...interface{}) {
 
 func Info(a ...interface{}) {
 	if logLevel <= InfoLevel {
-		logChan <- fmt.Sprint("I", saData.TimeStr(time.Now(), saData.TimeFormat_Default), a)
+		s := fmt.Sprint(a...)
+		s = "I " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " " + s
+		logChan <- s
 
 		if len(logChan) >= 10 {
 			if logLevel == InfoLevel {
@@ -98,6 +103,8 @@ func Info(a ...interface{}) {
 
 func Log(a ...interface{}) {
 	if log != nil {
-		log.Log("L", saData.TimeStr(time.Now(), saData.TimeFormat_Default), a)
+		s := fmt.Sprint(a...)
+		s = "L " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " " + s
+		log.Log(s)
 	}
 }
