@@ -17,6 +17,7 @@ type Router struct {
 	Method HttpMethod
 	Check  CheckType
 	Handle func(c *Context)
+	Log    string //in-打印输入信息 out-打印输出信息 in;out-打印输入输出信息 注：error时一定会打印参数
 }
 
 type RouterType int8
@@ -61,9 +62,10 @@ type Context struct {
 		Key  string
 		Desc bool
 	}
-	Me        JwtValue
-	Automatic RouterType //add、update时，一定做MsOrUserCheck，其他方法校验依据配置
-	RawData   []byte
+	Me         JwtValue
+	Automatic  RouterType //add、update时，一定做MsOrUserCheck，其他方法校验依据配置
+	RawData    []byte
+	CustomData map[string]interface{} //自定义参数
 }
 
 /*Content-Type为application/json时，备份rawData
