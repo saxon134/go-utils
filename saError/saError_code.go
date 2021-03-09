@@ -12,10 +12,12 @@ const (
 )
 
 const (
-	MissingParams = "缺少参数"
-	ErrorParams   = "参数有误"
-	ErrorIo       = "接口错误"
-	ErrorID       = "ID有误"
-	ErrorDate     = "数据有误"
-	ErrorPhone    = "手机格式有误"
+	MissingParams     = "缺少参数"
+	ErrorParams       = "参数有误"
+	ErrorIo           = "接口错误"
+	ErrorID           = "ID有误"
+	ErrorDate         = "数据有误"
+	ErrorPhone        = "手机格式有误"
+	ErrorConfig       = "配置有误"
+	ErrorUnauthorized = "未授权"
 )

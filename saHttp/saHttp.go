@@ -52,8 +52,10 @@ const (
 
 type Context struct {
 	*gin.Context
-	Scene  int
-	Paging struct {
+	Scene   int
+	MediaId int64
+	AppId   int64
+	Paging  struct {
 		Limit  int //默认值为10，基本Valid为false，Limit也不会空
 		Offset int
 		Valid  bool //有些场景，不传分页参数，表示需要获取所有数据。具体业务代码控制
@@ -126,7 +128,7 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 		}
 
 		_ = ParseJwt(token, &c.Me)
-		if c.Me.AccountId != accountId {
+		if c.Me.AccountId != accountId || c.Me.Check != MsCheck {
 			return false
 		}
 
@@ -141,7 +143,7 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 		}
 
 		_ = ParseJwt(token, &c.Me)
-		if c.Me.UserId != userId {
+		if c.Me.UserId != userId || c.Me.Check != UserCheck {
 			return false
 		}
 
@@ -208,8 +210,8 @@ func ResAry(c *Context, ary interface{}, paging ListResponse) {
 		"code":   0,
 		"ext": map[string]interface{}{
 			"totalCount": paging.Cnt,
-			"pageSize":   paging.Limit,
-			"pageNumber": paging.Offset,
+			"pageSize":   c.Paging.Limit,
+			"pageNumber": (c.Paging.Offset-1)/c.Paging.Limit + 1,
 		},
 	})
 	c.Abort()

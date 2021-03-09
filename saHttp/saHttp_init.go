@@ -74,6 +74,8 @@ func _get(c *gin.Context) {
 		Me:        JwtValue{},
 		Automatic: NullRouter,
 	}
+	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media.id"))
+	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app.id"))
 
 	if r.Handle == nil {
 		ResErr(ctx, "接口有误")
@@ -186,6 +188,8 @@ func _post(c *gin.Context) {
 		Me:        JwtValue{},
 		Automatic: NullRouter,
 	}
+	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media.id"))
+	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app.id"))
 
 	if r.Handle == nil {
 		ResErr(ctx, "接口有误")

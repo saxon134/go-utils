@@ -366,7 +366,7 @@ func GenerateTbl(set Set) {
 			tplStr = strings.Replace(tplStr, "{{FromDBSql}}", fromDbSqlTxt, -1)
 			tplStr = strings.Replace(tplStr, "{{ToDBSql}}", toDbSqlTxt, -1)
 
-			f_n := "./models/" + pkgName + "/" + saData.CamelStr(strings.TrimPrefix(structName, "Tbl")) + "_sql.go"
+			f_n := "./models/" + saData.SnakeStr(pkgName) + "/" + saData.CamelStr(strings.TrimPrefix(structName, "Tbl")) + "_sql.go"
 			if err = createPath(f_n); err != nil {
 				fmt.Println(err.Error())
 				return

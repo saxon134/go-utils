@@ -43,7 +43,7 @@ func (m StringAry) Value() (driver.Value, error) {
 
 /******** Ids ********/
 
-type Ids string
+type Ids []int64
 
 func (m *Ids) Scan(value interface{}) error {
 	if value == nil {
@@ -56,14 +56,11 @@ func (m *Ids) Scan(value interface{}) error {
 		if len(s) > 0 {
 			ary := strings.Split(s, ",")
 			if len(ary) > 0 {
-				tmp := ""
-				for i, v := range ary {
-					tmp += saData.I64tos(saData.CharbaseToi64(v))
-					if i+1 < len(ary) {
-						tmp += ","
+				for _, v := range ary {
+					if i64, _ := saData.Stoi64(v); i64 > 0 {
+						*m = append(*m, i64)
 					}
 				}
-				*m = Ids(tmp)
 			}
 		}
 	}
@@ -74,17 +71,50 @@ func (m *Ids) Scan(value interface{}) error {
 func (m Ids) Value() (driver.Value, error) {
 	if len(m) > 0 {
 		tmp := ""
-		ary := strings.Split(string(m), ",")
-		if len(ary) > 0 {
-			for _, v := range ary {
-				i64, _ := saData.ToInt64(v)
-				if i64 > 0 {
-					tmp += saData.I64ToCharbase(i64) + ","
+		for _, v := range m {
+			tmp += saData.I64tos(v) + ","
+		}
+		tmp = strings.TrimSuffix(tmp, ",")
+		return tmp, nil
+	}
+
+	return "", nil
+}
+
+/******** CompressIds ********/
+
+type CompressIds []int64
+
+func (m *CompressIds) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	bAry, ok := value.([]byte)
+	if ok {
+		s := string(bAry)
+		if len(s) > 0 {
+			ary := strings.Split(s, ",")
+			if len(ary) > 0 {
+				for _, v := range ary {
+					if i64 := saData.CharbaseToi64(v); i64 > 0 {
+						*m = append(*m, i64)
+					}
 				}
 			}
-
-			tmp = strings.TrimSuffix(tmp, ",")
 		}
+	}
+
+	return nil
+}
+
+func (m CompressIds) Value() (driver.Value, error) {
+	if len(m) > 0 {
+		tmp := ""
+		for _, v := range m {
+			tmp += saData.I64ToCharbase(v) + ","
+		}
+		tmp = strings.TrimSuffix(tmp, ",")
 		return tmp, nil
 	}
 
