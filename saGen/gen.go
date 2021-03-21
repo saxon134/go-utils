@@ -22,7 +22,7 @@ type Set struct {
 func GenerateTbl(set Set) {
 	//默认值处理
 	{
-		set.Options = saHit.Str(set.Options == "", "controller;serve,;ms;doc;tbl", set.Options)
+		set.Options = saHit.Str(set.Options == "", "tbl", set.Options)
 		set.DB = saHit.Str(set.DB == "", "common.DB", set.DB)
 		set.PK = saHit.Str(set.PK == "", "Id", set.PK)
 		set.AddImgRootFun = saHit.Str(set.AddImgRootFun == "", "saImg.AddDefaultUriRoot", set.AddImgRootFun)
@@ -311,8 +311,21 @@ func GenerateTbl(set Set) {
 							columnType = "varchar(255)"
 						} else if columns[i].snake == "cover" {
 							columnType = "varchar(128)"
+						} else if columns[i].snake == "img" {
+							columnType = "varchar(128)"
 						} else {
-							columnType = "varchar(64)"
+							switch reflect.TypeOf(columnType).Kind() {
+							case reflect.Int, reflect.Int32:
+								columnType = "int"
+							case reflect.Int64:
+								columnType = "bigint"
+							case reflect.Int8:
+								columnType = "tinyint"
+							}
+
+							if columnType == "" {
+								columnType = "varchar(64)"
+							}
 						}
 					}
 				}
@@ -324,6 +337,9 @@ func GenerateTbl(set Set) {
 				if columnComment != "" {
 					createSqlTxt += " comment " + columnComment
 				}
+				if pkSnake == columns[i].snake {
+					createSqlTxt += " auto_increment"
+				}
 				createSqlTxt += ",\n"
 			}
 
@@ -334,7 +350,7 @@ func GenerateTbl(set Set) {
 		}
 
 		//生成tbl sql文件
-		{
+		if false {
 			//todo 换成网络地址
 			tpl_f, err := os.OpenFile("/Users/jiang/go.yf/go-utils/saGen/template/tbl_sql.tpl", os.O_RDONLY, 0600)
 			if err != nil {

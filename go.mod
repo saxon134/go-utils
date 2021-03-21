@@ -5,6 +5,7 @@ go 1.14
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
 require (
+	gitee.com/go-utils/saData v0.0.0-20210223022700-01ea4f840d62 // indirect
 	github.com/RichardKnop/machinery v1.10.0
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
 	github.com/astaxie/beego v1.12.3

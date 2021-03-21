@@ -153,7 +153,7 @@ func _get(c *gin.Context) {
 		}
 	}
 
-	ctx.Scene = ctx.GetInt("scene")
+	ctx.Scene,_ = saData.ToInt(ctx.GetHeader("scene"))
 	r.Handle(ctx)
 
 	//error时，打印请求参数
@@ -229,7 +229,7 @@ func _post(c *gin.Context) {
 		}
 	}
 
-	ctx.Scene = ctx.GetInt("scene")
+	ctx.Scene,_ = saData.ToInt(ctx.GetHeader("scene"))
 	r.Handle(ctx)
 
 	//error时，打印请求参数

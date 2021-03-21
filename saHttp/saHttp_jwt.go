@@ -23,7 +23,7 @@ func GenerateJwt(value *JwtValue) (j string, err error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"jti": bAry,
+		"jti": string(bAry),
 		"nbf": time.Now().Unix(), //iat签发时间
 		"iat": time.Now().Unix(), //nbf生效时间
 	})
@@ -54,8 +54,15 @@ func ParseJwt(token string, j *JwtValue) (err error) {
 	}
 
 	value := claims["jti"]
-	if bAry, ok := value.([]byte); ok {
-		err = json.Unmarshal(bAry, j)
+	str, ok := value.(string)
+	if ok == false {
+		if bAry, ok := value.([]byte); ok {
+			str = string(bAry)
+		}
+	}
+
+	if len(str) > 0 {
+		err = json.Unmarshal([]byte(str), j)
 		if err != nil {
 			return saError.Error{Code: saError.UnauthorizedErrorCode}
 		}

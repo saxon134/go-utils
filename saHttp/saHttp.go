@@ -70,13 +70,16 @@ type Context struct {
 	CustomData map[string]interface{} //自定义参数
 }
 
-/*Content-Type为application/json时，备份rawData
+/*
+Content-Type为application/json时，备份rawData
 目的是为了能够多次bind
 */
 func Bind(c *Context, objPtr interface{}) (err error) {
 	if c.Request.Method == "GET" {
 		err = c.ShouldBindQuery(objPtr)
-		return err
+		if err != nil {
+			return err
+		}
 	} else if c.Request.Method == "POST" {
 		tp := c.Request.Header.Get("Content-Type")
 		if tp == "" {
@@ -89,15 +92,23 @@ func Bind(c *Context, objPtr interface{}) (err error) {
 			}
 			if len(c.RawData) > 0 {
 				err = saData.JsonToStruct(c.RawData, &objPtr)
-				return err
+				if err != nil {
+					return err
+				}
 			}
-			return nil
 		} else {
 			err = c.ShouldBind(objPtr)
-			return err
+			if err != nil {
+				return err
+			}
 		}
+	} else {
+		err = errors.New("GET/POST之外不支持")
+		return err
 	}
-	return errors.New("GET/POST之外不支持")
+
+	err = saData.TypeCheck(objPtr)
+	return err
 }
 
 /**

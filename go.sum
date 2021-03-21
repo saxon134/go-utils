@@ -36,6 +36,8 @@ cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RX
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 contrib.go.opencensus.io/exporter/ocagent v0.4.12/go.mod h1:450APlNTSR6FrvC3CTRqYosuDstRB9un7SOx2k/9ckA=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
+gitee.com/go-utils/saData v0.0.0-20210223022700-01ea4f840d62 h1:PPDAV/su6547uEz5zyhZKl14YY14hCn/8pa6Kn+UfRg=
+gitee.com/go-utils/saData v0.0.0-20210223022700-01ea4f840d62/go.mod h1:+n5ncP23ijHG+yxpV+tefkof9Yx0CPCxdoViPZjyaTk=
 github.com/Azure/azure-sdk-for-go v32.4.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/Azure/go-autorest/autorest v0.1.0/go.mod h1:AKyIcETwSUFxIcs/Wnq/C+kwCtlEYGUVd7FPNb2slmg=

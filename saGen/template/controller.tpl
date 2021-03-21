@@ -31,7 +31,7 @@ func _{{StructLower}}List(c *saHttp.Context) {
 		db.Order(c.Order.Key + " " + saHit.Str(c.Order.Desc, "desc", "asc"))
 	}
 
-	var resp = httpIo.{{Struct}}ListResp{}
+	var resp = tio.{{Struct}}ListResp{}
 	err := db.Find(&resp.Ary).Error
 	if saError.DbErr(err) {
 		saHttp.ResErr(c, err)

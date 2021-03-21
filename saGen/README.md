@@ -25,5 +25,4 @@
   created   -> 时间，创建的时候会自动设置当前时间
 
 - tag示例：
-  tbl:"varchar(32);created;;comment:状态 2-正常 1-取消了;default:12;phone;required"
-  api:"in(ms,md);comment:字段;<=23;phone;required;default;err:缺少参数"
+  type:"varchar(32);created;comment:状态 2-正常 1-取消了;default:12;phone;required;in(ms,md);comment:字段;<=23;phone;required;default;err:缺少参数"
