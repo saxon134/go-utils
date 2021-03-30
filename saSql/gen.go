@@ -1,4 +1,4 @@
-package saGen
+package saSql
 
 import (
 	"fmt"
@@ -73,7 +73,7 @@ func GenerateTbl(set Set) {
 			fieldNum := reflectType.NumField()
 			for i := 0; i < fieldNum; i++ {
 				fieldName := reflectType.Field(i).Name
-				tag := reflectType.Field(i).Tag.Get("tbl")
+				tag := reflectType.Field(i).Tag.Get("type")
 				if tag == "" {
 					tag = reflectType.Field(i).Tag.Get("gorm")
 				}
@@ -87,7 +87,7 @@ func GenerateTbl(set Set) {
 				columns = append(columns, v)
 			}
 
-			tblName = "t" + strings.TrimPrefix(saData.SnakeStr(structName), "tbl")
+			tblName = saData.SnakeStr(structName)
 			if _, ok := reflectType.MethodByName("TableName"); ok {
 				ary := reflectValue.Call([]reflect.Value{})
 				if len(ary) > 0 {
@@ -180,6 +180,9 @@ func GenerateTbl(set Set) {
 						} else {
 							columnType = "integer"
 						}
+					} else if tag == "tinyint" {
+						columnDefault = "0"
+						columnType = "tinyint"
 					} else if strings.HasPrefix(tag, "in(") {
 						if strings.Contains(tag, ":") {
 							tag = strings.TrimPrefix(tag, "in(")
@@ -204,7 +207,12 @@ func GenerateTbl(set Set) {
 								columnDefault = saData.F32tos(f)
 							}
 						}
-					} else if tag == "created" || tag == "updated" {
+					} else if tag == "created" {
+						columnType = "datetime"
+						if columnDefault == "" {
+							columnDefault = "CURRENT_TIME"
+						}
+					} else if tag == "updated" {
 						columnType = "datetime"
 					} else if tag == "oss" {
 						fromDbSqlTxt += fmt.Sprintf("\nm.%s = %s(m.%s)\n", columns[i].name, set.AddImgRootFun, columns[i].name)
@@ -290,6 +298,9 @@ func GenerateTbl(set Set) {
 								}
 								`, columns[i].name, tag)
 						}
+					} else if strings.HasPrefix(tag, "enum(") {
+						columnComment = strings.TrimPrefix(tag, "enum(")
+						columnComment = strings.TrimSuffix(columnComment, ")")
 					} else if tag == "time" {
 						columnType = "datetime"
 					}
