@@ -8,9 +8,12 @@ import (
 )
 
 type JwtValue struct {
-	UserId    int64
 	AccountId int64
+	MediaId   int64
+	AppId     int64
+	UserId    int64
 	Check     CheckType
+	Product   int
 }
 
 const secret = "yfjwt*()tok*#en#^&"

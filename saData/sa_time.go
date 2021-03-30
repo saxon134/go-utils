@@ -169,7 +169,11 @@ func StrToTime(format SaTimeFormat, s string) time.Time {
 		formatStr = "2006-01-02T15:04:05Z"
 	}
 
-	t, _ := time.ParseInLocation(formatStr, s, time.Local)
+	location, _ := time.LoadLocation("Asia/Shanghai")
+	if location == nil {
+		location = &time.Location{}
+	}
+	t, _ := time.ParseInLocation(formatStr, s, location)
 	return t
 }
 

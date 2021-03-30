@@ -53,10 +53,11 @@ const (
 type Context struct {
 	*gin.Context
 	Scene   int
+	Product int
 	MediaId int64
 	AppId   int64
 	Paging  struct {
-		Limit  int //默认值为10，基本Valid为false，Limit也不会空
+		Limit  int //默认值为10，即便Valid为false，Limit也不会空
 		Offset int
 		Valid  bool //有些场景，不传分页参数，表示需要获取所有数据。具体业务代码控制
 	}
@@ -118,7 +119,7 @@ func Bind(c *Context, objPtr interface{}) (err error) {
 func PrivilegeCheck(c *Context, t CheckType) bool {
 	if t == ApiSignCheck {
 		sign := c.GetHeader("Authorization")
-		accountId, _ := saData.ToInt64(c.GetHeader("account.id"))
+		accountId, _ := saData.ToInt64(c.GetHeader("accountId"))
 		timestamp, _ := saData.ToInt64(c.GetHeader("timestamp"))
 		if sign == "" || accountId <= 0 || timestamp <= 0 {
 			return false
@@ -133,7 +134,7 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 
 	if t == MsCheck {
 		token := c.GetHeader("Authorization")
-		accountId, _ := saData.ToInt64(c.GetHeader("account.id"))
+		accountId, _ := saData.ToInt64(c.GetHeader("accountId"))
 		if accountId <= 0 || token == "" {
 			return false
 		}
@@ -148,7 +149,7 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 
 	if t == UserCheck {
 		token := c.GetHeader("Authorization")
-		userId, _ := saData.ToInt64(c.GetHeader("user.id"))
+		userId, _ := saData.ToInt64(c.GetHeader("userId"))
 		if userId <= 0 || token == "" {
 			return false
 		}
@@ -167,8 +168,8 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 			return false
 		}
 
-		userId, _ := saData.ToInt64(c.GetHeader("user.id"))
-		accountId, _ := saData.ToInt64(c.GetHeader("account.id"))
+		userId, _ := saData.ToInt64(c.GetHeader("userId"))
+		accountId, _ := saData.ToInt64(c.GetHeader("accountId"))
 
 		_ = ParseJwt(token, &c.Me)
 		if userId > 0 {
@@ -189,7 +190,7 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 func Res(c *Context, v interface{}, ext interface{}) {
 	if c != nil {
 		if v == nil || v == "" {
-			v = map[string]int{}
+			v = "SUCCESS"
 		}
 
 		var dic = map[string]interface{}{

@@ -74,8 +74,8 @@ func _get(c *gin.Context) {
 		Me:        JwtValue{},
 		Automatic: NullRouter,
 	}
-	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media.id"))
-	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app.id"))
+	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("mediaId"))
+	ctx.AppId, _ = saData.Stoi64(c.GetHeader("appId"))
 
 	if r.Handle == nil {
 		ResErr(ctx, "接口有误")
@@ -153,13 +153,13 @@ func _get(c *gin.Context) {
 		}
 	}
 
-	ctx.Scene,_ = saData.ToInt(ctx.GetHeader("scene"))
+	ctx.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
 	r.Handle(ctx)
 
 	//error时，打印请求参数
 	if c.Writer.Status() != 200 {
 		args := map[string]interface{}{}
-		_ = c.BindQuery(args)
+		_ = Bind(ctx, args)
 
 		saLog.Err("Url:", c.Request.URL.Path)
 		saLog.Err("Args:", args)
@@ -229,13 +229,13 @@ func _post(c *gin.Context) {
 		}
 	}
 
-	ctx.Scene,_ = saData.ToInt(ctx.GetHeader("scene"))
+	ctx.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
 	r.Handle(ctx)
 
 	//error时，打印请求参数
 	if c.Writer.Status() != 200 {
 		args := map[string]interface{}{}
-		_ = c.ShouldBind(args)
+		_ = Bind(ctx, args)
 
 		saLog.Err("Url:", c.Request.URL.Path)
 		saLog.Err("Args:", args)

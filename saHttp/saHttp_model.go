@@ -8,11 +8,11 @@ type Response struct {
 }
 
 type ListRequest struct {
-	Status   int    `json:"status" api:"default:2"`
-	Statuses string `json:"statuses"`
-	Offset   int    `json:"offset" api:"default:0;>=0"`
-	Limit    int    `json:"limit" api:"default:20;>0"`
-	Word     string `json:"word"`
+	Status   int    `form:"status" type:"default:2"`
+	Statuses string `form:"statuses"`
+	Offset   int    `form:"offset" type:"default:0;>=0"`
+	Limit    int    `form:"limit" type:"default:20;>0"`
+	Word     string `form:"word"`
 }
 
 type ListResponse struct {
@@ -22,6 +22,6 @@ type ListResponse struct {
 }
 
 type UpdateStatusRequest struct {
-	Status int     `json:"status" api:"default:2"`
-	IdAry  []int64 `json:"idAry" api:"required"`
+	Status int     `form:"status"`
+	IdAry  []int64 `form:"idAry"`
 }
