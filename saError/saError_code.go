@@ -20,4 +20,7 @@ const (
 	ErrorPhone        = "手机格式有误"
 	ErrorConfig       = "配置有误"
 	ErrorUnauthorized = "未授权"
+	ErrorAuditing     = "审核中"
+	ErrorAuditFailed  = "审核未通过"
+	ErrorStatus       = "状态有误"
 )

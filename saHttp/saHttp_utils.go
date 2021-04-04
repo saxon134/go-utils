@@ -261,16 +261,14 @@ func QueryDecode(urlStr string) map[string]string {
 
 //返回结果是： /a/b/c
 func ConnPath(r string, path string) (full string) {
-	r = strings.TrimPrefix(r, "/")
 	r = strings.TrimSuffix(r, "/")
-
 	path = strings.TrimPrefix(path, "/")
 	path = strings.TrimSuffix(path, "/")
 
 	if len(r) > 0 {
-		full = "/" + r + "/" + path
+		full = r + "/" + path
 	} else {
-		full = "/" + path
+		full = path
 	}
 
 	return full

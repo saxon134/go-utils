@@ -11,6 +11,12 @@ import (
 )
 
 func FromDb(obj interface{}) error {
+	defer func() {
+		if e := recover(); e != nil {
+			return
+		}
+	}()
+
 	//反射，判断输入类型是否有误
 	reflectType := reflect.TypeOf(obj)
 	reflectValue := reflect.ValueOf(obj)
@@ -75,6 +81,12 @@ func FromDb(obj interface{}) error {
 }
 
 func ToDB(obj interface{}) error {
+	defer func() {
+		if e := recover(); e != nil {
+			return
+		}
+	}()
+
 	//反射，判断输入类型是否有误
 	reflectType := reflect.TypeOf(obj)
 	reflectValue := reflect.ValueOf(obj)
@@ -216,12 +228,12 @@ func ToDB(obj interface{}) error {
 		case reflect.String:
 			if lte == 0 {
 				if columnName == "Cover" || columnName == "Img" {
-					lte = 128
+					lte = 120
 					isOss = true
 				} else if columnName == "name" {
-					lte = 64
+					lte = 60
 				} else if columnName == "title" {
-					lte = 255
+					lte = 250
 				}
 			}
 

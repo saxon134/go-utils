@@ -195,14 +195,18 @@ func GenerateTbl(set Set) {
 						createSqlTxt += " NOT NULL"
 					} else if strings.HasPrefix(tag, "comment") {
 						columnComment = "'" + strings.TrimPrefix(tag, "comment:") + "'"
-					} else if tag == "default" {
+					} else if strings.HasPrefix(tag, "default:") {
 						tag = strings.TrimPrefix(tag, "default:")
 						if columnKind == reflect.Bool {
 							ok, _ := saData.ToBool(tag)
 							columnDefault = saData.Itos(saHit.Int(ok, 1, 0))
 						} else if columnKind == reflect.String {
 							columnDefault = "'" + tag + "'"
-						} else if columnKind == reflect.Float32 || columnKind == reflect.Float64 || columnKind == reflect.Complex64 || columnKind == reflect.Complex128 {
+						} else if columnKind >= reflect.Int && columnKind <= reflect.Uint64 {
+							if i, err := saData.ToInt64(tag); err == nil {
+								columnDefault = saData.I64tos(i)
+							}
+						} else if columnKind >= reflect.Float32 && columnKind <= reflect.Complex128 {
 							if f, err := saData.ToFloat32(tag); err == nil {
 								columnDefault = saData.F32tos(f)
 							}
@@ -210,7 +214,7 @@ func GenerateTbl(set Set) {
 					} else if tag == "created" {
 						columnType = "datetime"
 						if columnDefault == "" {
-							columnDefault = "CURRENT_TIME"
+							columnDefault = "CURRENT_TIMESTAMP"
 						}
 					} else if tag == "updated" {
 						columnType = "datetime"
@@ -317,13 +321,13 @@ func GenerateTbl(set Set) {
 						columnType = "decimal(10,2)"
 					} else {
 						if columns[i].snake == "name" {
-							columnType = "varchar(64)"
+							columnType = "varchar(60)"
 						} else if columns[i].snake == "title" {
-							columnType = "varchar(255)"
+							columnType = "varchar(250)"
 						} else if columns[i].snake == "cover" {
-							columnType = "varchar(128)"
+							columnType = "varchar(120)"
 						} else if columns[i].snake == "img" {
-							columnType = "varchar(128)"
+							columnType = "varchar(120)"
 						} else {
 							switch reflect.TypeOf(columnType).Kind() {
 							case reflect.Int, reflect.Int32:

@@ -103,14 +103,14 @@ func _get(c *gin.Context) {
 	}
 
 	//分页
-	ctx.Paging.Limit = 10
+	ctx.Paging.Limit = 20
 	ctx.Paging.Offset = 0
 	ctx.Paging.Valid = false
 	if s, ok := ctx.GetQuery("pageSize"); ok {
 		ctx.Paging.Valid = true
 
 		if ctx.Paging.Limit, _ = saData.ToInt(s); ctx.Paging.Limit <= 0 {
-			ctx.Paging.Limit = 10
+			ctx.Paging.Limit = 20
 		}
 
 		s, _ = ctx.GetQuery("pageNumber")
@@ -124,7 +124,7 @@ func _get(c *gin.Context) {
 		ctx.Paging.Valid = true
 
 		if ctx.Paging.Limit, _ = saData.ToInt(s); ctx.Paging.Limit <= 0 {
-			ctx.Paging.Limit = 10
+			ctx.Paging.Limit = 20
 		}
 
 		s, _ = ctx.GetQuery("offset")
@@ -134,7 +134,7 @@ func _get(c *gin.Context) {
 		}
 	}
 	if ctx.Paging.Limit > 400 {
-		ctx.Paging.Limit = 10
+		ctx.Paging.Limit = 20
 	}
 
 	//排序
