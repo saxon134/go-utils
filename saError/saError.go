@@ -27,6 +27,35 @@ func (e Error) String() string {
 	return s
 }
 
+// err只接收字符串和error类型
+func NewError(err interface{}) error {
+	if err == nil {
+		return nil
+	}
+
+	var e = Error{Code: NormalErrorCode, Msg: "", Err: "", Caller: ""}
+	_, file, line, ok := runtime.Caller(1)
+	if ok {
+		if ary := strings.Split(file, "/"); len(ary) > 0 {
+			if len(ary) >= 2 {
+				e.Caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
+			} else if len(ary) >= 1 {
+				e.Caller = ary[len(ary)-1]
+			}
+		}
+		e.Caller += ":" + strconv.Itoa(line)
+	}
+
+	if s, ok := err.(string); ok {
+		e.Err = s
+		e.Msg = s
+	} else if ev, ok := err.(error); ok {
+		e.Msg = ""
+		e.Err = ev.Error()
+	}
+	return e
+}
+
 // 会跟踪error的调用位置；
 // err只接收字符串和error类型；字符串会覆盖msg
 // params可传Code以及Msg，注意：会覆盖前面的
