@@ -8,14 +8,16 @@ import (
 	"strings"
 )
 
-var _groups map[string]map[string]Router
+var _groups []map[string]Router
+var _root string
 
-func InitRouters(g *gin.Engine, groups map[string]map[string]Router) {
+func InitRouters(g *gin.Engine, root string, groups []map[string]Router) {
 	_groups = groups
-	for k, conf := range _groups {
+	_root = root
+	for _, conf := range _groups {
 		toAdd := map[string]Router{}
 		for path, r := range conf {
-			full := ConnPath(k, path)
+			full := ConnPath(root, path)
 
 			if r.Method == GetMethod {
 				g.GET(full, _get)
@@ -55,9 +57,9 @@ func _get(c *gin.Context) {
 	var err error
 
 	var r Router
-	for k, routerDic := range _groups {
-		for path, router := range routerDic {
-			full := ConnPath(k, path)
+	for _, router := range _groups {
+		for path, router := range router {
+			full := ConnPath(_root, path)
 			if full == c.Request.URL.Path {
 				r = router
 				break
@@ -74,8 +76,8 @@ func _get(c *gin.Context) {
 		Me:        JwtValue{},
 		Automatic: NullRouter,
 	}
-	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("mediaId"))
-	ctx.AppId, _ = saData.Stoi64(c.GetHeader("appId"))
+	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media-id"))
+	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app-id"))
 
 	if r.Handle == nil {
 		ResErr(ctx, "接口有误")
@@ -169,9 +171,9 @@ func _get(c *gin.Context) {
 func _post(c *gin.Context) {
 	var err error
 	var r Router
-	for k, routerDic := range _groups {
-		for path, router := range routerDic {
-			full := ConnPath(k, path)
+	for _, router := range _groups {
+		for path, router := range router {
+			full := ConnPath(_root, path)
 			if full == c.Request.URL.Path {
 				r = router
 				break
@@ -188,8 +190,8 @@ func _post(c *gin.Context) {
 		Me:        JwtValue{},
 		Automatic: NullRouter,
 	}
-	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media.id"))
-	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app.id"))
+	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media-id"))
+	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app-id"))
 
 	if r.Handle == nil {
 		ResErr(ctx, "接口有误")

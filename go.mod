@@ -20,6 +20,7 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
+	github.com/silenceper/wechat/v2 v2.0.5 // indirect
 	go.uber.org/zap v1.16.0
 	gorm.io/gorm v1.20.12
 )

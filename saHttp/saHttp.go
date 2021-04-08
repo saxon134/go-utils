@@ -50,12 +50,11 @@ const (
 	ApiSignCheck  CheckType = 4
 )
 
-type Context struct {
-	*gin.Context
+type Headers struct {
 	Scene   int
 	Product int
-	MediaId int64
-	AppId   int64
+	MediaId int64 `form:"mediaId"`
+	AppId   int64 `form:"appId"`
 	Paging  struct {
 		Limit  int //默认值为10，即便Valid为false，Limit也不会空
 		Offset int
@@ -65,6 +64,11 @@ type Context struct {
 		Key  string
 		Desc bool
 	}
+}
+
+type Context struct {
+	*gin.Context
+	Headers
 	Me         JwtValue
 	Automatic  RouterType //add、update时，一定做MsOrUserCheck，其他方法校验依据配置
 	RawData    []byte
@@ -247,7 +251,9 @@ func ResErr(c *Context, err interface{}) {
 			_, file, line, ok := runtime.Caller(1)
 			if ok {
 				if ary := strings.Split(file, "/"); len(ary) > 0 {
-					if len(ary) >= 2 {
+					if len(ary) >= 3 {
+						caller = ary[len(ary)-3] + "/" + ary[len(ary)-2]+ "/" + ary[len(ary)-1]
+					} else if len(ary) >= 2 {
 						caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
 					} else if len(ary) >= 1 {
 						caller = ary[len(ary)-1]
@@ -302,6 +308,9 @@ func ResErr(c *Context, err interface{}) {
 				caller += ":" + saData.Itos(line)
 			}
 		}
+	}
+	if len(msg) == len(errMsg) && msg == errMsg { //重复信息不用打印
+		errMsg = ""
 	}
 	saLog.Err(code, caller, msg, errMsg)
 

@@ -23,4 +23,5 @@ const (
 	ErrorAuditing     = "审核中"
 	ErrorAuditFailed  = "审核未通过"
 	ErrorStatus       = "状态有误"
+	ErrorMedia        = "应用信息有误"
 )
