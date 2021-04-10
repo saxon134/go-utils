@@ -124,13 +124,12 @@ func Bind(c *Context, objPtr interface{}) (err error) {
 func PrivilegeCheck(c *Context, t CheckType) bool {
 	if t == ApiSignCheck {
 		sign := c.GetHeader("Authorization")
-		accountId, _ := saData.ToInt64(c.GetHeader("accountId"))
 		timestamp, _ := saData.ToInt64(c.GetHeader("timestamp"))
-		if sign == "" || accountId <= 0 || timestamp <= 0 {
+		if sign == "" || timestamp <= 0 {
 			return false
 		}
 
-		sign2 := "ac79u%^yr!i" + strconv.FormatInt(accountId, 10) + strconv.FormatInt(timestamp, 10)
+		sign2 := "ac79u%^yr!i" + strconv.FormatInt(timestamp, 10)
 		sign2 = saData.Md5(sign2, true)
 		if sign2 != sign {
 			return false
@@ -139,13 +138,12 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 
 	if t == MsCheck {
 		token := c.GetHeader("Authorization")
-		accountId, _ := saData.ToInt64(c.GetHeader("accountId"))
-		if accountId <= 0 || token == "" {
+		if token == "" {
 			return false
 		}
 
 		_ = ParseJwt(token, &c.Me)
-		if c.Me.AccountId != accountId || c.Me.Check != MsCheck {
+		if c.Me.AccountId <=0 || c.Me.Check != MsCheck {
 			return false
 		}
 
@@ -154,13 +152,12 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 
 	if t == UserCheck {
 		token := c.GetHeader("Authorization")
-		userId, _ := saData.ToInt64(c.GetHeader("userId"))
-		if userId <= 0 || token == "" {
+		if token == "" {
 			return false
 		}
 
 		_ = ParseJwt(token, &c.Me)
-		if c.Me.UserId != userId || c.Me.Check != UserCheck {
+		if c.Me.UserId <= 0 || c.Me.Check != UserCheck {
 			return false
 		}
 
@@ -173,19 +170,10 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 			return false
 		}
 
-		userId, _ := saData.ToInt64(c.GetHeader("userId"))
-		accountId, _ := saData.ToInt64(c.GetHeader("accountId"))
-
 		_ = ParseJwt(token, &c.Me)
-		if userId > 0 {
-			return c.Me.UserId == userId
+		if c.Me.UserId <=0 && c.Me.AccountId <=0 {
+			return false
 		}
-
-		if accountId > 0 {
-			return c.Me.AccountId == accountId
-		}
-
-		return false
 	}
 
 	return true

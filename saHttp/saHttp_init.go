@@ -78,6 +78,8 @@ func _get(c *gin.Context) {
 	}
 	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media-id"))
 	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app-id"))
+	ctx.Product, _= saData.Stoi(c.GetHeader("product"))
+	ctx.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
 
 	if r.Handle == nil {
 		ResErr(ctx, "接口有误")
@@ -154,8 +156,6 @@ func _get(c *gin.Context) {
 			}
 		}
 	}
-
-	ctx.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
 	r.Handle(ctx)
 
 	//error时，打印请求参数
@@ -192,6 +192,8 @@ func _post(c *gin.Context) {
 	}
 	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media-id"))
 	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app-id"))
+	ctx.Product, _= saData.Stoi(c.GetHeader("product"))
+	ctx.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
 
 	if r.Handle == nil {
 		ResErr(ctx, "接口有误")
@@ -230,8 +232,6 @@ func _post(c *gin.Context) {
 			}
 		}
 	}
-
-	ctx.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
 	r.Handle(ctx)
 
 	//error时，打印请求参数
