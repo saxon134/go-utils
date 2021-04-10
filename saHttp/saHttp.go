@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saError"
+	"github.com/saxon134/go-utils/saHit"
 	"github.com/saxon134/go-utils/saLog"
 	"reflect"
 	"runtime"
@@ -212,7 +213,7 @@ func Res(c *Context, v interface{}, ext interface{}) {
 }
 
 //返回正确的数组数据
-func ResAry(c *Context, ary interface{}, paging ListResponse) {
+func ResAry(c *Context, ary interface{}, cnt int64) {
 	if ary == nil || ary == "" {
 		ary = []int{}
 	}
@@ -225,7 +226,7 @@ func ResAry(c *Context, ary interface{}, paging ListResponse) {
 		"result": ary,
 		"code":   0,
 		"ext": map[string]interface{}{
-			"totalCount": paging.Cnt,
+			"totalCount": saHit.Int64(cnt > 0, cnt, int64(c.Paging.Offset+c.Paging.Limit)),
 			"pageSize":   c.Paging.Limit,
 			"pageNumber": (c.Paging.Offset-1)/c.Paging.Limit + 1,
 		},
@@ -252,7 +253,7 @@ func ResErr(c *Context, err interface{}) {
 			if ok {
 				if ary := strings.Split(file, "/"); len(ary) > 0 {
 					if len(ary) >= 3 {
-						caller = ary[len(ary)-3] + "/" + ary[len(ary)-2]+ "/" + ary[len(ary)-1]
+						caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
 					} else if len(ary) >= 2 {
 						caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
 					} else if len(ary) >= 1 {
