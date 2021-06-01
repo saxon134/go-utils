@@ -1,20 +1,21 @@
 package saBroker
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 )
 
 /*
-触发broker：server层 -> trigger
-注册任务：jobs -> server层
-使用参考brokerTest
-注意：broker请求的参数模型，要单独放在一个包里，否则容易引发循环引用
+使用请参考brokerTest
+通过Redis，分发事务给不同的实例使用
+并发安全
+只有多实例时才有用，如果只部署了一个实例，应当使用saGo/saChannel去处理
 */
 
-var Manager *BrokerManager
+var _manager *BrokerManager
 
-//host: redis://127.0.0.1:6379  queue: techioBroker
+//host: redis://127.0.0.1:6379  queue: tioBroker
 func Init(host string, queue string) *BrokerManager {
 	if host == "" || queue == "" {
 		return nil
@@ -24,8 +25,8 @@ func Init(host string, queue string) *BrokerManager {
 }
 
 //必须一次性注册所有任务
-func RegisterRemoteJobs(jobs ...RemoteJobModel) error {
-	if Manager == nil {
+func RegisterJobs(jobs ...RemoteJobModel) error {
+	if _manager == nil {
 		return errors.New("未注册remote job")
 	}
 
@@ -33,19 +34,24 @@ func RegisterRemoteJobs(jobs ...RemoteJobModel) error {
 		return errors.New("缺少必要参数")
 	}
 
-	err := Manager.RegisterJob(jobs...)
+	err := _manager.RegisterJob(jobs...)
 	if err != nil {
 		fmt.Println("broker jobs init error.")
 		return err
 	}
 
-	go Manager.Run()
+	go _manager.Run()
 	return nil
 }
 
-//concurrent最大并行数
-func RegisterLocalJobs(concurrent int, handle func(j *LocalJob)) error {
-	_handle = handle
-	initLocal(concurrent)
-	return nil
+func Do(name string, params interface{}) error {
+	bAry, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	_manager.lock.Lock()
+	defer _manager.lock.Unlock()
+	err = _manager.Switch(name).SetParams(bAry).Do()
+	return err
 }

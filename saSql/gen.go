@@ -124,6 +124,7 @@ func GenerateTbl(set Set) {
 				columnDefault := ""
 				columnComment := "''"
 				columnKind := reflectType.Field(i).Type.Kind()
+				columnSigned := false
 				for _, tag := range columns[i].tags {
 					tag = strings.ToLower(tag)
 
@@ -174,15 +175,15 @@ func GenerateTbl(set Set) {
 						columnDefault = "0"
 						tag = strings.TrimPrefix(tag, "int")
 						if tag == "8" {
-							columnType = "tinyint"
+							columnType = "tinyint unsigned"
 						} else if tag == "64" {
 							columnType = "bigint unsigned"
 						} else {
-							columnType = "integer"
+							columnType = "integer unsigned"
 						}
 					} else if tag == "tinyint" {
 						columnDefault = "0"
-						columnType = "tinyint"
+						columnType = "tinyint unsigned"
 					} else if strings.HasPrefix(tag, "in(") {
 						if strings.Contains(tag, ":") {
 							tag = strings.TrimPrefix(tag, "in(")
@@ -191,6 +192,8 @@ func GenerateTbl(set Set) {
 						}
 					} else if strings.HasPrefix(tag, "decimal(") {
 						columnType = tag
+					} else if tag == "signed" {
+						columnSigned = true
 					} else if tag == "required" {
 						createSqlTxt += " NOT NULL"
 					} else if strings.HasPrefix(tag, "comment") {
@@ -312,11 +315,11 @@ func GenerateTbl(set Set) {
 
 				if columnType == "" {
 					if columnKind == reflect.Bool || columnKind == reflect.Int8 || columnKind == reflect.Uint8 {
-						columnType = "tinyint"
+						columnType = saHit.Str(columnSigned, "tinyint", "tinyint unsigned")
 					} else if columnKind == reflect.Int16 || columnKind == reflect.Uint16 || columnKind == reflect.Uint32 || columnKind == reflect.Int32 {
-						columnType = "int"
+						columnType = saHit.Str(columnSigned, "int", "int unsigned")
 					} else if columnKind == reflect.Uint64 || columnKind == reflect.Int64 {
-						columnType = "bigint unsigned"
+						columnType = saHit.Str(columnSigned, "bigint", "bigint unsigned")
 					} else if columnKind == reflect.Float32 || columnKind == reflect.Float64 || columnKind == reflect.Complex64 || columnKind == reflect.Complex128 {
 						columnType = "decimal(10,2)"
 					} else {
@@ -332,10 +335,13 @@ func GenerateTbl(set Set) {
 							switch reflect.TypeOf(columnType).Kind() {
 							case reflect.Int, reflect.Int32:
 								columnType = "int"
+								columnType = saHit.Str(columnSigned, "int", "int unsigned")
 							case reflect.Int64:
 								columnType = "bigint"
+								columnType = saHit.Str(columnSigned, "bigint", "bigint unsigned")
 							case reflect.Int8:
 								columnType = "tinyint"
+								columnType = saHit.Str(columnSigned, "tinyint", "tinyint unsigned")
 							}
 
 							if columnType == "" {
@@ -343,6 +349,8 @@ func GenerateTbl(set Set) {
 							}
 						}
 					}
+				} else if columnSigned {
+					columnType = strings.Replace(columnType, " unsigned", "", -1)
 				}
 
 				createSqlTxt += "  `" + columns[i].snake + "` " + columnType
@@ -360,7 +368,7 @@ func GenerateTbl(set Set) {
 
 			createSqlTxt += "  PRIMARY KEY (`" + pkSnake + "`) USING BTREE"
 			createSqlTxt += "\n) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;\n"
-			fmt.Println("建表参考语句：")
+			fmt.Println("-- 建表参考语句：")
 			fmt.Println(createSqlTxt)
 		}
 

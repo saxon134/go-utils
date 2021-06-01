@@ -3,7 +3,6 @@ package brokerTest
 import (
 	"fmt"
 	"github.com/saxon134/go-utils/saBroker"
-	"github.com/saxon134/go-utils/saBroker/saTrigger"
 	"testing"
 	"time"
 )
@@ -18,7 +17,7 @@ func TestBroker(t *testing.T) {
 			return
 		}
 
-		err := yfBroker.RegisterRemoteJobs(
+		err := saBroker.RegisterJobs(
 			NewPrintJob("print_test"),
 		)
 		if err != nil {
@@ -26,24 +25,18 @@ func TestBroker(t *testing.T) {
 			return
 		}
 
-		_ = yfBroker.RegisterLocalJobs(10, func(j *yfBroker.LocalJob) {
-			fmt.Println(j.Type, j.Value)
-		})
-
 		fmt.Println("broker init ok.")
 	}
 
 	//server层，发送broker消息
 	{
-		err := yfTrigger.Remote("print_test", "123abc")
+		err := saBroker.Do("print_test", "123abc")
 		if err != nil {
-			fmt.Println("trigger error:", err)
+			fmt.Println("trigger broker error:", err)
 			return
 		}
 
-		_ = yfTrigger.Local(&yfBroker.LocalJob{Type: "1", Value: "a"})
-
-		fmt.Println("trigger ok!")
+		fmt.Println("trigger broker ok!")
 	}
 
 	time.Sleep(time.Second * 10)

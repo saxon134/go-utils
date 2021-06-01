@@ -61,7 +61,7 @@ func (c *Client) Call(ctx context.Context, method string, in interface{}, resPtr
 		ctx, _ = context.WithTimeout(context.Background(), time.Second*time.Duration(5))
 	}
 
-	request := c.Client().NewRequest(c.App, "Server.Api", req, client.WithContentType("application/json"))
+	request := c.Client().NewRequest(c.App, "ServiceHandle.Api", req, client.WithContentType("application/json"))
 	var rsp Response
 	if err = c.Client().Call(ctx, request, &rsp); err != nil {
 		return err

@@ -21,21 +21,20 @@ func IsIpAddress(str string) bool {
 func GetIpRegion(ip string) *map[string]string {
 	if IsIpAddress(ip) {
 		reg := map[string]string{}
-		if _res, err := Get("http://ip.taobao.com/service/getIpInfo.php?ip="+ip, nil); err == nil {
+		if _res, err := Get("https://api.map.baidu.com/location/ip?ak=Tp7rCYFxLmiTf0EZRpc55AgdvExlLePI&coor=bd09ll&ip="+ip, nil); err == nil {
 			if res, err := saData.JsonToMap(_res); err == nil && res != nil {
-				if d, _ := saData.ToMap(res["data"]); d != nil {
-					if v, _ := saData.ToStr(d["region_id"]); v != "" {
-						reg["provinceCode"] = v
-						reg["provinceName"], _ = saData.ToStr(d["region"])
+				if d, _ := saData.ToMap(res["content"]); d != nil {
+					if address,_:=saData.ToMap(d["address_detail"]) ;address !=nil{
+						reg["province"], _ = saData.ToStr(d["province"])
+						reg["city"], _ = saData.ToStr(d["city"])
+						reg["district"], _ = saData.ToStr(d["street"])
 					}
-					if v, _ := saData.ToStr(d["city_id"]); v != "" {
-						reg["cityCode"] = v
-						reg["cityName"], _ = saData.ToStr(d["city"])
+
+					if point,_:=saData.ToMap(d["point"]) ;point !=nil{
+						reg["long"], _ = saData.ToStr(point["x"])
+						reg["lat"], _ = saData.ToStr(point["y"])
 					}
-					if v, _ := saData.ToStr(d["area_id"]); v != "" {
-						reg["districtCode"] = v
-						reg["districtName"], _ = saData.ToStr(d["area"])
-					}
+
 					return &reg
 				}
 			}

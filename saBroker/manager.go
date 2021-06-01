@@ -28,10 +28,10 @@ type BrokerManager struct {
 
 // 单例
 func initInstance(host string, queue string) *BrokerManager {
-	if nil == Manager {
+	if nil == _manager {
 		Lock.Lock()
-		if nil == Manager {
-			Manager = &BrokerManager{
+		if nil == _manager {
+			_manager = &BrokerManager{
 				taskCenter:       initMachineryServer(host, queue),
 				taskResult:       make(map[string]*result.AsyncResult),
 				taskMapFunc:      make(map[string]interface{}),
@@ -42,13 +42,13 @@ func initInstance(host string, queue string) *BrokerManager {
 			Lock.Unlock()
 		}
 	}
-	return Manager
+	return _manager
 }
 
 func (m *BrokerManager) RegisterJob(jobs ...RemoteJobModel) error {
-	Manager.tasks = append(Manager.tasks, jobs...)
-	Manager.parseTaskMapFuncAndSignature()
-	err := Manager.taskCenter.RegisterTasks(Manager.taskMapFunc)
+	_manager.tasks = append(_manager.tasks, jobs...)
+	_manager.parseTaskMapFuncAndSignature()
+	err := _manager.taskCenter.RegisterTasks(_manager.taskMapFunc)
 	return err
 }
 
@@ -74,8 +74,6 @@ func (m *BrokerManager) Do() error {
 			return err
 		}
 
-		m.lock.Lock()
-		defer m.lock.Unlock()
 		m.taskResult[m.currentName] = res
 	}
 
@@ -112,15 +110,13 @@ func (m *BrokerManager) DoDelay(seconds int64) {
 		if err != nil {
 			logs.Error("DoDelay job任务执行错误", err, v)
 		}
-		m.lock.Lock()
-		defer m.lock.Unlock()
 		m.taskResult[m.currentName] = res
 	}
 }
 
 func (m *BrokerManager) parseTaskMapFuncAndSignature() {
 	for _, t := range m.tasks {
-		m.taskMapFunc[t.GetSignature().Name] = t.GetHandle()
+		m.taskMapFunc[t.GetSignature().Name] = t.Handle
 		m.taskMapSignature[t.GetSignature().Name] = t.GetSignature()
 	}
 }

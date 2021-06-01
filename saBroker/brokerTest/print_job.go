@@ -6,7 +6,7 @@ import (
 )
 
 type PrintJob struct {
-	saBroker.RemoteJob
+	saBroker.Job
 }
 
 func NewPrintJob(name string) *PrintJob {
@@ -19,9 +19,7 @@ func NewPrintJob(name string) *PrintJob {
 	return j
 }
 
-func (t *PrintJob) GetHandle() interface{} {
-	return func(bAry []byte) error {
-		fmt.Println("print task handle:", bAry)
-		return nil
-	}
+func (t *PrintJob) Handle(bAry []byte) error {
+	fmt.Println("print task handle:", bAry)
+	return nil
 }

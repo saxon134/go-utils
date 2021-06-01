@@ -4,14 +4,14 @@ import "github.com/RichardKnop/machinery/v1/tasks"
 
 type RemoteJobModel interface {
 	GetSignature() *tasks.Signature
-	GetHandle() interface{}
+	Handle(bAry []byte) error
 }
 
-type RemoteJob struct {
+type Job struct {
 	Name string
 }
 
-func (t *RemoteJob) GetSignature() (s *tasks.Signature) {
+func (t *Job) GetSignature() (s *tasks.Signature) {
 	s = &tasks.Signature{
 		Name:         t.Name,
 		RetryCount:   1,

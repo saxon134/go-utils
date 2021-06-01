@@ -2,22 +2,8 @@ package saTask
 
 import (
 	"github.com/astaxie/beego/toolbox"
+	"github.com/pkg/errors"
 )
-
-type Handle struct {
-	HandleFunc func() error
-	Name       string
-	Spec       string // */2 * * * * * 每2秒执行一次
-}
-
-type handler struct {
-	f func() error
-}
-
-func (m *handler) run() error {
-	go m.f()
-	return nil
-}
 
 func Init(handlers ...Handle) {
 	if len(handlers) > 0 {
@@ -25,6 +11,30 @@ func Init(handlers ...Handle) {
 			toolbox.AddTask(h.Name, toolbox.NewTask(h.Name, h.Spec, handler{f: h.HandleFunc}.run))
 		}
 	}
+	_taskAry = handlers
 
 	toolbox.StartTask()
+}
+
+func Fire(name string) error {
+	if name == "" {
+		return errors.New("任务名称不能空")
+	}
+
+	if len(_taskAry) == 0 {
+		return errors.New("任务空")
+	}
+
+	existed := false
+	for _, t := range _taskAry {
+		if t.Name == name {
+			existed = true
+			go t.HandleFunc()
+			break
+		}
+	}
+	if existed == false {
+		return errors.New("未找到当前任务")
+	}
+	return nil
 }
