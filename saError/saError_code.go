@@ -25,4 +25,5 @@ const (
 	ErrorStatus       = "状态有误"
 	ErrorMedia        = "应用信息有误"
 	ErrorEmpty        = "数据为空"
+	ErrorMethod       = "未找到对应方法"
 )

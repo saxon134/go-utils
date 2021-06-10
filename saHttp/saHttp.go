@@ -183,7 +183,7 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 func Res(c *Context, v interface{}, ext interface{}) {
 	if c != nil {
 		if v == nil || v == "" {
-			v = "SUCCESS"
+			v = "success"
 		}
 
 		var dic = map[string]interface{}{

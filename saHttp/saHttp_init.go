@@ -76,10 +76,10 @@ func _get(c *gin.Context) {
 		Me:        JwtValue{},
 		Automatic: NullRouter,
 	}
-	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media-id"))
-	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app-id"))
-	ctx.Product, _= saData.Stoi(c.GetHeader("product"))
-	ctx.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
+	ctx.Headers.MediaId, _ = saData.Stoi64(c.GetHeader("media-id"))
+	ctx.Headers.AppId, _ = saData.Stoi64(c.GetHeader("app-id"))
+	ctx.Headers.Product, _= saData.Stoi(c.GetHeader("product"))
+	ctx.Headers.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
 
 	if r.Handle == nil {
 		ResErr(ctx, "接口有误")
@@ -104,6 +104,12 @@ func _get(c *gin.Context) {
 			ResErr(ctx, err)
 			return
 		}
+	}
+
+	//获取“我”的信息
+	if ctx.Me.UserId <=0 {
+		token := c.GetHeader("Authorization")
+		_ = ParseJwt(token, &ctx.Me)
 	}
 
 	//分页

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var source = []string{"2", "3", "4", "5", "6", "7", "8", "9",
+var _source = []string{"2", "3", "4", "5", "6", "7", "8", "9",
 	"A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
 	"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
 }
@@ -15,6 +15,18 @@ const prime1 = 7
 const prime2 = 13
 
 func Id2Code(id int64, length int) (code string) {
+	return Id2CodeWithSource(id, length, _source)
+}
+
+func Code2Id(ivcode string, length int) (id int64) {
+	return Code2IdWithSource(ivcode, length, _source)
+}
+
+func Id2CodeWithSource(id int64, length int, source []string) (code string) {
+	if len(source) == 0 {
+		source = _source
+	}
+
 	if length < 4 {
 		length = 4
 	}
@@ -46,7 +58,11 @@ func Id2Code(id int64, length int) (code string) {
 	return
 }
 
-func Code2Id(ivcode string, length int) (id int64) {
+func Code2IdWithSource(ivcode string, length int, source []string) (id int64) {
+	if len(source) == 0 {
+		source = _source
+	}
+
 	if length < 4 {
 		length = 4
 	}
