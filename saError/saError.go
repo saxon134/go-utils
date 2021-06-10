@@ -70,7 +70,7 @@ func StackError(err interface{}, params ...interface{}) error {
 	if ok {
 		if ary := strings.Split(file, "/"); len(ary) > 0 {
 			if len(ary) >= 3 {
-				e.Caller = ary[len(ary)-3] + "/" + ary[len(ary)-2]+ "/" + ary[len(ary)-1]
+				e.Caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
 			} else if len(ary) >= 2 {
 				e.Caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
 			} else if len(ary) >= 1 {

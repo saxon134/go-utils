@@ -59,7 +59,7 @@ func ToIdAry(args map[string]interface{}, key string) []int64 {
 }
 
 // []{1,2,3} => 1,2,3
-func ToIds(ary []int64) string {
+func AryToIds(ary []int64) string {
 	if ary == nil || len(ary) == 0 {
 		return ""
 	}
@@ -93,4 +93,21 @@ func IdsToAry(str string) []int64 {
 	}
 
 	return idAry
+}
+
+func FormatIds(str string) string {
+	if str == "" {
+		return ""
+	}
+
+	ary := strings.Split(str, ",")
+	str = ""
+	for _, v := range ary {
+		id, _ := ToInt64(v)
+		if id > 0 {
+			str += I64tos(id) + ","
+		}
+	}
+	str = strings.TrimSuffix(str, ",")
+	return str
 }
