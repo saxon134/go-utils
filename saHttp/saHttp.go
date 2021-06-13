@@ -143,7 +143,7 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 		}
 
 		_ = ParseJwt(token, &c.Me)
-		if c.Me.AccountId <=0 || c.Me.Check != MsCheck {
+		if c.Me.AccountId <= 0 || c.Me.Check != MsCheck {
 			return false
 		}
 
@@ -171,7 +171,7 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 		}
 
 		_ = ParseJwt(token, &c.Me)
-		if c.Me.UserId <=0 && c.Me.AccountId <=0 {
+		if c.Me.UserId <= 0 && c.Me.AccountId <= 0 {
 			return false
 		}
 	}
@@ -284,16 +284,10 @@ func ResErr(c *Context, err interface{}) {
 			code = saError.SensitiveErrorCode
 			errMsg = err_s
 
+			//获取调用文件及位置
 			_, file, line, ok := runtime.Caller(1)
 			if ok {
-				if ary := strings.Split(file, "/"); len(ary) > 0 {
-					if len(ary) >= 2 {
-						caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
-					} else if len(ary) >= 1 {
-						caller = ary[len(ary)-1]
-					}
-				}
-
+				caller = file + ":" + saData.Itos(line)
 				caller += ":" + saData.Itos(line)
 			}
 		}

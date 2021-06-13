@@ -62,7 +62,7 @@ func Err(a ...interface{}) {
 	}
 
 	s := "E " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " "
-	for _,v := range a {
+	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
 
@@ -76,7 +76,7 @@ func Warn(a ...interface{}) {
 
 	if logLevel <= WarnLevel {
 		s := "W " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " "
-		for _,v := range a {
+		for _, v := range a {
 			s += fmt.Sprint(v) + " "
 		}
 
@@ -96,7 +96,7 @@ func Warn(a ...interface{}) {
 func Info(a ...interface{}) {
 	if logLevel <= InfoLevel {
 		s := "I " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " "
-		for _,v := range a {
+		for _, v := range a {
 			s += fmt.Sprint(v) + " "
 		}
 		logChan <- s
