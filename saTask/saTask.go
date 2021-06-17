@@ -12,7 +12,7 @@ type handler struct {
 	f func()
 }
 
-func (m *handler) run() error {
+func (m handler) run() error {
 	go m.f()
 	return nil
 }
