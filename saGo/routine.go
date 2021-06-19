@@ -29,7 +29,7 @@ func NewRoutine(maxGoroutine int, handle func(params interface{})) *Routine {
 /**
 任务数量大于最大协程数时会阻塞
 */
-func (r *Routine) Run(params interface{}) {
+func (r *Routine) Do(params interface{}) {
 	if r.maxGoroutine == 0 {
 		panic("请通过NewRoutine初始化")
 		return

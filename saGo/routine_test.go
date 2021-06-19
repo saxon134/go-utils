@@ -16,7 +16,7 @@ func TestRoutine(t *testing.T) {
 	})
 
 	for i := 0; i < 100; i++ {
-		r.Run(i)
+		r.Do(i)
 	}
 	time.Sleep(time.Second * 11)
 }
