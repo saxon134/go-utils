@@ -15,10 +15,8 @@ import (
 )
 
 type Router struct {
-	Method HttpMethod
-	Check  CheckType
+	Set    string //get,post,auto,sign,ms,user
 	Handle func(c *Context)
-	Log    string //in-打印输入信息 out-打印输出信息 in;out-打印输入输出信息 注：error时一定会打印参数
 }
 
 type RouterType int8
@@ -31,28 +29,8 @@ const (
 	UpdateStatusRouter
 )
 
-type HttpMethod int
-
-const (
-	NullApiMethod HttpMethod = iota
-	GetMethod
-	PostMethod
-	AnyMethod
-	AutomaticMethod
-)
-
-type CheckType int
-
-const (
-	NullCheck     CheckType = 0
-	MsCheck       CheckType = 1 //包含系统管理 和 媒体管理
-	UserCheck     CheckType = 2
-	MsOrUserCheck CheckType = 3
-	ApiSignCheck  CheckType = 4
-)
-
 type Headers struct {
-	Scene   int
+	Scene   int //1-ms 2-md 3-wxApp 4-wxXcx 5-wxGzh 6-H5
 	Product int
 	MediaId int64 `form:"mediaId"`
 	AppId   int64 `form:"appId"`
@@ -70,10 +48,9 @@ type Headers struct {
 type Context struct {
 	*gin.Context
 	Headers
-	Me         JwtValue
-	Automatic  RouterType //add、update时，一定做MsOrUserCheck，其他方法校验依据配置
-	RawData    []byte
-	CustomData map[string]interface{} //自定义参数
+	User    UserJwt
+	Admin   AdminJwt
+	RawData []byte
 }
 
 /*
@@ -121,8 +98,8 @@ func Bind(c *Context, objPtr interface{}) (err error) {
 权限校验
 系统管理 和 媒体管理都会有isMs参数，媒体管理还会有isMd参数
 */
-func PrivilegeCheck(c *Context, t CheckType) bool {
-	if t == ApiSignCheck {
+func PrivilegeCheck(c *Context, t string) bool {
+	if t == "sign" {
 		sign := c.GetHeader("Authorization")
 		timestamp, _ := saData.ToInt64(c.GetHeader("timestamp"))
 		if sign == "" || timestamp <= 0 {
@@ -136,44 +113,32 @@ func PrivilegeCheck(c *Context, t CheckType) bool {
 		}
 	}
 
-	if t == MsCheck {
+	if t == "ms" {
 		token := c.GetHeader("Authorization")
 		if token == "" {
 			return false
 		}
 
-		_ = ParseJwt(token, &c.Me)
-		if c.Me.AccountId <= 0 || c.Me.Check != MsCheck {
+		_ = ParseAdminJwt(token, &c.Admin)
+		if c.Admin.AccountId <= 0 {
 			return false
 		}
 
 		return true
 	}
 
-	if t == UserCheck {
+	if t == "user" {
 		token := c.GetHeader("Authorization")
 		if token == "" {
 			return false
 		}
 
-		_ = ParseJwt(token, &c.Me)
-		if c.Me.UserId <= 0 || c.Me.Check != UserCheck {
+		_ = ParseUserJwt(token, &c.User)
+		if c.User.UserId <= 0 {
 			return false
 		}
 
 		return true
-	}
-
-	if t == MsOrUserCheck {
-		token := c.GetHeader("Authorization")
-		if token == "" {
-			return false
-		}
-
-		_ = ParseJwt(token, &c.Me)
-		if c.Me.UserId <= 0 && c.Me.AccountId <= 0 {
-			return false
-		}
 	}
 
 	return true
@@ -210,13 +175,13 @@ func ResAry(c *Context, ary interface{}, cnt int64) {
 		ary = []int{}
 	}
 
+	cnt = saHit.Int64(cnt > 0, cnt, int64(c.Paging.Offset+c.Paging.Limit))
 	c.JSON(200, map[string]interface{}{
 		"result": ary,
 		"code":   0,
 		"ext": map[string]interface{}{
-			"totalCount": saHit.Int64(cnt > 0, cnt, int64(c.Paging.Offset+c.Paging.Limit)),
-			"pageSize":   c.Paging.Limit,
-			"pageNumber": (c.Paging.Offset-1)/c.Paging.Limit + 1,
+			"cnt":     cnt,
+			"hasNext": cnt > int64(c.Paging.Offset+c.Paging.Limit),
 		},
 	})
 	c.Abort()

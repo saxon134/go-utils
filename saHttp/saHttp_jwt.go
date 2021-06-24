@@ -7,24 +7,72 @@ import (
 	"time"
 )
 
-type JwtValue struct {
-	AccountId int64
+type AdminJwt struct {
 	MediaId   int64
-	AppId     int64
-	UserId    int64
-	Check     CheckType
 	Product   int
+	AccountId int64
+}
+
+type UserJwt struct {
+	MediaId int64
+	AppId   int64
+	Product int
+	UserId  int64
 }
 
 const secret = "yfjwt*()tok*#en#^&"
 
-func GenerateJwt(value *JwtValue) (j string, err error) {
+func GenerateAdminJwt(j *AdminJwt) (token string, err error) {
 	var bAry []byte
-	bAry, err = json.Marshal(value)
+	bAry, err = json.Marshal(j)
 	if err != nil {
-		return "", err
+		return
 	}
 
+	token, err = generate(bAry)
+	return
+}
+
+func ParseAdminJwt(token string, j *AdminJwt) (err error) {
+	var bAry []byte
+	bAry, err = parse(token)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(bAry, j)
+	if err != nil {
+		return saError.Error{Code: saError.UnauthorizedErrorCode}
+	}
+	return
+}
+
+func GenerateUserJwt(j *UserJwt) (token string, err error) {
+	var bAry []byte
+	bAry, err = json.Marshal(j)
+	if err != nil {
+		return
+	}
+
+	token, err = generate(bAry)
+	return
+}
+
+func ParseUserJwt(token string, j *UserJwt) (err error) {
+	var bAry []byte
+	bAry, err = parse(token)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(bAry, j)
+	if err != nil {
+		return saError.Error{Code: saError.UnauthorizedErrorCode}
+	}
+	return
+}
+
+func generate(bAry []byte) (j string, err error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"jti": string(bAry),
 		"nbf": time.Now().Unix(), //iat签发时间
@@ -34,7 +82,7 @@ func GenerateJwt(value *JwtValue) (j string, err error) {
 	return
 }
 
-func ParseJwt(token string, j *JwtValue) (err error) {
+func parse(token string) (bAry []byte, err error) {
 	var (
 		t      *jwt.Token
 		claims jwt.MapClaims
@@ -48,28 +96,21 @@ func ParseJwt(token string, j *JwtValue) (err error) {
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return saError.Error{Code: saError.UnauthorizedErrorCode}
+		return nil, saError.Error{Code: saError.UnauthorizedErrorCode}
 	}
 
 	claims, ok = t.Claims.(jwt.MapClaims)
 	if !ok || !t.Valid {
-		return saError.Error{Code: saError.UnauthorizedErrorCode}
+		return nil, saError.Error{Code: saError.UnauthorizedErrorCode}
 	}
 
 	value := claims["jti"]
-	str, ok := value.(string)
-	if ok == false {
-		if bAry, ok := value.([]byte); ok {
-			str = string(bAry)
+	ok = false
+	if bAry, ok = value.([]byte); ok == false {
+		var str string
+		if str, ok = value.(string); ok == true {
+			bAry = []byte(str)
 		}
 	}
-
-	if len(str) > 0 {
-		err = json.Unmarshal([]byte(str), j)
-		if err != nil {
-			return saError.Error{Code: saError.UnauthorizedErrorCode}
-		}
-	}
-
-	return nil
+	return
 }

@@ -8,39 +8,42 @@ import (
 	"strings"
 )
 
-var _groups []map[string]Router
+var _groups map[string]map[string]Router
 var _root string
 
-func InitRouters(g *gin.Engine, root string, groups []map[string]Router) {
+func InitRouters(g *gin.Engine, root string, groups map[string]map[string]Router) {
 	_groups = groups
 	_root = root
-	for _, conf := range _groups {
+	for k, conf := range _groups {
 		toAdd := map[string]Router{}
 		for path, r := range conf {
-			full := ConnPath(root, path)
+			full := ConnPath(root, k)
+			full = ConnPath(full, path)
+			r.Set = strings.ToLower(r.Set)
 
-			if r.Method == GetMethod {
+			if strings.Index(r.Set, "get") >= 0 {
 				g.GET(full, _get)
-			} else if r.Method == PostMethod {
+			}
+
+			if strings.Index(r.Set, "post") >= 0 {
 				g.POST(full, _post)
-			} else if r.Method == AnyMethod {
-				g.GET(full, _get)
-				g.POST(full, _post)
-			} else if r.Method == AutomaticMethod {
+			}
+
+			if strings.Index(r.Set, "auto") >= 0 {
 				if strings.HasSuffix(path, "/") == false {
 					g.GET(full, _get)
 
 					g.GET(full+".list", _get)
-					toAdd[path+".list"] = Router{Method: r.Method, Check: r.Check, Handle: r.Handle}
+					toAdd[path+".list"] = Router{Set: r.Set, Handle: r.Handle}
 
 					g.POST(full+".add", _post)
-					toAdd[path+".add"] = Router{Method: r.Method, Check: MsOrUserCheck, Handle: r.Handle}
+					toAdd[path+".add"] = Router{Set: r.Set + ",ms,user", Handle: r.Handle}
 
 					g.POST(full+".update", _post)
-					toAdd[path+".update"] = Router{Method: r.Method, Check: MsOrUserCheck, Handle: r.Handle}
+					toAdd[path+".update"] = Router{Set: r.Set + ",ms,user", Handle: r.Handle}
 
 					g.POST(full+".update.status", _post)
-					toAdd[path+".update.status"] = Router{Method: r.Method, Check: MsOrUserCheck, Handle: r.Handle}
+					toAdd[path+".update.status"] = Router{Set: r.Set + ",ms,user", Handle: r.Handle}
 				} else {
 					panic(saError.StackError("路由设置有误"))
 				}
@@ -72,13 +75,13 @@ func _get(c *gin.Context) {
 	}
 
 	ctx := &Context{
-		Context:   c,
-		Me:        JwtValue{},
-		Automatic: NullRouter,
+		Context: c,
+		User:    UserJwt{},
+		Admin:   AdminJwt{},
 	}
 	ctx.Headers.MediaId, _ = saData.Stoi64(c.GetHeader("media-id"))
 	ctx.Headers.AppId, _ = saData.Stoi64(c.GetHeader("app-id"))
-	ctx.Headers.Product, _= saData.Stoi(c.GetHeader("product"))
+	ctx.Headers.Product, _ = saData.Stoi(c.GetHeader("product"))
 	ctx.Headers.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
 
 	if r.Handle == nil {
@@ -86,30 +89,44 @@ func _get(c *gin.Context) {
 		return
 	}
 
-	//自动路由
-	if r.Method == AutomaticMethod {
-		ary := strings.Split(c.Request.URL.Path, "/")
-		if len(ary) > 0 {
-			source := ary[len(ary)-1]
-			if strings.HasSuffix(source, ".list") {
-				ctx.Automatic = ListRouter
+	//权限校验
+	scene := ctx.Headers.Scene
+	if scene == 1 || scene == 2 {
+		if strings.Index(r.Set, "ms") >= 0 {
+			if PrivilegeCheck(ctx, "ms") == false {
+				err = saError.Error{Code: 1104, Msg: ""}
+				ResErr(ctx, err)
+				return
 			}
+		}
+
+		//获取“我”的信息
+		if ctx.Admin.AccountId <= 0 {
+			token := c.GetHeader("Authorization")
+			_ = ParseAdminJwt(token, &ctx.Admin)
+		}
+	} else {
+		if strings.Index(r.Set, "user") >= 0 {
+			if PrivilegeCheck(ctx, "user") == false {
+				err = saError.Error{Code: 1104, Msg: ""}
+				ResErr(ctx, err)
+				return
+			}
+		}
+
+		//获取“我”的信息
+		if ctx.User.UserId <= 0 {
+			token := c.GetHeader("Authorization")
+			_ = ParseUserJwt(token, &ctx.User)
 		}
 	}
 
-	//权限校验
-	if r.Check != NullCheck {
-		if PrivilegeCheck(ctx, r.Check) == false {
+	if strings.Index(r.Set, "sign") >= 0 {
+		if PrivilegeCheck(ctx, "sign") == false {
 			err = saError.Error{Code: 1104, Msg: ""}
 			ResErr(ctx, err)
 			return
 		}
-	}
-
-	//获取“我”的信息
-	if ctx.Me.UserId <=0 {
-		token := c.GetHeader("Authorization")
-		_ = ParseJwt(token, &ctx.Me)
 	}
 
 	//分页
@@ -177,9 +194,10 @@ func _get(c *gin.Context) {
 func _post(c *gin.Context) {
 	var err error
 	var r Router
-	for _, router := range _groups {
+	for k, router := range _groups {
 		for path, router := range router {
-			full := ConnPath(_root, path)
+			full := ConnPath(_root, k)
+			full = ConnPath(full, path)
 			if full == c.Request.URL.Path {
 				r = router
 				break
@@ -192,13 +210,12 @@ func _post(c *gin.Context) {
 	}
 
 	ctx := &Context{
-		Context:   c,
-		Me:        JwtValue{},
-		Automatic: NullRouter,
+		Context: c,
+		User:    UserJwt{},
 	}
 	ctx.MediaId, _ = saData.Stoi64(c.GetHeader("media-id"))
 	ctx.AppId, _ = saData.Stoi64(c.GetHeader("app-id"))
-	ctx.Product, _= saData.Stoi(c.GetHeader("product"))
+	ctx.Product, _ = saData.Stoi(c.GetHeader("product"))
 	ctx.Scene, _ = saData.ToInt(ctx.GetHeader("scene"))
 
 	if r.Handle == nil {
@@ -206,36 +223,43 @@ func _post(c *gin.Context) {
 		return
 	}
 
-	//自动路由
-	if r.Method == AutomaticMethod {
-		ary := strings.Split(c.Request.URL.Path, "/")
-		if len(ary) > 0 {
-			source := ary[len(ary)-1]
-			if strings.HasSuffix(source, ".update") {
-				ctx.Automatic = UpdateRouter
-			} else if strings.HasSuffix(source, ".update.status") {
-				ctx.Automatic = UpdateStatusRouter
-			} else if strings.HasSuffix(source, ".add") {
-				ctx.Automatic = AddRouter
-			}
-
-			//权限校验
-			if ctx.Automatic != NullRouter {
-				if PrivilegeCheck(ctx, MsOrUserCheck) == false {
-					err = saError.Error{Code: saError.UnauthorizedErrorCode, Msg: ""}
-					ResErr(ctx, err)
-					return
-				}
-			}
-		}
-	} else {
-		//权限校验
-		if r.Check != NullCheck {
-			if PrivilegeCheck(ctx, r.Check) == false {
-				err = saError.Error{Code: saError.UnauthorizedErrorCode}
+	//权限校验
+	scene := ctx.Headers.Scene
+	if scene == 1 || scene == 2 {
+		if strings.Index(r.Set, "ms") >= 0 {
+			if PrivilegeCheck(ctx, "ms") == false {
+				err = saError.Error{Code: 1104, Msg: ""}
 				ResErr(ctx, err)
 				return
 			}
+		}
+
+		//获取“我”的信息
+		if ctx.Admin.AccountId <= 0 {
+			token := c.GetHeader("Authorization")
+			_ = ParseAdminJwt(token, &ctx.Admin)
+		}
+	} else {
+		if strings.Index(r.Set, "user") >= 0 {
+			if PrivilegeCheck(ctx, "user") == false {
+				err = saError.Error{Code: 1104, Msg: ""}
+				ResErr(ctx, err)
+				return
+			}
+		}
+
+		//获取“我”的信息
+		if ctx.User.UserId <= 0 {
+			token := c.GetHeader("Authorization")
+			_ = ParseUserJwt(token, &ctx.User)
+		}
+	}
+
+	if strings.Index(r.Set, "sign") >= 0 {
+		if PrivilegeCheck(ctx, "sign") == false {
+			err = saError.Error{Code: 1104, Msg: ""}
+			ResErr(ctx, err)
+			return
 		}
 	}
 	r.Handle(ctx)

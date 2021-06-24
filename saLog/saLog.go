@@ -3,6 +3,8 @@ package saLog
 import (
 	"fmt"
 	"github.com/saxon134/go-utils/saData"
+	"net/http"
+	"strings"
 	"time"
 )
 
@@ -37,14 +39,29 @@ func Init(l LogLevel, t LogType) {
 		panic("log初始化失败~")
 	}
 
+	logLevel = l
 	logChan = make(chan string, 12)
 	go func() {
 		for {
 			if s, ok := <-logChan; ok {
+				//向远端发送日志
+				if strings.HasPrefix(remoteUrl, "http") == true {
+					_, _ = http.Post(remoteUrl, "text/plain", strings.NewReader(s))
+				}
 				log.Log(s)
 			}
 		}
 	}()
+}
+
+func SetLogLevel(l LogLevel) {
+	if l != NullLevel {
+		logLevel = l
+	}
+}
+
+func SetRemoteUrl(url string) {
+	remoteUrl = url
 }
 
 func Err(a ...interface{}) {
