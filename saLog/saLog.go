@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/saxon134/go-utils/saData"
 	"net/http"
+	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -83,7 +85,26 @@ func Err(a ...interface{}) {
 		s += fmt.Sprint(v) + " "
 	}
 
-	logChan <- s
+	caller := ""
+	_, file, line, ok := runtime.Caller(1)
+	if ok {
+		if ary := strings.Split(file, "/"); len(ary) > 0 {
+			if len(ary) >= 3 {
+				caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
+			} else if len(ary) >= 2 {
+				caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
+			} else if len(ary) >= 1 {
+				caller = ary[len(ary)-1]
+			}
+		}
+		caller += ":" + strconv.Itoa(line)
+	}
+
+	if len(caller) > 0 {
+		logChan <- caller + " " + s
+	} else {
+		logChan <- s
+	}
 }
 
 func Warn(a ...interface{}) {
@@ -97,7 +118,26 @@ func Warn(a ...interface{}) {
 			s += fmt.Sprint(v) + " "
 		}
 
-		logChan <- s
+		caller := ""
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			if ary := strings.Split(file, "/"); len(ary) > 0 {
+				if len(ary) >= 3 {
+					caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
+				} else if len(ary) >= 2 {
+					caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
+				} else if len(ary) >= 1 {
+					caller = ary[len(ary)-1]
+				}
+			}
+			caller += ":" + strconv.Itoa(line)
+		}
+
+		if len(caller) > 0 {
+			logChan <- caller + " " + s
+		} else {
+			logChan <- s
+		}
 
 		if len(logChan) >= 10 {
 			if logLevel == InfoLevel {
@@ -116,7 +156,27 @@ func Info(a ...interface{}) {
 		for _, v := range a {
 			s += fmt.Sprint(v) + " "
 		}
-		logChan <- s
+
+		caller := ""
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			if ary := strings.Split(file, "/"); len(ary) > 0 {
+				if len(ary) >= 3 {
+					caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
+				} else if len(ary) >= 2 {
+					caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
+				} else if len(ary) >= 1 {
+					caller = ary[len(ary)-1]
+				}
+			}
+			caller += ":" + strconv.Itoa(line)
+		}
+
+		if len(caller) > 0 {
+			logChan <- caller + " " + s
+		} else {
+			logChan <- s
+		}
 
 		if len(logChan) >= 10 {
 			if logLevel == InfoLevel {
@@ -131,6 +191,26 @@ func Log(a ...interface{}) {
 	if log != nil {
 		s := fmt.Sprint(a...)
 		s = "L " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " " + s
-		log.Log(s)
+
+		caller := ""
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			if ary := strings.Split(file, "/"); len(ary) > 0 {
+				if len(ary) >= 3 {
+					caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
+				} else if len(ary) >= 2 {
+					caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
+				} else if len(ary) >= 1 {
+					caller = ary[len(ary)-1]
+				}
+			}
+			caller += ":" + strconv.Itoa(line)
+		}
+
+		if len(caller) > 0 {
+			log.Log(caller + " " + s)
+		} else {
+			log.Log(s)
+		}
 	}
 }
