@@ -1,6 +1,8 @@
 package saTask
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestTask(t *testing.T) {
 	Init(
