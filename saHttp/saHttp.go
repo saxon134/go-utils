@@ -3,6 +3,7 @@ package saHttp
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saError"
@@ -11,7 +12,6 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
-	"strings"
 )
 
 type Router struct {
@@ -201,21 +201,6 @@ func ResErr(c *Context, err interface{}) {
 	if s, ok := err.(string); ok {
 		if s != "" {
 			msg = s
-
-			_, file, line, ok := runtime.Caller(1)
-			if ok {
-				if ary := strings.Split(file, "/"); len(ary) > 0 {
-					if len(ary) >= 3 {
-						caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
-					} else if len(ary) >= 2 {
-						caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
-					} else if len(ary) >= 1 {
-						caller = ary[len(ary)-1]
-					}
-				}
-
-				caller += ":" + saData.Itos(line)
-			}
 		}
 	} else if e, ok := err.(saError.Error); ok {
 		code = e.Code
@@ -238,29 +223,39 @@ func ResErr(c *Context, err interface{}) {
 			err_s, _ = saData.ToStr(dic["detail"])
 		}
 
-		//如果是saError，则错误码、信息按emerror输出；否则全部按照敏感信息处理
-		yferr := new(saError.Error)
-		if saData.JsonToStruct([]byte(err_s), yferr) == nil && yferr.Code > 0 {
-			code = yferr.Code
-			msg = yferr.Msg
-			errMsg = yferr.Err
-			caller = yferr.Caller
+		//如果是saError，则错误码、信息按saError输出；否则全部按照敏感信息处理
+		sa_err := new(saError.Error)
+		if saData.JsonToStruct([]byte(err_s), sa_err) == nil && sa_err.Code > 0 {
+			code = sa_err.Code
+			msg = sa_err.Msg
+			errMsg = sa_err.Err
+			caller = sa_err.Caller
 		} else {
 			code = saError.SensitiveErrorCode
 			errMsg = err_s
-
-			//获取调用文件及位置
-			_, file, line, ok := runtime.Caller(1)
-			if ok {
-				caller = file + ":" + saData.Itos(line)
-				caller += ":" + saData.Itos(line)
-			}
 		}
 	}
-	if len(msg) == len(errMsg) && msg == errMsg { //重复信息不用打印
+
+	//重复信息不用打印
+	if len(msg) == len(errMsg) && msg == errMsg {
 		errMsg = ""
 	}
-	saLog.Err(code, caller, msg, errMsg)
+
+	//获取调用文件及位置
+	if len(caller) == 0 {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			caller = file + ":" + saData.Itos(line)
+			caller += ":" + saData.Itos(line)
+		}
+	}
+
+	//打印错误信息
+	if len(errMsg) > 0 {
+		saLog.Err(fmt.Sprintf("%d %s\n%s\n%s", code, msg, errMsg, caller))
+	} else {
+		saLog.Err(fmt.Sprintf("%d %s\n%s", code, msg, caller))
+	}
 
 	if code != 0 {
 		rsp_v := map[string]interface{}{"code": code}
