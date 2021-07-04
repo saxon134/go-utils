@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"github.com/saxon134/go-utils/saData"
 	"net/http"
-	"runtime"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -42,6 +40,7 @@ func Init(l LogLevel, t LogType) {
 	}
 
 	logLevel = l
+	settedLogLevel = l
 	logChan = make(chan string, 12)
 	go func() {
 		for {
@@ -59,6 +58,7 @@ func Init(l LogLevel, t LogType) {
 func SetLogLevel(l LogLevel) {
 	if l != NullLevel {
 		logLevel = l
+		settedLogLevel = l
 	}
 }
 
@@ -71,7 +71,8 @@ func Err(a ...interface{}) {
 		return
 	}
 
-	if len(logChan) >= 10 {
+	//日志太多时，升等级
+	if len(logChan) >= 5 {
 		if logLevel == InfoLevel {
 			logLevel = WarnLevel
 		} else if logLevel == WarnLevel {
@@ -80,31 +81,12 @@ func Err(a ...interface{}) {
 		return
 	}
 
-	s := "E " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " "
-	for _, v := range a {
-		s += fmt.Sprint(v) + " "
+	//日志少了之后，恢复等级
+	if len(logChan) == 0 && logLevel > settedLogLevel {
+		logLevel = settedLogLevel
 	}
 
-	caller := ""
-	_, file, line, ok := runtime.Caller(1)
-	if ok {
-		if ary := strings.Split(file, "/"); len(ary) > 0 {
-			if len(ary) >= 3 {
-				caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
-			} else if len(ary) >= 2 {
-				caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
-			} else if len(ary) >= 1 {
-				caller = ary[len(ary)-1]
-			}
-		}
-		caller += ":" + strconv.Itoa(line)
-	}
-
-	if len(caller) > 0 {
-		logChan <- caller + " " + s
-	} else {
-		logChan <- s
-	}
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " E\n" + fmt.Sprint(a...)
 }
 
 func Warn(a ...interface{}) {
@@ -112,105 +94,63 @@ func Warn(a ...interface{}) {
 		return
 	}
 
-	if logLevel <= WarnLevel {
-		s := "W " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " "
-		for _, v := range a {
-			s += fmt.Sprint(v) + " "
-		}
+	if logLevel > WarnLevel {
+		return
+	}
 
-		caller := ""
-		_, file, line, ok := runtime.Caller(1)
-		if ok {
-			if ary := strings.Split(file, "/"); len(ary) > 0 {
-				if len(ary) >= 3 {
-					caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
-				} else if len(ary) >= 2 {
-					caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
-				} else if len(ary) >= 1 {
-					caller = ary[len(ary)-1]
-				}
-			}
-			caller += ":" + strconv.Itoa(line)
+	//日志太多时，升等级
+	if len(logChan) >= 5 {
+		if logLevel == InfoLevel {
+			logLevel = WarnLevel
+		} else if logLevel == WarnLevel {
+			logLevel = ErrorLevel
 		}
+		return
+	}
 
-		if len(caller) > 0 {
-			logChan <- caller + " " + s
-		} else {
-			logChan <- s
-		}
+	//日志少了之后，恢复等级
+	if len(logChan) == 0 && logLevel > settedLogLevel {
+		logLevel = settedLogLevel
+	}
 
-		if len(logChan) >= 10 {
-			if logLevel == InfoLevel {
-				logLevel = WarnLevel
-			} else if logLevel == WarnLevel {
-				logLevel = ErrorLevel
-			}
-			return
+	//输出日志
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " W\n" + fmt.Sprint(a...)
+	if len(logChan) >= 5 {
+		if logLevel == InfoLevel {
+			logLevel = WarnLevel
+		} else if logLevel == WarnLevel {
+			logLevel = ErrorLevel
 		}
 	}
 }
 
 func Info(a ...interface{}) {
-	if logLevel <= InfoLevel {
-		s := "I " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " "
-		for _, v := range a {
-			s += fmt.Sprint(v) + " "
-		}
-
-		caller := ""
-		_, file, line, ok := runtime.Caller(1)
-		if ok {
-			if ary := strings.Split(file, "/"); len(ary) > 0 {
-				if len(ary) >= 3 {
-					caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
-				} else if len(ary) >= 2 {
-					caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
-				} else if len(ary) >= 1 {
-					caller = ary[len(ary)-1]
-				}
-			}
-			caller += ":" + strconv.Itoa(line)
-		}
-
-		if len(caller) > 0 {
-			logChan <- caller + " " + s
-		} else {
-			logChan <- s
-		}
-
-		if len(logChan) >= 10 {
-			if logLevel == InfoLevel {
-				logLevel = WarnLevel
-			}
-			return
-		}
+	if logLevel > InfoLevel {
+		return
 	}
-}
 
-func Log(a ...interface{}) {
-	if log != nil {
-		s := fmt.Sprint(a...)
-		s = "L " + saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " " + s
-
-		caller := ""
-		_, file, line, ok := runtime.Caller(1)
-		if ok {
-			if ary := strings.Split(file, "/"); len(ary) > 0 {
-				if len(ary) >= 3 {
-					caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
-				} else if len(ary) >= 2 {
-					caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
-				} else if len(ary) >= 1 {
-					caller = ary[len(ary)-1]
-				}
-			}
-			caller += ":" + strconv.Itoa(line)
+	//日志太多时，升等级
+	if len(logChan) >= 5 {
+		if logLevel == InfoLevel {
+			logLevel = WarnLevel
+		} else if logLevel == WarnLevel {
+			logLevel = ErrorLevel
 		}
+		return
+	}
 
-		if len(caller) > 0 {
-			log.Log(caller + " " + s)
-		} else {
-			log.Log(s)
+	//日志少了之后，恢复等级
+	if len(logChan) == 0 && logLevel > settedLogLevel {
+		logLevel = settedLogLevel
+	}
+
+	//输出日志
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " W\n" + fmt.Sprint(a...)
+	if len(logChan) >= 5 {
+		if logLevel == InfoLevel {
+			logLevel = WarnLevel
+		} else if logLevel == WarnLevel {
+			logLevel = ErrorLevel
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package saError
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"runtime"
 	"strconv"
@@ -34,80 +35,54 @@ func NewError(err interface{}) error {
 	}
 
 	var e = Error{Code: NormalErrorCode, Msg: "", Err: "", Caller: ""}
-	_, file, line, ok := runtime.Caller(1)
-	if ok {
-		if ary := strings.Split(file, "/"); len(ary) > 0 {
-			if len(ary) >= 3 {
-				e.Caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
-			} else if len(ary) >= 2 {
-				e.Caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
-			} else if len(ary) >= 1 {
-				e.Caller = ary[len(ary)-1]
-			}
-		}
-		e.Caller += ":" + strconv.Itoa(line)
-	}
-
 	if s, ok := err.(string); ok {
-		e.Err = s
 		e.Msg = s
+	} else if sae, ok := err.(Error); ok {
+		return sae
+	} else if sae, ok := err.(*Error); ok {
+		return *sae
 	} else if ev, ok := err.(error); ok {
-		e.Msg = ""
 		e.Err = ev.Error()
 	}
 	return e
 }
 
-// 会跟踪error的调用位置；
-// err只接收字符串和error类型；字符串会覆盖msg
-// params可传Code以及Msg，注意：会覆盖前面的
+/**
+ * 会打印调用栈信息，建议只在类似controller最上层位置调用
+ * @params err 可接收提示信息(err.Msg)和error类型
+ * @params params 可接收错误信息(err.Err)和error类型
+ * 注意：params参数会覆盖err参数
+ */
 func StackError(err interface{}, params ...interface{}) error {
 	if err == nil {
 		return nil
 	}
 
-	var e = Error{Code: NormalErrorCode, Msg: "", Err: "", Caller: ""}
-
-	_, file, line, ok := runtime.Caller(1)
-	if ok {
-		if ary := strings.Split(file, "/"); len(ary) > 0 {
-			if len(ary) >= 3 {
-				e.Caller = ary[len(ary)-3] + "/" + ary[len(ary)-2] + "/" + ary[len(ary)-1]
-			} else if len(ary) >= 2 {
-				e.Caller = ary[len(ary)-2] + "/" + ary[len(ary)-1]
-			} else if len(ary) >= 1 {
-				e.Caller = ary[len(ary)-1]
-			}
-		}
-
-		e.Caller += ":" + strconv.Itoa(line)
-	}
-
+	var resErr = Error{Code: NormalErrorCode, Msg: "", Err: "", Caller: "\n"}
 	if s, ok := err.(string); ok {
-		e.Err = s
-		e.Msg = s
+		resErr.Msg = s
 	} else {
-		ev, ok := err.(*Error)
+		e, ok := err.(*Error)
 		if ok == false {
-			var ev2 Error
-			if ev2, ok = err.(Error); ok {
-				ev = &ev2
+			var e2 Error
+			if e2, ok = err.(Error); ok {
+				e = &e2
 			}
 		}
 
-		if ev != nil {
-			e.Err = ev.Err
-			if len(ev.Msg) > 0 {
-				e.Msg = ev.Msg
+		if e != nil {
+			resErr.Err = e.Err
+			if len(e.Msg) > 0 {
+				resErr.Msg = e.Msg
 			}
-			if ev.Code > 0 {
-				e.Code = ev.Code
+			if e.Code > 0 {
+				resErr.Code = e.Code
 			}
-			if ev.Caller != "" {
-				e.Caller = e.Caller + " " + ev.Caller
+			if e.Caller != "" {
+				resErr.Caller += e.Caller + "\n"
 			}
-		} else if e_v, ok := err.(error); ok {
-			e.Err = e_v.Error()
+		} else if e, ok := err.(error); ok {
+			resErr.Err = e.Error()
 		} else {
 			return nil
 		}
@@ -117,17 +92,51 @@ func StackError(err interface{}, params ...interface{}) error {
 		for _, v := range params {
 			if code, ok := v.(int); ok {
 				if code > 0 {
-					e.Code = code
+					resErr.Code = code
 				}
 			} else if s, ok := v.(string); ok {
 				if s != "" {
-					e.Msg = s
+					resErr.Err = s
+				}
+			} else {
+				e, ok := err.(*Error)
+				if ok == false {
+					var e2 Error
+					if e2, ok = err.(Error); ok {
+						e = &e2
+					}
+				}
+
+				if e != nil {
+					resErr.Err = e.Err
+					if len(e.Msg) > 0 {
+						resErr.Msg = e.Msg
+					}
+					if e.Code > 0 {
+						resErr.Code = e.Code
+					}
+					if e.Caller != "" {
+						resErr.Caller += e.Caller + "\n"
+					}
+				} else if e, ok := err.(error); ok {
+					resErr.Err = e.Error()
 				}
 			}
 		}
 	}
 
-	return &e
+	//获取调用栈
+	pc := make([]uintptr, 10)
+	n := runtime.Callers(1, pc)
+	for i := 0; i < n; i++ {
+		if i >= 4 {
+			break //最多4层
+		}
+		f := runtime.FuncForPC(pc[i])
+		file, line := f.FileLine(pc[i])
+		resErr.Caller += fmt.Sprintf("%s:%d\n", file, line)
+	}
+	return &resErr
 }
 
 func DbErr(err error) bool {
