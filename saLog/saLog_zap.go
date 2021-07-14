@@ -34,10 +34,7 @@ func initZapLog() *zapLog {
 	writer := zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(fileWriter))
 	config := zapcore.EncoderConfig{
 		MessageKey:     "message",
-		LevelKey:       "level",
-		TimeKey:        "time",
 		NameKey:        "logger",
-		CallerKey:      "caller",
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.LowercaseLevelEncoder,
 		EncodeDuration: zapcore.SecondsDurationEncoder,

@@ -41,9 +41,21 @@ func Init(l LogLevel, t LogType) {
 
 	logLevel = l
 	settedLogLevel = l
-	logChan = make(chan string, 12)
+	logsPerSecond = 5
+	logChan = make(chan string, 10)
 	go func() {
 		for {
+			now := time.Now().Second()
+			if now == lastLogTimestamp {
+				if loggedCnt >= logsPerSecond {
+					time.Sleep(time.Microsecond * 300)
+				}
+				loggedCnt++
+			} else {
+				lastLogTimestamp = now
+				loggedCnt = 0
+			}
+
 			if s, ok := <-logChan; ok {
 				//向远端发送日志
 				if strings.HasPrefix(remoteUrl, "http") == true {
@@ -66,6 +78,10 @@ func SetRemoteUrl(url string) {
 	remoteUrl = url
 }
 
+func SetLogsPerSecond(cnt int) {
+	logsPerSecond = cnt
+}
+
 func Err(a ...interface{}) {
 	if log == nil {
 		return
@@ -86,7 +102,12 @@ func Err(a ...interface{}) {
 		logLevel = settedLogLevel
 	}
 
-	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " E\n" + fmt.Sprint(a...)
+	//输出日志
+	var s = ""
+	for _, v := range a {
+		s += fmt.Sprint(v) + " "
+	}
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " E\n" + s
 }
 
 func Warn(a ...interface{}) {
@@ -114,7 +135,11 @@ func Warn(a ...interface{}) {
 	}
 
 	//输出日志
-	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " W\n" + fmt.Sprint(a...)
+	var s = ""
+	for _, v := range a {
+		s += fmt.Sprint(v) + " "
+	}
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " W\n" + s
 	if len(logChan) >= 5 {
 		if logLevel == InfoLevel {
 			logLevel = WarnLevel
@@ -145,7 +170,11 @@ func Info(a ...interface{}) {
 	}
 
 	//输出日志
-	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " W\n" + fmt.Sprint(a...)
+	var s = ""
+	for _, v := range a {
+		s += fmt.Sprint(v) + " "
+	}
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " W\n" + s
 	if len(logChan) >= 5 {
 		if logLevel == InfoLevel {
 			logLevel = WarnLevel
