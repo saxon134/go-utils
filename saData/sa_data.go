@@ -5,45 +5,270 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/saxon134/go-utils/saHit"
 	"reflect"
 	"strconv"
 )
 
-func ToBytes(v interface{}) ([]byte, error) {
+func ToBytes(data interface{}) ([]byte, error) {
+	if data == nil {
+		return []byte{}, nil
+	}
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(v)
+	err := enc.Encode(data)
 	if err != nil {
-		return nil, err
+		return []byte{}, err
 	}
 	return buf.Bytes(), nil
 }
 
-func ToStr(d interface{}) (string, error) {
-	s := ""
-	switch v := d.(type) {
-	case *string:
-		var s string = *v
-		return s, nil
+func ToStr(data interface{}) (string, error) {
+	if data == nil {
+		return "", nil
+	}
+	switch v := data.(type) {
 	case string:
-		var s string = v
+		return v, nil
+	case int, int8, int16, int64, float32, float64:
+		return fmt.Sprint(data), nil
+	case *string:
+		return *v, nil
+	}
+
+	bAry, err := j.Marshal(data)
+	if err == nil && bAry != nil {
+		s := BytesToStr(bAry)
+		s = saHit.Str(s == "null", "", s)
 		return s, nil
-	case int:
-	case int8:
-	case int16:
-	case int64:
-	case float32:
-	case float64:
-		return fmt.Sprint(d), nil
+	}
+	return "", err
+}
+
+func ToMap(data interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return map[string]interface{}{}, nil
+	}
+	if d, ok := data.(map[string]interface{}); ok {
+		return d, nil
+	}
+	if d, ok := data.(*map[string]interface{}); ok {
+		return *d, nil
 	}
 
-	s = fmt.Sprint(d)
-	if s == "<nil>" {
-		s = ""
-		return s, errors.New("类型不匹配或者数据空")
+	//json
+	if s, ok := data.(string); ok {
+		var dic map[string]interface{}
+		var err error
+		if s != "" {
+			err = j.Unmarshal(StrToBytes(s), &dic)
+		}
+		return dic, err
 	}
 
-	return s, nil
+	//反射
+	v := reflect.ValueOf(data)
+	vKind := v.Kind()
+	if vKind == reflect.Map {
+		keyAry := v.MapKeys()
+		cnt := len(keyAry)
+		ret := make(map[string]interface{}, cnt)
+		for i := 0; i < cnt; i++ {
+			key := keyAry[i].String()
+			if key != "" {
+				ret[key] = v.MapIndex(keyAry[i]).Interface()
+			}
+		}
+		return ret, nil
+	} else if vKind == reflect.Struct || vKind == reflect.Ptr || vKind == reflect.Interface {
+		var dic map[string]interface{}
+		bAry, err := j.Marshal(data)
+		if err != nil {
+			return map[string]interface{}{}, err
+		}
+		err = j.Unmarshal(bAry, &dic)
+		return dic, err
+	}
+	return map[string]interface{}{}, errors.New("类型不匹配")
+}
+
+func ToStrMap(data interface{}) (map[string]string, error) {
+	if data == nil {
+		return map[string]string{}, nil
+	}
+	if d, ok := data.(map[string]string); ok {
+		return d, nil
+	}
+	if d, ok := data.(*map[string]string); ok {
+		return *d, nil
+	}
+
+	//json
+	if s, ok := data.(string); ok {
+		var dic map[string]string
+		var err error
+		if s != "" {
+			err = j.Unmarshal(StrToBytes(s), &dic)
+		}
+		return dic, err
+	}
+
+	//反射
+	v := reflect.ValueOf(data)
+	vKind := v.Kind()
+	if vKind == reflect.Map {
+		keyAry := v.MapKeys()
+		cnt := len(keyAry)
+		ret := make(map[string]string, cnt)
+		for i := 0; i < cnt; i++ {
+			key := keyAry[i].String()
+			if key != "" {
+				val := v.MapIndex(keyAry[i]).Interface()
+				s, _ := ToStr(val)
+				ret[key] = s
+			}
+		}
+		return ret, nil
+	} else if vKind == reflect.Struct || vKind == reflect.Ptr || vKind == reflect.Interface {
+		var dic map[string]string
+		bAry, err := j.Marshal(data)
+		if err != nil {
+			return map[string]string{}, err
+		}
+		err = j.Unmarshal(bAry, &dic)
+		return dic, err
+	}
+	return map[string]string{}, errors.New("类型不匹配")
+}
+
+func ToAry(data interface{}) ([]interface{}, error) {
+	if data == nil {
+		return []interface{}{}, nil
+	}
+	if v, ok := (data).([]interface{}); ok {
+		return v, nil
+	}
+	if v, ok := (data).(*[]interface{}); ok {
+		return *v, nil
+	}
+
+	//json
+	if s, ok := data.(string); ok {
+		var ary []interface{}
+		var err error
+		if s != "" {
+			err = j.Unmarshal(StrToBytes(s), &ary)
+		}
+		return ary, err
+	}
+
+	//反射
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Slice {
+		cnt := v.Len()
+		ret := make([]interface{}, cnt)
+		for i := 0; i < cnt; i++ {
+			ret[i] = v.Index(i).Interface()
+		}
+		return ret, nil
+	}
+	return []interface{}{}, errors.New("类型不匹配")
+}
+
+func ToMapAry(data interface{}) ([]map[string]interface{}, error) {
+	if data == nil {
+		return []map[string]interface{}{}, nil
+	}
+	if ary, ok := data.([]map[string]interface{}); ok {
+		return ary, nil
+	}
+	if ary, ok := data.(*[]map[string]interface{}); ok {
+		return *ary, nil
+	}
+
+	//json转ary
+	if s, ok := data.(string); ok {
+		var ary []map[string]interface{}
+		var err error
+		if s != "" {
+			err = j.Unmarshal(StrToBytes(s), &ary)
+		}
+		return ary, err
+	}
+
+	//反射map
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Slice {
+		cnt := v.Len()
+		ary := make([]map[string]interface{}, cnt)
+		for i := 0; i < cnt; i++ {
+			d := v.Index(i).Interface()
+			m, _ := ToMap(d)
+			ary[i] = m
+		}
+		return ary, nil
+	}
+	return []map[string]interface{}{}, errors.New("类型不匹配")
+}
+
+func ToStrAry(data interface{}) ([]string, error) {
+	if data == nil {
+		return []string{}, nil
+	}
+	if v, ok := (data).([]string); ok {
+		return v, nil
+	}
+
+	if v, ok := (data).(*[]string); ok {
+		return *v, nil
+	}
+
+	//json
+	if s, ok := data.(string); ok {
+		var ary = []string{}
+		var err error
+		if s != "" {
+			err = j.Unmarshal(StrToBytes(s), &ary)
+		}
+		return ary, err
+	}
+
+	//反射
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Slice {
+		cnt := v.Len()
+		ary := make([]string, cnt)
+		for i := 0; i < cnt; i++ {
+			d := v.Index(i).Interface()
+			s, _ := ToStr(d)
+			ary[i] = s
+		}
+		return ary, nil
+	}
+	return []string{}, errors.New("类型不匹配")
+}
+
+func StrToData(str string) (interface{}, error) {
+	var err error
+	bAry := StrToBytes(str)
+
+	dic := map[string]interface{}{}
+	err = j.Unmarshal(bAry, &dic)
+	if err == nil {
+		return dic, nil
+	}
+
+	ary := make([]interface{}, 0, 10)
+	err = j.Unmarshal(bAry, &ary)
+	if err == nil {
+		return ary, nil
+	}
+	return str, nil
+}
+
+func StrToModel(str string, m interface{}) error {
+	err := j.Unmarshal(StrToBytes(str), m)
+	return err
 }
 
 func ToInt(d interface{}) (int, error) {
@@ -281,200 +506,7 @@ func ToInt64(d interface{}) (int64, error) {
 	return 0, errors.New("类型不匹配")
 }
 
-func ToAry(arr interface{}) ([]interface{}, error) {
-	if arr == nil {
-		return nil, errors.New("empty")
-	}
-
-	if v, ok := (arr).([]interface{}); ok {
-		return v, nil
-	}
-
-	if v, ok := (arr).(*[]interface{}); ok {
-		return *v, nil
-	}
-
-	v := reflect.ValueOf(arr)
-	if v.Kind() != reflect.Slice {
-		return nil, errors.New("类型不匹配")
-	}
-	cnt := v.Len()
-	ret := make([]interface{}, cnt)
-	for i := 0; i < cnt; i++ {
-		ret[i] = v.Index(i).Interface()
-	}
-	return ret, nil
-}
-
-func ToAryStr(arr interface{}) ([]string, error) {
-	if arr == nil {
-		return nil, errors.New("empty")
-	}
-
-	if v, ok := (arr).([]string); ok {
-		return v, nil
-	}
-
-	if v, ok := (arr).(*[]string); ok {
-		return *v, nil
-	}
-
-	v := reflect.ValueOf(arr)
-	if v.Kind() != reflect.Slice {
-		return nil, errors.New("类型不匹配")
-	}
-	cnt := v.Len()
-	ret := make([]string, cnt)
-	for i := 0; i < cnt; i++ {
-		d := v.Index(i).Interface()
-		s, _ := ToStr(d)
-		ret[i] = s
-	}
-	return ret, nil
-}
-
-func ToAryMap(arr interface{}) ([]map[string]interface{}, error) {
-	if arr == nil {
-		return nil, errors.New("empty")
-	}
-
-	if v, ok := (arr).([]map[string]interface{}); ok {
-		return v, nil
-	}
-
-	if v, ok := (arr).(*[]map[string]interface{}); ok {
-		return *v, nil
-	}
-
-	v := reflect.ValueOf(arr)
-	if v.Kind() != reflect.Slice {
-		return nil, errors.New("类型不匹配")
-	}
-	cnt := v.Len()
-	ret := make([]map[string]interface{}, cnt)
-	for i := 0; i < cnt; i++ {
-		d := v.Index(i).Interface()
-		m, _ := ToMap(d)
-		ret[i] = m
-	}
-	return ret, nil
-}
-
-func ToMap(ma interface{}) (map[string]interface{}, error) {
-	if ma == nil {
-		return nil, errors.New("empty")
-	}
-
-	if v, ok := (ma).(map[string]interface{}); ok {
-		return v, nil
-	}
-
-	if v, ok := (ma).(*map[string]interface{}); ok {
-		return *v, nil
-	}
-
-	v := reflect.ValueOf(ma)
-	if v.Kind() != reflect.Map {
-		return nil, errors.New("类型不匹配")
-	}
-
-	keyAry := v.MapKeys()
-	cnt := len(keyAry)
-	ret := make(map[string]interface{}, cnt)
-	for i := 0; i < cnt; i++ {
-		key := keyAry[i].String()
-		if key != "" {
-			ret[key] = v.MapIndex(keyAry[i]).Interface()
-		}
-	}
-	return ret, nil
-}
-
-func ToMapStr(ma interface{}) (map[string]string, error) {
-	if v, ok := (ma).(map[string]string); ok {
-		return v, nil
-	}
-
-	v := reflect.ValueOf(ma)
-	if v.Kind() != reflect.Map {
-		return nil, errors.New("类型不匹配")
-	}
-
-	keyAry := v.MapKeys()
-	cnt := len(keyAry)
-	ret := make(map[string]string, cnt)
-	for i := 0; i < cnt; i++ {
-		key := keyAry[i].String()
-		if key != "" {
-			d := v.MapIndex(keyAry[i]).Interface()
-			s, _ := ToStr(d)
-			ret[key] = s
-		}
-	}
-	return ret, nil
-}
-
-func MapToMapStr(ma map[string]interface{}) map[string]string {
-	if ma == nil {
-		return nil
-	}
-
-	dic := map[string]string{}
-	for k, v := range ma {
-		str, _ := ToStr(v)
-		if v != "" {
-			dic[k] = str
-		}
-	}
-	return dic
-}
-
-func I64FromMap(ma map[string]interface{}, key string) NullInt64 {
-	var res = NullInt64{Ok: false, V: 0}
-
-	if ma == nil {
-		return res
-	}
-
-	var err error
-	res.V, err = ToInt64(ma[key])
-	if err == nil {
-		res.Ok = true
-	}
-	return res
-}
-
-func IFromMap(ma map[string]interface{}, key string) NullInt {
-	var res = NullInt{Ok: false, V: 0}
-
-	if ma == nil {
-		return res
-	}
-
-	var err error
-	res.V, err = ToInt(ma[key])
-
-	if err == nil {
-		res.Ok = true
-	}
-	return res
-}
-
-func StrFromMap(ma map[string]interface{}, key string) NullString {
-	if ma == nil {
-		return NullString{V: "", Ok: false}
-	}
-
-	var err error
-	var res = NullString{Ok: false, V: ""}
-	res.V, err = ToStr(ma[key])
-	if err == nil {
-		res.Ok = true
-	}
-	return res
-}
-
+//保留三位小数，四舍五入
 func ToPrice(f float32) float32 {
-	// 保留两位小数，四舍五入
-	return float32(int(f*100)) / float32(100)
+	return float32(int(f*1000)) / float32(1000)
 }

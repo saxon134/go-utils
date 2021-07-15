@@ -1,6 +1,7 @@
 package saHttp
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saError"
@@ -45,7 +46,7 @@ func InitRouters(g *gin.Engine, root string, groups map[string]map[string]Router
 					g.POST(full+".update.status", _post)
 					toAdd[path+".update.status"] = Router{Set: r.Set + ",ms,user", Handle: r.Handle}
 				} else {
-					panic(saError.StackError("路由设置有误"))
+					panic(errors.New("路由设置有误"))
 				}
 			}
 		}

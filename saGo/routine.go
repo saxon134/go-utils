@@ -14,6 +14,10 @@ type Routine struct {
 	handle           func(params interface{})
 }
 
+//todo NewRoutine搞一个channel出去，让外层控制，目的是为了方便从上游分页获取数据；
+//todo 现在逻辑是必须从上游获取到所有数据，再调用NewRoutine
+//todo 考虑handle里增加context控制
+
 /**
 通过channel，分发事务，控制事务并发数量
 */
@@ -65,7 +69,7 @@ func (r *Routine) Do(params interface{}) {
 						case <-handleDoneChan:
 							break
 						case <-quitTick:
-							str, _ := saData.DataToJson(v)
+							str, _ := saData.ToStr(v)
 							saLog.Err("Goroutine执行超时：", str)
 							break
 						}

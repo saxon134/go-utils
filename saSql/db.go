@@ -3,7 +3,6 @@ package saSql
 import (
 	"github.com/pkg/errors"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saError"
 	"github.com/saxon134/go-utils/saImg"
 	"reflect"
 	"strings"
@@ -27,7 +26,7 @@ func FromDb(obj interface{}) error {
 		}
 
 		if reflectType.Kind() != reflect.Struct {
-			return saError.StackError(errors.New("Error:类型有误，只能是Struct，或Struct指针"), saError.ErrorDate)
+			return errors.New("Error:类型有误，只能是Struct，或Struct指针")
 		}
 	}
 
@@ -97,7 +96,7 @@ func ToDB(obj interface{}) error {
 		}
 
 		if reflectType.Kind() != reflect.Struct {
-			return saError.StackError(errors.New("Error:类型有误，只能是Struct，或Struct指针"), saError.ErrorDate)
+			return errors.New("Error:类型有误，只能是Struct，或Struct指针")
 		}
 	}
 

@@ -159,7 +159,7 @@ func StrLen(s string) int {
 
 //rune长度，支持中文
 func LenCheck(m interface{}, max int) error {
-	str, _ := DataToJson(m)
+	str, _ := ToStr(m)
 	if StrLen(str) <= max {
 		return nil
 	}
@@ -251,17 +251,17 @@ func RandomStr() string {
 }
 
 // 通过内存操作，效率极高，但是有风险。只在数据量很大、效率要求高的场景使用
-func Stobytes(s string) []byte {
+func StrToBytes(s string) []byte {
 	x := (*[2]uintptr)(unsafe.Pointer(&s))
 	h := [3]uintptr{x[0], x[1], x[1]}
 	return *(*[]byte)(unsafe.Pointer(&h))
 }
-func BytesTos(b []byte) string {
+func BytesToStr(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
 // int64和88进制字符转换
-func I64ToCharbase(v int64) string {
+func I64ToCharBase(v int64) string {
 	if v <= 0 {
 		return ""
 	}
@@ -279,7 +279,7 @@ func I64ToCharbase(v int64) string {
 
 	return axis
 }
-func CharbaseToi64(str string) int64 {
+func CharBaseToI64(str string) int64 {
 	if str == "" {
 		return 0
 	}

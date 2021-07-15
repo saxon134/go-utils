@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saError"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -116,11 +115,11 @@ func (m *aliOss) DeleteUrlRoot(uri string) string {
 //src为文件，如果dest后缀为/，则将src文件拷贝到destination目录下；如果destination后缀不是/，则将src拷贝成dest文件
 func (m *aliOss) CopyWithBucket(src, destination string) error {
 	if m == nil {
-		return saError.StackError("bucket不存在")
+		return errors.New("bucket不存在")
 	}
 
 	if src == "" || destination == "" {
-		return saError.StackError("路径不能空")
+		return errors.New("路径不能空")
 	}
 
 	var err error
@@ -189,7 +188,7 @@ func (m *aliOss) GetTxt(uri string) (res string, err error) {
 
 func (m *aliOss) UploadTxt(destination string, v string) (url string, err error) {
 	if destination == "" || v == "" {
-		return "", saError.StackError("缺参数")
+		return "", errors.New("缺参数")
 	}
 
 	if strings.HasSuffix(destination, "/") {

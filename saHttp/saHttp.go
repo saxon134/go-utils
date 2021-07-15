@@ -74,7 +74,7 @@ func Bind(c *Context, objPtr interface{}) (err error) {
 				c.RawData, _ = c.GetRawData()
 			}
 			if len(c.RawData) > 0 {
-				err = saData.JsonToStruct(c.RawData, &objPtr)
+				err = saData.StrToModel(string(c.RawData), &objPtr)
 				if err != nil {
 					return err
 				}
@@ -225,7 +225,7 @@ func ResErr(c *Context, err interface{}) {
 
 		//如果是saError，则错误码、信息按saError输出；否则全部按照敏感信息处理
 		sa_err := new(saError.Error)
-		if saData.JsonToStruct([]byte(err_s), sa_err) == nil && sa_err.Code > 0 {
+		if saData.StrToModel(err_s, sa_err) == nil && sa_err.Code > 0 {
 			code = sa_err.Code
 			msg = sa_err.Msg
 			errMsg = sa_err.Err
@@ -241,13 +241,16 @@ func ResErr(c *Context, err interface{}) {
 		errMsg = ""
 	}
 
-	//获取调用文件及位置
-	if len(caller) == 0 {
-		_, file, line, ok := runtime.Caller(1)
-		if ok {
-			caller = file + ":" + saData.Itos(line)
-			caller += ":" + saData.Itos(line)
+	//获取调用栈
+	pc := make([]uintptr, 4)
+	n := runtime.Callers(2, pc)
+	for i := 0; i < n; i++ {
+		if i >= 4 {
+			break //最多4层
 		}
+		f := runtime.FuncForPC(pc[i])
+		file, line := f.FileLine(pc[i])
+		caller += fmt.Sprintf("%s:%d\n", file, line)
 	}
 
 	//打印错误信息

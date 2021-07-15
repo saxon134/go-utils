@@ -38,26 +38,6 @@ func GetIdByKeys(args map[string]interface{}, key1 string, key2 string) int64 {
 	return id
 }
 
-// => []{1,2,3}
-func ToIdAry(args map[string]interface{}, key string) []int64 {
-	if key == "" {
-		key = "idAry"
-	}
-
-	if idStrAry, _ := ToAry(args[key]); idStrAry != nil && len(idStrAry) > 0 {
-		idAry := make([]int64, 0, len(idStrAry))
-		for _, v := range idStrAry {
-			id, _ := ToInt64(v)
-			if id > 0 {
-				idAry = append(idAry, id)
-			}
-		}
-		return idAry
-	}
-
-	return []int64{}
-}
-
 // []{1,2,3} => 1,2,3
 func AryToIds(ary []int64) string {
 	if ary == nil || len(ary) == 0 {

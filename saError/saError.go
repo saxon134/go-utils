@@ -2,6 +2,7 @@ package saError
 
 import (
 	"fmt"
+	"github.com/saxon134/go-utils/saHit"
 	"gorm.io/gorm"
 	"runtime"
 	"strconv"
@@ -53,7 +54,7 @@ func NewError(err interface{}) error {
  * @params params 可接收错误信息(err.Err)和error类型
  * 注意：params参数会覆盖err参数
  */
-func StackError(err interface{}, params ...interface{}) error {
+func StackError(err interface{}, skip int, params ...interface{}) error {
 	if err == nil {
 		return nil
 	}
@@ -127,7 +128,8 @@ func StackError(err interface{}, params ...interface{}) error {
 
 	//获取调用栈
 	pc := make([]uintptr, 10)
-	n := runtime.Callers(1, pc)
+	skip = saHit.Int(skip > 0, skip+1, 1)
+	n := runtime.Callers(skip, pc)
 	for i := 0; i < n; i++ {
 		if i >= 4 {
 			break //最多4层

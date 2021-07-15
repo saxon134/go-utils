@@ -97,7 +97,7 @@ func (m *CompressIds) Scan(value interface{}) error {
 			ary := strings.Split(s, ",")
 			if len(ary) > 0 {
 				for _, v := range ary {
-					if i64 := saData.CharbaseToi64(v); i64 > 0 {
+					if i64 := saData.CharBaseToI64(v); i64 > 0 {
 						*m = append(*m, i64)
 					}
 				}
@@ -112,7 +112,7 @@ func (m CompressIds) Value() (driver.Value, error) {
 	if len(m) > 0 {
 		tmp := ""
 		for _, v := range m {
-			tmp += saData.I64ToCharbase(v) + ","
+			tmp += saData.I64tos(v) + ","
 		}
 		tmp = strings.TrimSuffix(tmp, ",")
 		return tmp, nil

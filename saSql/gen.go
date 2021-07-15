@@ -152,7 +152,7 @@ func GenerateTbl(set Set) {
 						columnType = "varchar(" + saData.Itos(length) + ")"
 						checkSqlTxt += fmt.Sprintf(`
 							if err:= saData.LenCheck(m.%s, %d); err != nil {
-								return yfError.StackError(err, yfError.SensitiveErrorCode)
+								return errors.New(err, yfError.SensitiveErrorCode)
 							}
 						`, columns[i].name, length)
 					} else if strings.HasPrefix(tag, "char") {
@@ -168,7 +168,7 @@ func GenerateTbl(set Set) {
 						columnType = "char(" + saData.Itos(length) + ")"
 						checkSqlTxt += fmt.Sprintf(`
 							if err:= saData.LenCheck(m.%s, %d); err != nil {
-								return yfError.StackError(err, yfError.SensitiveErrorCode)
+								return err
 							}
 						`, columns[i].name, length)
 					} else if strings.HasPrefix(tag, "int") {
@@ -227,7 +227,7 @@ func GenerateTbl(set Set) {
 					} else if tag == "phone" {
 						toDbSqlTxt += fmt.Sprintf(`
 							if saData.IsPhone(m.%s) == false {
-								return yfError.StackError("手机号格式有误", yfError.SensitiveErrorCode)
+								return errors.New("手机号格式有误")
 							}
 							`, columns[i].name)
 					} else if strings.HasPrefix(tag, ">") {
@@ -241,7 +241,7 @@ func GenerateTbl(set Set) {
 							tag = strings.TrimPrefix(tag, ">")
 							toDbSqlTxt += fmt.Sprintf(`
 								if %s <= %s {
-									return  yfError.StackError(yfError.ErrorDate, yfError.SensitiveErrorCode)
+									return errors.New(yfError.ErrorDate)
 								}
 								`, left, tag)
 						}
@@ -256,7 +256,7 @@ func GenerateTbl(set Set) {
 							tag = strings.TrimPrefix(tag, ">=")
 							toDbSqlTxt += fmt.Sprintf(`
 								if m.%s < %s {
-									return  yfError.StackError(yfError.ErrorDate, yfError.SensitiveErrorCode)
+									return errors.New(yfError.ErrorDate)
 								}
 								`, columns[i].name, tag)
 						}
@@ -271,7 +271,7 @@ func GenerateTbl(set Set) {
 							tag = strings.TrimPrefix(tag, "<")
 							toDbSqlTxt += fmt.Sprintf(`
 								if m.%s >= %s {
-									return  yfError.StackError(yfError.ErrorDate, yfError.SensitiveErrorCode)
+									return errors.New(yfError.ErrorDate)
 								}
 								`, columns[i].name, tag)
 						}
@@ -286,7 +286,7 @@ func GenerateTbl(set Set) {
 							tag = strings.TrimPrefix(tag, "<=")
 							toDbSqlTxt += fmt.Sprintf(`
 								if m.%s > %s {
-									return  yfError.StackError(yfError.ErrorDate, yfError.SensitiveErrorCode)
+									return errors.New(yfError.ErrorDate)
 								}
 								`, columns[i].name, tag)
 						}
@@ -301,7 +301,7 @@ func GenerateTbl(set Set) {
 							tag = strings.TrimPrefix(tag, "<>")
 							toDbSqlTxt += fmt.Sprintf(`
 								if m.%s != %s {
-									return  yfError.StackError(yfError.ErrorDate, yfError.SensitiveErrorCode)
+									return errors.New(yfError.ErrorDate)
 								}
 								`, columns[i].name, tag)
 						}

@@ -7,7 +7,7 @@ import (
 )
 
 func TestRoutine(t *testing.T) {
-	r := NewRoutine(10, func(params interface{}) {
+	r := NewRoutine(10, 3, func(params interface{}) {
 		i, ok := params.(int)
 		if ok {
 			time.Sleep(time.Second * 1)
