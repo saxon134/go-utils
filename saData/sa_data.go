@@ -248,29 +248,6 @@ func ToStrAry(data interface{}) ([]string, error) {
 	return []string{}, errors.New("类型不匹配")
 }
 
-func StrToData(str string) (interface{}, error) {
-	var err error
-	bAry := StrToBytes(str)
-
-	dic := map[string]interface{}{}
-	err = j.Unmarshal(bAry, &dic)
-	if err == nil {
-		return dic, nil
-	}
-
-	ary := make([]interface{}, 0, 10)
-	err = j.Unmarshal(bAry, &ary)
-	if err == nil {
-		return ary, nil
-	}
-	return str, nil
-}
-
-func StrToModel(str string, m interface{}) error {
-	err := j.Unmarshal(StrToBytes(str), m)
-	return err
-}
-
 func ToInt(d interface{}) (int, error) {
 	if i, ok := d.(int); ok {
 		return i, nil
@@ -506,7 +483,25 @@ func ToInt64(d interface{}) (int64, error) {
 	return 0, errors.New("类型不匹配")
 }
 
-//保留三位小数，四舍五入
-func ToPrice(f float32) float32 {
-	return float32(int(f*1000)) / float32(1000)
+func StrToData(str string) (interface{}, error) {
+	var err error
+	bAry := StrToBytes(str)
+
+	dic := map[string]interface{}{}
+	err = j.Unmarshal(bAry, &dic)
+	if err == nil {
+		return dic, nil
+	}
+
+	ary := make([]interface{}, 0, 10)
+	err = j.Unmarshal(bAry, &ary)
+	if err == nil {
+		return ary, nil
+	}
+	return str, nil
+}
+
+func StrToModel(str string, m interface{}) error {
+	err := j.Unmarshal(StrToBytes(str), m)
+	return err
 }

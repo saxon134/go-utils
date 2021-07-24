@@ -15,13 +15,13 @@ import (
 
 var _manager *BrokerManager
 
-//host: redis://127.0.0.1:6379  queue: tioBroker
-func Init(host string, queue string) *BrokerManager {
+//host: redis://127.0.0.1:6379  queue: tioBroker  concurrency:并发数
+func Init(host string, queue string, concurrency int) *BrokerManager {
 	if host == "" || queue == "" {
 		return nil
 	}
 
-	return initInstance(host, queue)
+	return initInstance(host, queue, concurrency)
 }
 
 //必须一次性注册所有任务
@@ -44,7 +44,7 @@ func RegisterJobs(jobs ...RemoteJobModel) error {
 	return nil
 }
 
-func Do(name string, params interface{}) error {
+func Send(name string, params interface{}) error {
 	bAry, err := json.Marshal(params)
 	if err != nil {
 		return err

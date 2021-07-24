@@ -1,37 +1,33 @@
 package saGo
 
 import (
-	"github.com/saxon134/go-utils/saData"
+	"context"
 	"github.com/saxon134/go-utils/saLog"
 	"time"
 )
 
 type Routine struct {
-	routineMaxCnt    int              //goroutine最大并发数量
-	routineMaxSecond int              //单个goroutine执行最大时间，如果非0，则会导致goroutine数量翻倍，暂不支持超时
-	routineChan      chan struct{}    //控制goroutine并发数量
-	paramsChan       chan interface{} //传输参数
-	handle           func(params interface{})
+	routineMaxCnt  int              //goroutine最大并发数量
+	routineMaxTime time.Duration    //所有任务执行最大时间
+	routineChan    chan struct{}    //控制goroutine并发数量
+	paramsChan     chan interface{} //传输参数
+	handle         func(params interface{})
 }
-
-//todo NewRoutine搞一个channel出去，让外层控制，目的是为了方便从上游分页获取数据；
-//todo 现在逻辑是必须从上游获取到所有数据，再调用NewRoutine
-//todo 考虑handle里增加context控制
 
 /**
 通过channel，分发事务，控制事务并发数量
 */
-func NewRoutine(routineMaxCnt int, routineMaxSecond int, handle func(params interface{})) *Routine {
+func NewRoutine(routineMaxCnt int, routineMaxTime time.Duration, handle func(params interface{})) *Routine {
 	if routineMaxCnt <= 0 {
 		routineMaxCnt = 20
 	}
 
 	m := &Routine{
-		routineMaxCnt:    routineMaxCnt,
-		routineMaxSecond: routineMaxSecond,
-		routineChan:      make(chan struct{}, routineMaxCnt),
-		paramsChan:       make(chan interface{}, routineMaxCnt+1),
-		handle:           handle,
+		routineMaxCnt:  routineMaxCnt,
+		routineMaxTime: routineMaxTime,
+		routineChan:    make(chan struct{}, routineMaxCnt),
+		paramsChan:     make(chan interface{}, routineMaxCnt+1),
+		handle:         handle,
 	}
 	return m
 }
@@ -50,34 +46,33 @@ func (r *Routine) Do(params interface{}) {
 		r.routineChan <- struct{}{}
 		go func() {
 			defer func() {
+				recover()
 				_ = <-r.routineChan
 			}()
 
-			for {
-				if v, ok := <-r.paramsChan; ok {
-					//控制每个goroutine最大执行时间
-					if r.routineMaxSecond > 0 {
-						var quitTick = time.Tick(time.Second * time.Duration(r.routineMaxSecond))
-						var handleDoneChan chan bool
+			if r.routineMaxTime > 0 {
+				ctx, _ := context.WithTimeout(context.Background(), r.routineMaxTime)
+				for {
+					v, ok := <-r.paramsChan
+					if ok == false {
+						return
+					}
 
-						go func() {
-							r.handle(v)
-							handleDoneChan <- true
-						}()
-
-						select {
-						case <-handleDoneChan:
-							break
-						case <-quitTick:
-							str, _ := saData.ToStr(v)
-							saLog.Err("Goroutine执行超时：", str)
-							break
-						}
-					} else {
+					select {
+					case <-ctx.Done():
+						saLog.Err("saGo routine time out...")
+						return
+					default:
 						r.handle(v)
 					}
-				} else {
-					return
+				}
+			} else {
+				for {
+					v, ok := <-r.paramsChan
+					if ok == false {
+						return
+					}
+					r.handle(v)
 				}
 			}
 		}()

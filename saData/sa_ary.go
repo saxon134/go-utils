@@ -1,20 +1,8 @@
 package saData
 
 import (
-	"reflect"
 	"strings"
 )
-
-func RemoveDuplicate(a interface{}) (ret []interface{}) {
-	va := reflect.ValueOf(a)
-	for i := 0; i < va.Len(); i++ {
-		if i > 0 && reflect.DeepEqual(va.Index(i-1).Interface(), va.Index(i).Interface()) {
-			continue
-		}
-		ret = append(ret, va.Index(i).Interface())
-	}
-	return ret
-}
 
 func GetIdByKeys(args map[string]interface{}, key1 string, key2 string) int64 {
 	if args == nil {

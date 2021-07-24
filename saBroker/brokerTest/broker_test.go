@@ -11,7 +11,7 @@ func TestBroker(t *testing.T) {
 	//初始化broker
 	{
 		var m *saBroker.BrokerManager
-		m = saBroker.Init("redis://127.0.0.1:6379", "brokerTest")
+		m = saBroker.Init("redis://127.0.0.1:6379", "brokerTest", 10)
 		if m == nil {
 			fmt.Println("broker init error.")
 			return
@@ -30,7 +30,7 @@ func TestBroker(t *testing.T) {
 
 	//server层，发送broker消息
 	{
-		err := saBroker.Do("print_test", "123abc")
+		err := saBroker.Send("print_test", "123abc")
 		if err != nil {
 			fmt.Println("trigger broker error:", err)
 			return

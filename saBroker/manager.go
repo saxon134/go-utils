@@ -7,6 +7,7 @@ import (
 	"github.com/RichardKnop/machinery/v1/config"
 	"github.com/RichardKnop/machinery/v1/tasks"
 	"github.com/astaxie/beego/logs"
+	"github.com/saxon134/go-utils/saHit"
 	"sync"
 	"time"
 )
@@ -18,6 +19,7 @@ var (
 type BrokerManager struct {
 	taskCenter       *machinery.Server
 	tasks            []RemoteJobModel
+	concurrency      int
 	work             *machinery.Worker
 	taskMapFunc      map[string]interface{}
 	taskMapSignature map[string]*tasks.Signature
@@ -27,7 +29,7 @@ type BrokerManager struct {
 }
 
 // 单例
-func initInstance(host string, queue string) *BrokerManager {
+func initInstance(host string, queue string, concurrency int) *BrokerManager {
 	if nil == _manager {
 		Lock.Lock()
 		if nil == _manager {
@@ -36,6 +38,7 @@ func initInstance(host string, queue string) *BrokerManager {
 				taskResult:       make(map[string]*result.AsyncResult),
 				taskMapFunc:      make(map[string]interface{}),
 				taskMapSignature: make(map[string]*tasks.Signature),
+				concurrency:      concurrency,
 			}
 			Lock.Unlock()
 		} else {
@@ -59,7 +62,8 @@ func (m *BrokerManager) GetResultByTaskName(name string) *result.AsyncResult {
 
 // 监听任务
 func (m *BrokerManager) Run() {
-	m.work = m.taskCenter.NewWorker("test", 10)
+	m.concurrency = saHit.Int(m.concurrency > 0, m.concurrency, 10)
+	m.work = m.taskCenter.NewWorker("test", m.concurrency)
 	err := m.work.Launch()
 	if err != nil {
 		fmt.Println(err)

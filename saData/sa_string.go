@@ -198,47 +198,6 @@ func TrimH5Tags(src string) (str string) {
 	return s
 }
 
-/* map转query字符串 **/
-func MapToQuery(ma map[string]interface{}) string {
-	var query string = ""
-	for k, v := range ma {
-		if k != "" && v != "" {
-			s, _ := ToStr(v)
-			query += url.QueryEscape(k) + "=" + url.QueryEscape(s) + "&"
-		}
-	}
-	if len(query) > 0 {
-		query = strings.TrimSuffix(query, "&")
-	}
-
-	return query
-}
-
-/* query字符串转map **/
-func QueryToMap(str string) map[string]interface{} {
-	ma := map[string]interface{}{}
-	if str != "" {
-		ary := strings.Split(str, "&")
-		if ary != nil && len(ary) > 0 {
-			for _, v := range ary {
-				subStr := v
-				subAry := strings.Split(subStr, "=")
-				if subAry != nil && len(subAry) == 2 {
-					var mapK = subAry[0]
-					var mapV = subAry[1]
-
-					mapK, _ = url.QueryUnescape(mapK)
-					mapV, _ = url.QueryUnescape(mapV)
-					if mapK != "" && mapV != "" {
-						ma[mapK] = mapV
-					}
-				}
-			}
-		}
-	}
-	return ma
-}
-
 func RandomStr() string {
 	t := time.Now().UnixNano() / 1000
 	r := rand.Intn(1000)
@@ -248,16 +207,6 @@ func RandomStr() string {
 	_, _ = io.WriteString(h, s)
 	s = fmt.Sprintf("%x", h.Sum(nil))
 	return s
-}
-
-// 通过内存操作，效率极高，但是有风险。只在数据量很大、效率要求高的场景使用
-func StrToBytes(s string) []byte {
-	x := (*[2]uintptr)(unsafe.Pointer(&s))
-	h := [3]uintptr{x[0], x[1], x[1]}
-	return *(*[]byte)(unsafe.Pointer(&h))
-}
-func BytesToStr(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
 }
 
 // int64和88进制字符转换
@@ -299,4 +248,39 @@ func CharBaseToI64(str string) int64 {
 		}
 	}
 	return v
+}
+
+// 通过内存操作，效率极高，但是有风险。只在数据量很大、效率要求高的场景使用
+func StrToBytes(s string) []byte {
+	x := (*[2]uintptr)(unsafe.Pointer(&s))
+	h := [3]uintptr{x[0], x[1], x[1]}
+	return *(*[]byte)(unsafe.Pointer(&h))
+}
+func BytesToStr(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
+
+//query & map 互转
+func MapToQuery(m map[string]string) string {
+	if m != nil {
+		urlV := url.Values{}
+		for k, v := range m {
+			if k != "" {
+				urlV.Add(k, v)
+			}
+		}
+		return urlV.Encode()
+	}
+	return ""
+}
+func QueryToMap(urlStr string) map[string]string {
+	values, _ := url.ParseQuery(urlStr)
+	m := map[string]string{}
+	for k, v := range values {
+		if k != "" {
+			m[k] = v[0]
+		}
+	}
+
+	return m
 }

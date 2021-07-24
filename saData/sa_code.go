@@ -18,8 +18,8 @@ func Id2Code(id int64, length int) (code string) {
 	return Id2CodeWithSource(id, length, _source)
 }
 
-func Code2Id(ivcode string, length int) (id int64) {
-	return Code2IdWithSource(ivcode, length, _source)
+func Code2Id(code string, length int) (id int64) {
+	return Code2IdWithSource(code, length, _source)
 }
 
 func Id2CodeWithSource(id int64, length int, source []string) (code string) {
@@ -58,7 +58,7 @@ func Id2CodeWithSource(id int64, length int, source []string) (code string) {
 	return
 }
 
-func Code2IdWithSource(ivcode string, length int, source []string) (id int64) {
+func Code2IdWithSource(code string, length int, source []string) (id int64) {
 	if len(source) == 0 {
 		source = _source
 	}
@@ -67,12 +67,12 @@ func Code2IdWithSource(ivcode string, length int, source []string) (id int64) {
 		length = 4
 	}
 
-	if len(ivcode) != length {
+	if len(code) != length {
 		return
 	}
 
 	// return to int64
-	result := strings.Split(ivcode, "")
+	result := strings.Split(code, "")
 	numberResult := make([]int64, length)
 	numbers := make([]int64, length)
 	for i := 0; i < length; i++ {
