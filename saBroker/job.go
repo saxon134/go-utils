@@ -4,7 +4,7 @@ import "github.com/RichardKnop/machinery/v1/tasks"
 
 type RemoteJobModel interface {
 	GetSignature() *tasks.Signature
-	Handle(bAry []byte) error
+	Handle(string) error
 }
 
 type Job struct {
@@ -19,8 +19,8 @@ func (t *Job) GetSignature() (s *tasks.Signature) {
 		Args: []tasks.Arg{
 			{
 				Name:  "params",
-				Type:  "[]byte",
-				Value: []byte{},
+				Type:  "string",
+				Value: "",
 			},
 		},
 	}

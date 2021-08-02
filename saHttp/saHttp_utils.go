@@ -10,7 +10,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 )
@@ -176,7 +175,7 @@ func ToRequest(method string, url string, params map[string]string, header map[s
 	var req *http.Request
 	if method == "GET" {
 		if len(params) > 0 {
-			paramsStr := QueryEncode(params)
+			paramsStr := saData.MapToQuery(params)
 			if strings.HasSuffix(url, "?") == false {
 				url += "?"
 			}
@@ -187,7 +186,7 @@ func ToRequest(method string, url string, params map[string]string, header map[s
 			return "", err
 		}
 	} else if method == "POST" {
-		bodyStr := strings.TrimSpace(QueryEncode(params))
+		bodyStr := strings.TrimSpace(saData.MapToQuery(params))
 		req, err = http.NewRequest("POST", url, strings.NewReader(bodyStr))
 		if err != nil {
 			return "", err
@@ -222,54 +221,4 @@ func ToRequest(method string, url string, params map[string]string, header map[s
 	} else {
 		return "", saError.NewError("error:" + saData.Itos(status))
 	}
-}
-
-func StrEncode(s string) string {
-	if s != "" {
-		v := url.Values{}
-		v.Add("k", s)
-		s = v.Encode()
-		return string([]rune(s)[2:])
-	}
-	return ""
-}
-
-func QueryEncode(m map[string]string) string {
-	if m != nil {
-		urlV := url.Values{}
-		for k, v := range m {
-			if k != "" {
-				urlV.Add(k, v)
-			}
-		}
-		return urlV.Encode()
-	}
-	return ""
-}
-
-func QueryDecode(urlStr string) map[string]string {
-	values, _ := url.ParseQuery(urlStr)
-	m := map[string]string{}
-	for k, v := range values {
-		if k != "" {
-			m[k] = v[0]
-		}
-	}
-
-	return m
-}
-
-//返回结果是： /a/b/c
-func ConnPath(r string, path string) (full string) {
-	r = strings.TrimSuffix(r, "/")
-	path = strings.TrimPrefix(path, "/")
-	path = strings.TrimSuffix(path, "/")
-
-	if len(r) > 0 {
-		full = r + "/" + path
-	} else {
-		full = path
-	}
-
-	return full
 }

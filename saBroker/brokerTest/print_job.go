@@ -19,7 +19,7 @@ func NewPrintJob(name string) *PrintJob {
 	return j
 }
 
-func (t *PrintJob) Handle(bAry []byte) error {
-	fmt.Println("print task handle:", bAry)
+func (t *PrintJob) Handle(params string) error {
+	fmt.Println("print task handle:", params)
 	return nil
 }

@@ -284,3 +284,18 @@ func QueryToMap(urlStr string) map[string]string {
 
 	return m
 }
+
+//返回结果是： /r/path
+func ConnPath(r string, path string) (full string) {
+	r = strings.TrimSuffix(r, "/")
+	path = strings.TrimPrefix(path, "/")
+	path = strings.TrimSuffix(path, "/")
+
+	if len(r) > 0 {
+		full = r + "/" + path
+	} else {
+		full = path
+	}
+
+	return full
+}

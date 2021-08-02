@@ -1,9 +1,9 @@
 package saBroker
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/saxon134/go-utils/saData"
 )
 
 /*
@@ -45,13 +45,13 @@ func RegisterJobs(jobs ...RemoteJobModel) error {
 }
 
 func Send(name string, params interface{}) error {
-	bAry, err := json.Marshal(params)
+	str, err := saData.ToStr(params)
 	if err != nil {
 		return err
 	}
 
 	_manager.lock.Lock()
 	defer _manager.lock.Unlock()
-	err = _manager.Switch(name).SetParams(bAry).Do()
+	err = _manager.Switch(name).SetParams(str).Do()
 	return err
 }
