@@ -1,7 +1,6 @@
 package saData
 
 import (
-	"errors"
 	"fmt"
 	"github.com/saxon134/go-utils/saError"
 	"reflect"
@@ -34,7 +33,7 @@ func TypeCheck(ptr interface{}) (err error) {
 			fieldV := objV.Field(i)
 			if t == "required" {
 				if fieldV.IsValid() == false {
-					err = errors.New(saError.ErrorDate)
+					err = saError.ErrorDate
 					return
 				}
 			} else if strings.HasPrefix(t, "in(") {
@@ -50,7 +49,7 @@ func TypeCheck(ptr interface{}) (err error) {
 					}
 				}
 				if existed == false {
-					err = errors.New(saError.ErrorDate)
+					err = saError.ErrorDate
 					return
 				}
 			} else if strings.HasPrefix(t, "enum(") {
@@ -69,7 +68,7 @@ func TypeCheck(ptr interface{}) (err error) {
 					}
 				}
 				if existed == false {
-					err = errors.New(saError.ErrorDate)
+					err = saError.ErrorDate
 					return
 				}
 			} else if t == ">" || t == ">=" || t == "<" || t == "<=" || t == "<>" {
@@ -86,27 +85,27 @@ func TypeCheck(ptr interface{}) (err error) {
 						switch t {
 						case ">":
 							if l1 <= l2 {
-								err = errors.New(saError.ErrorDate)
+								err = saError.ErrorDate
 								return
 							}
 						case ">=":
 							if l1 < l2 {
-								err = errors.New(saError.ErrorDate)
+								err = saError.ErrorDate
 								return
 							}
 						case "<":
 							if l1 >= l2 {
-								err = errors.New(saError.ErrorDate)
+								err = saError.ErrorDate
 								return
 							}
 						case "<=":
 							if l1 > l2 {
-								err = errors.New(saError.ErrorDate)
+								err = saError.ErrorDate
 								return
 							}
 						case "<>":
 							if l1 == l2 {
-								err = errors.New(saError.ErrorDate)
+								err = saError.ErrorDate
 								return
 							}
 						}
@@ -122,27 +121,27 @@ func TypeCheck(ptr interface{}) (err error) {
 					switch t {
 					case ">":
 						if i1 <= i2 {
-							err = errors.New(saError.ErrorDate)
+							err = saError.ErrorDate
 							return
 						}
 					case ">=":
 						if i1 < i2 {
-							err = errors.New(saError.ErrorDate)
+							err = saError.ErrorDate
 							return
 						}
 					case "<":
 						if i1 >= i2 {
-							err = errors.New(saError.ErrorDate)
+							err = saError.ErrorDate
 							return
 						}
 					case "<=":
 						if i1 > i2 {
-							err = errors.New(saError.ErrorDate)
+							err = saError.ErrorDate
 							return
 						}
 					case "<>":
 						if i1 == i2 {
-							err = errors.New(saError.ErrorDate)
+							err = saError.ErrorDate
 							return
 						}
 					}
@@ -150,7 +149,7 @@ func TypeCheck(ptr interface{}) (err error) {
 			} else if t == "phone" {
 				if fieldV.Kind() == reflect.String {
 					if IsPhone(fieldV.String()) == false {
-						err = errors.New(saError.ErrorDate)
+						err = saError.ErrorDate
 						return
 					}
 				}
@@ -161,7 +160,7 @@ func TypeCheck(ptr interface{}) (err error) {
 				if i > 0 {
 					s := fieldV.String()
 					if len(s) > i {
-						err = errors.New(saError.ErrorDate)
+						err = saError.ErrorDate
 						return
 					}
 				}

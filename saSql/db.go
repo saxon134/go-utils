@@ -105,6 +105,9 @@ func ToDB(obj interface{}) error {
 	for i := 0; i < fieldNum; i++ {
 		tags := reflectType.Field(i).Tag.Get("type")
 		if tags == "" {
+			tags = reflectType.Field(i).Tag.Get("orm")
+		}
+		if tags == "" {
 			tags = reflectType.Field(i).Tag.Get("gorm")
 		}
 		tagAry := strings.Split(tags, ";")
