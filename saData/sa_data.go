@@ -27,6 +27,10 @@ func ToStr(data interface{}) (string, error) {
 	if data == nil {
 		return "", nil
 	}
+	defer func() {
+		_ = recover()
+	}()
+
 	switch v := data.(type) {
 	case string:
 		return v, nil
@@ -55,6 +59,10 @@ func ToMap(data interface{}) (map[string]interface{}, error) {
 	if d, ok := data.(*map[string]interface{}); ok {
 		return *d, nil
 	}
+
+	defer func() {
+		_ = recover()
+	}()
 
 	//json
 	if s, ok := data.(string); ok {
@@ -102,6 +110,10 @@ func ToStrMap(data interface{}) (map[string]string, error) {
 	if d, ok := data.(*map[string]string); ok {
 		return *d, nil
 	}
+
+	defer func() {
+		_ = recover()
+	}()
 
 	//json
 	if s, ok := data.(string); ok {
@@ -152,6 +164,10 @@ func ToAry(data interface{}) ([]interface{}, error) {
 		return *v, nil
 	}
 
+	defer func() {
+		_ = recover()
+	}()
+
 	//json
 	if s, ok := data.(string); ok {
 		var ary []interface{}
@@ -186,6 +202,10 @@ func ToMapAry(data interface{}) ([]map[string]interface{}, error) {
 		return *ary, nil
 	}
 
+	defer func() {
+		_ = recover()
+	}()
+
 	//json转ary
 	if s, ok := data.(string); ok {
 		var ary []map[string]interface{}
@@ -218,10 +238,13 @@ func ToStrAry(data interface{}) ([]string, error) {
 	if v, ok := (data).([]string); ok {
 		return v, nil
 	}
-
 	if v, ok := (data).(*[]string); ok {
 		return *v, nil
 	}
+
+	defer func() {
+		_ = recover()
+	}()
 
 	//json
 	if s, ok := data.(string); ok {
@@ -484,6 +507,10 @@ func ToInt64(d interface{}) (int64, error) {
 }
 
 func StrToData(str string) (interface{}, error) {
+	defer func() {
+		_ = recover()
+	}()
+
 	var err error
 	bAry := StrToBytes(str)
 
@@ -502,6 +529,10 @@ func StrToData(str string) (interface{}, error) {
 }
 
 func StrToModel(str string, m interface{}) error {
+	defer func() {
+		_ = recover()
+	}()
+
 	err := j.Unmarshal(StrToBytes(str), m)
 	return err
 }

@@ -1,4 +1,4 @@
-package saSql
+package saOrm
 
 import (
 	"fmt"
@@ -77,6 +77,9 @@ func GenerateTbl(set Set) {
 				if tag == "" {
 					tag = reflectType.Field(i).Tag.Get("gorm")
 				}
+				if tag == "" {
+					tag = reflectType.Field(i).Tag.Get("orm")
+				}
 
 				v := struct {
 					name  string
@@ -120,6 +123,13 @@ func GenerateTbl(set Set) {
 			createSqlTxt = "CREATE TABLE IF NOT EXISTS `" + tblName + "` (\n"
 			fieldNum := reflectType.NumField()
 			for i := 0; i < fieldNum; i++ {
+				if columns[i].snake == "base_model" {
+					createSqlTxt += "  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n" +
+						"  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n" +
+						"  `deleted_at` timestamp NULL DEFAULT NULL,\n"
+					continue
+				}
+
 				columnType := ""
 				columnDefault := ""
 				columnComment := "''"

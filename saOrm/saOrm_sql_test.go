@@ -1,8 +1,7 @@
-package saSql
+package saOrm
 
 import (
 	"fmt"
-	"github.com/saxon134/go-utils/saOrm"
 	"testing"
 	"time"
 )
@@ -13,7 +12,7 @@ type DBT struct {
 	T2     *time.Time `type:"updated"`
 	S1     string     `type:"varchar(4)"`
 	Img    string     `type:"oss"`
-	ImgAry saOrm.StringAry
+	ImgAry StringAry
 }
 
 func TestDB(t *testing.T) {
@@ -23,7 +22,7 @@ func TestDB(t *testing.T) {
 		T2:     nil,
 		S1:     "222",
 		Img:    "abc",
-		ImgAry: saOrm.StringAry{"1111", "2222"},
+		ImgAry: StringAry{"1111", "2222"},
 	}
 	err := ToDB(m)
 	if err != nil {

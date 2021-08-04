@@ -1,4 +1,4 @@
-package saSql
+package saOrm
 
 import (
 	"github.com/pkg/errors"
