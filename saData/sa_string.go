@@ -260,6 +260,16 @@ func BytesToStr(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
+func StrEncode(s string) string {
+	if s != "" {
+		v := url.Values{}
+		v.Add("k", s)
+		s = v.Encode()
+		return string([]rune(s)[2:])
+	}
+	return ""
+}
+
 //query & map 互转
 func MapToQuery(m map[string]string) string {
 	if m != nil {
