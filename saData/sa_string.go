@@ -260,7 +260,7 @@ func BytesToStr(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-func StrEncode(s string) string {
+func QueryEncode(s string) string {
 	if s != "" {
 		v := url.Values{}
 		v.Add("k", s)
