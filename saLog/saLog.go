@@ -82,6 +82,10 @@ func SetLogsPerSecond(cnt int) {
 	logsPerSecond = cnt
 }
 
+func Log(a ...interface{}) {
+	Err(a...)
+}
+
 func Err(a ...interface{}) {
 	if log == nil {
 		return

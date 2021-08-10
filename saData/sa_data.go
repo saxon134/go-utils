@@ -340,6 +340,13 @@ func ToInt(d interface{}) (int, error) {
 		return int(f), nil
 	}
 
+	if s, e := ToStr(d); e == nil {
+		if s == "" {
+			return 0, nil
+		}
+		return strconv.Atoi(s)
+	}
+
 	return 0, errors.New("类型不匹配")
 }
 
@@ -453,12 +460,7 @@ func ToInt64(d interface{}) (int64, error) {
 		if s == "" {
 			return 0, nil
 		}
-
-		if i64, err := strconv.ParseInt(s, 10, 64); err == nil {
-			return i64, nil
-		} else {
-			return 0, err
-		}
+		return strconv.ParseInt(s, 10, 64)
 	}
 
 	if f, ok := d.(float64); ok {
@@ -501,6 +503,13 @@ func ToInt64(d interface{}) (int64, error) {
 
 	if f, ok := d.(float32); ok {
 		return int64(f), nil
+	}
+
+	if s, e := ToStr(d); e == nil {
+		if s == "" {
+			return 0, nil
+		}
+		return strconv.ParseInt(s, 10, 64)
 	}
 
 	return 0, errors.New("类型不匹配")
