@@ -3,6 +3,7 @@ package saData
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/saxon134/go-utils/saHit"
@@ -40,7 +41,7 @@ func ToStr(data interface{}) (string, error) {
 		return *v, nil
 	}
 
-	bAry, err := j.Marshal(data)
+	bAry, err := json.Marshal(data)
 	if err == nil && bAry != nil {
 		s := BytesToStr(bAry)
 		s = saHit.Str(s == "null", "", s)
@@ -69,7 +70,7 @@ func ToMap(data interface{}) (map[string]interface{}, error) {
 		var dic map[string]interface{}
 		var err error
 		if s != "" {
-			err = j.Unmarshal(StrToBytes(s), &dic)
+			err = json.Unmarshal(StrToBytes(s), &dic)
 		}
 		return dic, err
 	}
@@ -90,11 +91,11 @@ func ToMap(data interface{}) (map[string]interface{}, error) {
 		return ret, nil
 	} else if vKind == reflect.Struct || vKind == reflect.Ptr || vKind == reflect.Interface {
 		var dic map[string]interface{}
-		bAry, err := j.Marshal(data)
+		bAry, err := json.Marshal(data)
 		if err != nil {
 			return map[string]interface{}{}, err
 		}
-		err = j.Unmarshal(bAry, &dic)
+		err = json.Unmarshal(bAry, &dic)
 		return dic, err
 	}
 	return map[string]interface{}{}, errors.New("类型不匹配")
@@ -120,7 +121,7 @@ func ToStrMap(data interface{}) (map[string]string, error) {
 		var dic map[string]string
 		var err error
 		if s != "" {
-			err = j.Unmarshal(StrToBytes(s), &dic)
+			err = json.Unmarshal(StrToBytes(s), &dic)
 		}
 		return dic, err
 	}
@@ -143,11 +144,11 @@ func ToStrMap(data interface{}) (map[string]string, error) {
 		return ret, nil
 	} else if vKind == reflect.Struct || vKind == reflect.Ptr || vKind == reflect.Interface {
 		var dic map[string]string
-		bAry, err := j.Marshal(data)
+		bAry, err := json.Marshal(data)
 		if err != nil {
 			return map[string]string{}, err
 		}
-		err = j.Unmarshal(bAry, &dic)
+		err = json.Unmarshal(bAry, &dic)
 		return dic, err
 	}
 	return map[string]string{}, errors.New("类型不匹配")
@@ -173,7 +174,7 @@ func ToAry(data interface{}) ([]interface{}, error) {
 		var ary []interface{}
 		var err error
 		if s != "" {
-			err = j.Unmarshal(StrToBytes(s), &ary)
+			err = json.Unmarshal(StrToBytes(s), &ary)
 		}
 		return ary, err
 	}
@@ -211,7 +212,7 @@ func ToMapAry(data interface{}) ([]map[string]interface{}, error) {
 		var ary []map[string]interface{}
 		var err error
 		if s != "" {
-			err = j.Unmarshal(StrToBytes(s), &ary)
+			err = json.Unmarshal(StrToBytes(s), &ary)
 		}
 		return ary, err
 	}
@@ -251,7 +252,7 @@ func ToStrAry(data interface{}) ([]string, error) {
 		var ary = []string{}
 		var err error
 		if s != "" {
-			err = j.Unmarshal(StrToBytes(s), &ary)
+			err = json.Unmarshal(StrToBytes(s), &ary)
 		}
 		return ary, err
 	}
@@ -524,13 +525,13 @@ func StrToData(str string) (interface{}, error) {
 	bAry := StrToBytes(str)
 
 	dic := map[string]interface{}{}
-	err = j.Unmarshal(bAry, &dic)
+	err = json.Unmarshal(bAry, &dic)
 	if err == nil {
 		return dic, nil
 	}
 
 	ary := make([]interface{}, 0, 10)
-	err = j.Unmarshal(bAry, &ary)
+	err = json.Unmarshal(bAry, &ary)
 	if err == nil {
 		return ary, nil
 	}
@@ -542,6 +543,6 @@ func StrToModel(str string, m interface{}) error {
 		_ = recover()
 	}()
 
-	err := j.Unmarshal(StrToBytes(str), m)
+	err := json.Unmarshal(StrToBytes(str), m)
 	return err
 }
