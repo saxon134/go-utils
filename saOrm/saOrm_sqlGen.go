@@ -231,7 +231,7 @@ func GenerateTbl(set Set) {
 						}
 					} else if tag == "updated" {
 						columnType = "datetime"
-					} else if tag == "oss" {
+					} else if tag == "oss" || tag == "img" {
 						fromDbSqlTxt += fmt.Sprintf("\nm.%s = %s(m.%s)\n", columns[i].name, set.AddImgRootFun, columns[i].name)
 						toDbSqlTxt += fmt.Sprintf("\nm.%s = %s(m.%s)\n", columns[i].name, set.DeleteImgRootFun, columns[i].name)
 					} else if tag == "phone" {

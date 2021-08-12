@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saImg"
 	"strings"
 )
 
@@ -118,5 +119,41 @@ func (m CompressIds) Value() (driver.Value, error) {
 		return tmp, nil
 	}
 
+	return "", nil
+}
+
+/******** RichTxt ********/
+
+type RichTxt struct {
+	Path string
+	Md5  string
+}
+
+func (m *RichTxt) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	bAry, ok := value.([]byte)
+	if ok {
+		str := saData.BytesToStr(bAry)
+		ary := strings.Split(str, " ")
+		if len(ary) == 2 {
+			m.Path = saImg.AddDefaultUriRoot(ary[0])
+			m.Md5 = ary[1]
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func (m RichTxt) Value() (driver.Value, error) {
+	m.Path = saImg.DeleteUriRoot(m.Path)
+	if m.Path != "" {
+		m.Md5 = saData.Md5(m.Path, true)
+		m.Md5 = strings.TrimSpace(m.Md5)
+		return m.Path + " " + m.Md5, nil
+	}
 	return "", nil
 }

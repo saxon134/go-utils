@@ -44,7 +44,7 @@ func FromDb(obj interface{}) error {
 		columnName := reflectType.Field(i).Name
 		for _, tag := range tagAry {
 			tag = strings.ToLower(tag)
-			if tag == "oss" {
+			if tag == "oss" || tag == "img" {
 				isOss = true
 				break
 			}
@@ -150,7 +150,7 @@ func ToDB(obj interface{}) error {
 				}
 			} else if tag == "updated" {
 				isUpdated = true
-			} else if tag == "oss" {
+			} else if tag == "oss" || tag == "img" {
 				isOss = true
 			} else if tag == "phone" {
 				isPhone = true

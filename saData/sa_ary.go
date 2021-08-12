@@ -1,6 +1,7 @@
 package saData
 
 import (
+	"reflect"
 	"strings"
 )
 
@@ -78,4 +79,30 @@ func FormatIds(str string) string {
 	}
 	str = strings.TrimSuffix(str, ",")
 	return str
+}
+
+func InArray(item interface{}, ary interface{}) bool {
+	val := reflect.ValueOf(ary)
+	switch val.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < val.Len(); i++ {
+			if reflect.DeepEqual(item, val.Index(i).Interface()) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func InArrayFun(ary interface{}, fun func(i int) bool) bool {
+	val := reflect.ValueOf(ary)
+	switch val.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < val.Len(); i++ {
+			if fun(i) == true {
+				return true
+			}
+		}
+	}
+	return false
 }
