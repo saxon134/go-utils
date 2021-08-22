@@ -5,12 +5,12 @@ import (
 	"strings"
 )
 
-var _source = []string{"2", "3", "4", "5", "6", "7", "8", "9",
+var _source = []string{
+	"2", "3", "4", "5", "6", "7", "8", "9",
 	"A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-	"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
 }
 
-const salt = 367892
+const salt = 192
 const prime1 = 7
 const prime2 = 13
 
@@ -27,8 +27,8 @@ func Id2CodeWithSource(id int64, length int, source []string) (code string) {
 		source = _source
 	}
 
-	if length < 4 {
-		length = 4
+	if length < 3 {
+		length = 3
 	}
 
 	id = id * prime1
@@ -38,13 +38,14 @@ func Id2CodeWithSource(id int64, length int, source []string) (code string) {
 	numberResult := make([]int64, length)
 
 	// transform to 32 base
+	SourceLen := int64(len(source))
 	numberResult[0] = id
 	for i := 0; i < length-1; i++ {
-		numberResult[i+1] = numberResult[i] / 32
-		numberResult[i] = (numberResult[i] + numberResult[0]*int64(i)) % 32
+		numberResult[i+1] = numberResult[i] / SourceLen
+		numberResult[i] = (numberResult[i] + numberResult[0]*int64(i)) % SourceLen
 	}
 
-	if numberResult[length-1] >= 32 {
+	if numberResult[length-1] >= SourceLen {
 		return
 	}
 
@@ -63,8 +64,8 @@ func Code2IdWithSource(code string, length int, source []string) (id int64) {
 		source = _source
 	}
 
-	if length < 4 {
-		length = 4
+	if length < 3 {
+		length = 3
 	}
 
 	if len(code) != length {
@@ -87,14 +88,15 @@ func Code2IdWithSource(code string, length int, source []string) (id int64) {
 		numbers[i] = numberResult[i*prime2%length]
 	}
 
+	SourceLen := int64(len(source))
 	b := make([]int64, length)
 	for i := length - 2; i >= 0; i-- {
-		b[i] = (numbers[i] - numbers[0]*int64(i) + 32*int64(i)) % 32
+		b[i] = (numbers[i] - numbers[0]*int64(i) + SourceLen*int64(i)) % SourceLen
 	}
 
 	for i := length - 2; i > 0; i-- {
 		id += b[i]
-		id *= 32
+		id *= SourceLen
 	}
 	id = (id + b[0] - salt) / prime1
 	return

@@ -20,7 +20,7 @@ type aliOss struct {
 //destination以"/"结尾，则认为是文件夹，会自动生成文件名；
 func (m *aliOss) Upload(destination string, reader io.Reader) error {
 	if strings.HasSuffix(destination, "/") {
-		t := time.Now().UnixNano() / 1000
+		t := time.Now().Unix()
 		r := rand.Intn(10000)
 		destination += saData.I64tos(t) + saData.Itos(r)
 	}
@@ -31,7 +31,7 @@ func (m *aliOss) Upload(destination string, reader io.Reader) error {
 
 func (m *aliOss) UploadFromLocalFile(destination string, localPath string) error {
 	if strings.HasSuffix(destination, "/") {
-		t := time.Now().UnixNano() / 1000
+		t := time.Now().Unix()
 		r := rand.Intn(10000)
 		destination += saData.I64tos(t) + saData.Itos(r)
 	}
@@ -192,7 +192,7 @@ func (m *aliOss) UploadTxt(destination string, v string) (url string, err error)
 	}
 
 	if strings.HasSuffix(destination, "/") {
-		t := time.Now().UnixNano() / 1000
+		t := time.Now().Unix()
 		r := rand.Intn(10000)
 		destination += saData.I64tos(t) + saData.Itos(r)
 	}

@@ -9,7 +9,7 @@ import (
 )
 
 //验证参数
-func TypeCheck(ptr interface{}) (err error) {
+func ValidCheck(ptr interface{}) (err error) {
 	objT := reflect.TypeOf(ptr)
 	objV := reflect.ValueOf(ptr)
 	if objT.Kind() == reflect.Struct || (objT.Kind() == reflect.Ptr && objT.Elem().Kind() == reflect.Struct) {
@@ -23,7 +23,7 @@ func TypeCheck(ptr interface{}) (err error) {
 	fieldNum := objT.NumField()
 	for i := 0; i < fieldNum; i++ {
 		tags := []string{}
-		tag := objT.Field(i).Tag.Get("type")
+		tag := objT.Field(i).Tag.Get("valid")
 		if tag == "" {
 			return nil
 		}

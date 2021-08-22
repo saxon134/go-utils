@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-/******** StringAry ********/
-
+/* StringAry
+数据库存储格式：json **/
 type StringAry []string
 
 func (m *StringAry) Scan(value interface{}) error {
@@ -42,8 +42,22 @@ func (m StringAry) Value() (driver.Value, error) {
 	return "", err
 }
 
-/******** Ids ********/
+func (m StringAry) IsSame(n StringAry) bool {
+	if len(m) != len(n) {
+		return false
+	}
+	for i, s := range m {
+		s = saImg.DeleteUriRoot(s)
+		n[i] = saImg.DeleteUriRoot(n[i])
+		if s != n[i] {
+			return false
+		}
+	}
+	return true
+}
 
+/* Ids
+数据库存储格式： id1,id2,id3 **/
 type Ids []int64
 
 func (m *Ids) Scan(value interface{}) error {
@@ -82,8 +96,8 @@ func (m Ids) Value() (driver.Value, error) {
 	return "", nil
 }
 
-/******** CompressIds ********/
-
+/* CompressIds
+数据库存储格式：字符串，ID转换为88进制，逗号分隔 **/
 type CompressIds []int64
 
 func (m *CompressIds) Scan(value interface{}) error {
@@ -122,8 +136,8 @@ func (m CompressIds) Value() (driver.Value, error) {
 	return "", nil
 }
 
-/******** RichTxt ********/
-
+/* RichTxt
+数据库存储格式：字符串，OSS路径和MD5空格隔开 **/
 type RichTxt struct {
 	Path string
 	Md5  string
@@ -156,4 +170,34 @@ func (m RichTxt) Value() (driver.Value, error) {
 		return m.Path + " " + m.Md5, nil
 	}
 	return "", nil
+}
+
+/* Price
+数据库存储格式：整数，分为单位 **/
+type Price float32
+
+func (m *Price) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	if i, ok := value.(int); ok {
+		*m = Price(saData.Fen2Yuan(i, saData.RoundTypeDefault))
+	}
+
+	if bAry, ok := value.([]byte); ok {
+		s := string(bAry)
+		i, _ := saData.ToInt(s)
+		if i > 0 {
+			*m = Price(saData.Fen2Yuan(i, saData.RoundTypeDefault))
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func (m Price) Value() (driver.Value, error) {
+	i := saData.Yuan2Fen(int(m), saData.RoundTypeDefault)
+	return i, nil
 }

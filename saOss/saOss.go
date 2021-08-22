@@ -18,5 +18,6 @@ type SaOss interface {
 	DeleteUrlRoot(url string) string
 	CopyWithBucket(src, destination string) error
 	GetTxt(uri string) (res string, err error)
+	//destination已"/"结尾，则会自动加上随机名称，否则直接按照全路径保存
 	UploadTxt(destination string, v string) (url string, err error)
 }

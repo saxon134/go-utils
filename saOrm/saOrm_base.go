@@ -4,7 +4,13 @@ import "time"
 
 type BaseModel struct {
 	Id        int64 `json:"id"`
-	CreatedAt *Time `json:"createdAt" orm:"datetime;created"`
+	CreatedAt *Time `orm:"datetime;created" json:"createdAt"`
+}
+
+type BaseModelWithDelete struct {
+	Id        int64 `json:"id"`
+	CreatedAt *Time `orm:"datetime;created" json:"createdAt"`
+	DeletedAt *Time `orm:"datetime;default:null" json:"deletedAt"`
 }
 
 type Time time.Time

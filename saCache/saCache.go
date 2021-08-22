@@ -4,7 +4,8 @@ import "github.com/saxon134/go-utils/saHit"
 
 var _cache = make(map[string]*cache, 10)
 
-func Get(key string, id string, getHandle func() (interface{}, error)) interface{} {
+//内存cache
+func MGet(key string, id string, getHandle func() (interface{}, error)) interface{} {
 	if key == "" || id == "" {
 		return nil
 	}
@@ -66,5 +67,11 @@ func Get(key string, id string, getHandle func() (interface{}, error)) interface
 			}
 		}
 	}
+	return nil
+}
+
+//Redis cache
+func RGet(key string, id string, getHandle func() (interface{}, error)) interface{} {
+	//todo
 	return nil
 }

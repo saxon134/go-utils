@@ -57,16 +57,6 @@ func GenerateTbl(set Set) {
 	hasFromDB := true
 	hasToDB := true
 	{
-		////钩子函数
-		//{
-		//	if _, ok := reflectType.MethodByName("FromDB"); ok {
-		//		hasFromDB = true
-		//	}
-		//	if _, ok := reflectType.MethodByName("ToDB"); ok {
-		//		hasToDB = true
-		//	}
-		//}
-
 		//获取结构体基本属性数据
 		{
 			structName = reflectType.Name()
@@ -91,16 +81,14 @@ func GenerateTbl(set Set) {
 			}
 
 			tblName = saData.SnakeStr(structName)
-			if _, ok := reflectType.MethodByName("TableName"); ok {
-				ary := reflectValue.Call([]reflect.Value{})
-				if len(ary) > 0 {
-					s := ary[0].String()
-					if len(s) > 0 {
-						tblName = s
-					}
+			m := reflectValue.MethodByName("TableName")
+			if m.IsValid() {
+				v := m.Call(nil)
+				s,_:=v[0].Interface().(string)
+				if len(s) > 0 {
+					tblName = s
 				}
 			}
-
 			pkgName = strings.Replace(reflectType.String(), "*", "", -1)
 			pkgName = strings.Replace(reflectType.String(), "."+structName, "", -1)
 		}
