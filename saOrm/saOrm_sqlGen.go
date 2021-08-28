@@ -56,42 +56,41 @@ func GenerateTbl(set Set) {
 	}
 	hasFromDB := true
 	hasToDB := true
+
+	//获取结构体基本属性数据
 	{
-		//获取结构体基本属性数据
-		{
-			structName = reflectType.Name()
-			fieldNum := reflectType.NumField()
-			for i := 0; i < fieldNum; i++ {
-				fieldName := reflectType.Field(i).Name
-				tag := reflectType.Field(i).Tag.Get("type")
-				if tag == "" {
-					tag = reflectType.Field(i).Tag.Get("gorm")
-				}
-				if tag == "" {
-					tag = reflectType.Field(i).Tag.Get("orm")
-				}
-
-				v := struct {
-					name  string
-					snake string
-					tags  []string
-				}{name: fieldName, snake: saData.SnakeStr(fieldName)}
-				v.tags = strings.Split(tag, ";")
-				columns = append(columns, v)
+		structName = reflectType.Name()
+		fieldNum := reflectType.NumField()
+		for i := 0; i < fieldNum; i++ {
+			fieldName := reflectType.Field(i).Name
+			tag := reflectType.Field(i).Tag.Get("type")
+			if tag == "" {
+				tag = reflectType.Field(i).Tag.Get("gorm")
+			}
+			if tag == "" {
+				tag = reflectType.Field(i).Tag.Get("orm")
 			}
 
-			tblName = saData.SnakeStr(structName)
-			m := reflectValue.MethodByName("TableName")
-			if m.IsValid() {
-				v := m.Call(nil)
-				s,_:=v[0].Interface().(string)
-				if len(s) > 0 {
-					tblName = s
-				}
-			}
-			pkgName = strings.Replace(reflectType.String(), "*", "", -1)
-			pkgName = strings.Replace(reflectType.String(), "."+structName, "", -1)
+			v := struct {
+				name  string
+				snake string
+				tags  []string
+			}{name: fieldName, snake: saData.SnakeStr(fieldName)}
+			v.tags = strings.Split(tag, ";")
+			columns = append(columns, v)
 		}
+
+		tblName = saData.SnakeStr(structName)
+		m := reflectValue.MethodByName("TableName")
+		if m.IsValid() {
+			v := m.Call(nil)
+			s, _ := v[0].Interface().(string)
+			if len(s) > 0 {
+				tblName = s
+			}
+		}
+		pkgName = strings.Replace(reflectType.String(), "*", "", -1)
+		pkgName = strings.Replace(reflectType.String(), "."+structName, "", -1)
 	}
 
 	if len(columns) == 0 {
@@ -113,8 +112,7 @@ func GenerateTbl(set Set) {
 			for i := 0; i < fieldNum; i++ {
 				if columns[i].snake == "base_model" {
 					createSqlTxt += "  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n" +
-						"  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n" +
-						"  `deleted_at` timestamp NULL DEFAULT NULL,\n"
+						"  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n"
 					continue
 				}
 
@@ -219,6 +217,8 @@ func GenerateTbl(set Set) {
 						}
 					} else if tag == "updated" {
 						columnType = "datetime"
+					} else if tag == "datetime" {
+						columnType = "datetime"
 					} else if tag == "oss" || tag == "img" {
 						fromDbSqlTxt += fmt.Sprintf("\nm.%s = %s(m.%s)\n", columns[i].name, set.AddImgRootFun, columns[i].name)
 						toDbSqlTxt += fmt.Sprintf("\nm.%s = %s(m.%s)\n", columns[i].name, set.DeleteImgRootFun, columns[i].name)
@@ -314,7 +314,7 @@ func GenerateTbl(set Set) {
 				if columnType == "" {
 					if columnKind == reflect.Bool || columnKind == reflect.Int8 || columnKind == reflect.Uint8 {
 						columnType = saHit.Str(columnSigned, "tinyint", "tinyint unsigned")
-					} else if columnKind == reflect.Int16 || columnKind == reflect.Uint16 || columnKind == reflect.Uint32 || columnKind == reflect.Int32 {
+					} else if columnKind == reflect.Int || columnKind == reflect.Int16 || columnKind == reflect.Uint16 || columnKind == reflect.Uint32 || columnKind == reflect.Int32 {
 						columnType = saHit.Str(columnSigned, "int", "int unsigned")
 					} else if columnKind == reflect.Uint64 || columnKind == reflect.Int64 {
 						columnType = saHit.Str(columnSigned, "bigint", "bigint unsigned")

@@ -18,7 +18,7 @@ func (m *StringAry) Scan(value interface{}) error {
 	}
 
 	bAry, ok := value.([]byte)
-	if ok {
+	if ok && len(bAry) > 0 {
 		err := json.Unmarshal(bAry, m)
 		if err != nil {
 			return err
@@ -66,15 +66,13 @@ func (m *Ids) Scan(value interface{}) error {
 	}
 
 	bAry, ok := value.([]byte)
-	if ok {
+	if ok && len(bAry) > 0{
 		s := string(bAry)
-		if len(s) > 0 {
-			ary := strings.Split(s, ",")
-			if len(ary) > 0 {
-				for _, v := range ary {
-					if i64, _ := saData.Stoi64(v); i64 > 0 {
-						*m = append(*m, i64)
-					}
+		ary := strings.Split(s, ",")
+		if len(ary) > 0 {
+			for _, v := range ary {
+				if i64, _ := saData.Stoi64(v); i64 > 0 {
+					*m = append(*m, i64)
 				}
 			}
 		}
@@ -106,15 +104,13 @@ func (m *CompressIds) Scan(value interface{}) error {
 	}
 
 	bAry, ok := value.([]byte)
-	if ok {
+	if ok && len(bAry) > 0{
 		s := string(bAry)
-		if len(s) > 0 {
-			ary := strings.Split(s, ",")
-			if len(ary) > 0 {
-				for _, v := range ary {
-					if i64 := saData.CharBaseToI64(v); i64 > 0 {
-						*m = append(*m, i64)
-					}
+		ary := strings.Split(s, ",")
+		if len(ary) > 0 {
+			for _, v := range ary {
+				if i64 := saData.CharBaseToI64(v); i64 > 0 {
+					*m = append(*m, i64)
 				}
 			}
 		}
@@ -149,7 +145,7 @@ func (m *RichTxt) Scan(value interface{}) error {
 	}
 
 	bAry, ok := value.([]byte)
-	if ok {
+	if ok && len(bAry) > 0{
 		str := saData.BytesToStr(bAry)
 		ary := strings.Split(str, " ")
 		if len(ary) == 2 {
@@ -185,7 +181,7 @@ func (m *Price) Scan(value interface{}) error {
 		*m = Price(saData.Fen2Yuan(i, saData.RoundTypeDefault))
 	}
 
-	if bAry, ok := value.([]byte); ok {
+	if bAry, ok := value.([]byte); ok  && len(bAry) > 0{
 		s := string(bAry)
 		i, _ := saData.ToInt(s)
 		if i > 0 {
@@ -198,6 +194,6 @@ func (m *Price) Scan(value interface{}) error {
 }
 
 func (m Price) Value() (driver.Value, error) {
-	i := saData.Yuan2Fen(int(m), saData.RoundTypeDefault)
-	return i, nil
+	i := saData.Yuan2Fen(float32(m), saData.RoundTypeDefault)
+	return saData.Itos(i), nil
 }

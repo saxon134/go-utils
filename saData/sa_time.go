@@ -34,6 +34,11 @@ const (
 	TimeFormate_secondStr //20060102150405
 )
 
+func Now() *time.Time {
+	t := time.Now()
+	return &t
+}
+
 func TimeStr(t time.Time, format SaTimeFormat) string {
 	s := ""
 	y := t.Year()

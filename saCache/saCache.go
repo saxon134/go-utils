@@ -1,13 +1,35 @@
 package saCache
 
-import "github.com/saxon134/go-utils/saHit"
+import (
+	"github.com/saxon134/go-utils/saHit"
+	"sync"
+)
 
-var _cache = make(map[string]*cache, 10)
+type CacheHandle func(id string) (interface{}, error)
 
-//内存cache
-func MGet(key string, id string, getHandle func() (interface{}, error)) interface{} {
+var _cache = make(map[string]*cache, 20)
+var _locker sync.RWMutex
+var _handle map[string]CacheHandle
+
+/**
+建议都提前调用该接口注册方法，注册后其他获取缓存接口行为才会一致
+否则获取缓存可能无法命中 */
+func RegisterHandle(key string, handle CacheHandle) {
+	if key == "" || handle == nil {
+		return
+	}
+	if _handle == nil || len(_handle) == 0 {
+		_handle = make(map[string]CacheHandle, 20)
+	}
+
+	_handle[key] = handle
+}
+
+/**
+该接口的handle不会自动注册的，因为各业务内handle可能都会有一点点差异*/
+func MGetWithFunc(key string, id string, handle CacheHandle) (value interface{}, err error) {
 	if key == "" || id == "" {
-		return nil
+		return
 	}
 
 	item := _cache[key]
@@ -24,28 +46,28 @@ func MGet(key string, id string, getHandle func() (interface{}, error)) interfac
 	}
 
 	if c != nil {
-		item.locker.Lock()
-		item.locker.Unlock()
+		_locker.Lock()
+		defer _locker.Unlock()
 
 		c.cnt++
 		if c.cnt > item.maxCnt {
 			item.maxCnt = c.cnt
 		}
-		return c.v
-	} else if getHandle != nil {
-		//做多保存10类数据
-		if len(_cache) > 20 {
-			return nil
+		return c.v, nil
+	} else if handle != nil {
+		//最多保存50类数据
+		if len(_cache) > 50 {
+			return nil, nil
 		}
 
-		v, err := getHandle()
+		v, err := handle(id)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 
 		c = new(cacheItem)
-		item.locker.Lock()
-		defer item.locker.Unlock()
+		_locker.Lock()
+		defer _locker.Unlock()
 
 		c.cnt = saHit.Int(item.maxCnt > 1, item.maxCnt/2, 1)
 		c.v = v
@@ -67,11 +89,13 @@ func MGet(key string, id string, getHandle func() (interface{}, error)) interfac
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
-//Redis cache
-func RGet(key string, id string, getHandle func() (interface{}, error)) interface{} {
-	//todo
-	return nil
+/**
+只有提前调用了RegisterHandle将方法注册进来后才可以调用该接口，否则返回数据会是空的
+除非之前有调用MGetWithFunc有缓存才可能命中*/
+func MGet(key string, id string) (value interface{}, err error) {
+	value, err = MGetWithFunc(key, id, _handle[key])
+	return
 }
