@@ -6,6 +6,7 @@ import (
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saImg"
 	"strings"
+	"time"
 )
 
 /* StringAry
@@ -66,7 +67,7 @@ func (m *Ids) Scan(value interface{}) error {
 	}
 
 	bAry, ok := value.([]byte)
-	if ok && len(bAry) > 0{
+	if ok && len(bAry) > 0 {
 		s := string(bAry)
 		ary := strings.Split(s, ",")
 		if len(ary) > 0 {
@@ -104,7 +105,7 @@ func (m *CompressIds) Scan(value interface{}) error {
 	}
 
 	bAry, ok := value.([]byte)
-	if ok && len(bAry) > 0{
+	if ok && len(bAry) > 0 {
 		s := string(bAry)
 		ary := strings.Split(s, ",")
 		if len(ary) > 0 {
@@ -135,8 +136,9 @@ func (m CompressIds) Value() (driver.Value, error) {
 /* RichTxt
 数据库存储格式：字符串，OSS路径和MD5空格隔开 **/
 type RichTxt struct {
-	Path string
 	Md5  string
+	Path string
+	//Type int 后续扩展类型的时候可以用
 }
 
 func (m *RichTxt) Scan(value interface{}) error {
@@ -145,7 +147,7 @@ func (m *RichTxt) Scan(value interface{}) error {
 	}
 
 	bAry, ok := value.([]byte)
-	if ok && len(bAry) > 0{
+	if ok && len(bAry) > 0 {
 		str := saData.BytesToStr(bAry)
 		ary := strings.Split(str, " ")
 		if len(ary) == 2 {
@@ -177,23 +179,59 @@ func (m *Price) Scan(value interface{}) error {
 		return nil
 	}
 
-	if i, ok := value.(int); ok {
+	i, err := saData.ToInt(value)
+	if err == nil {
 		*m = Price(saData.Fen2Yuan(i, saData.RoundTypeDefault))
 	}
-
-	if bAry, ok := value.([]byte); ok  && len(bAry) > 0{
-		s := string(bAry)
-		i, _ := saData.ToInt(s)
-		if i > 0 {
-			*m = Price(saData.Fen2Yuan(i, saData.RoundTypeDefault))
-		}
-		return nil
-	}
-
-	return nil
+	return err
 }
 
 func (m Price) Value() (driver.Value, error) {
 	i := saData.Yuan2Fen(float32(m), saData.RoundTypeDefault)
 	return saData.Itos(i), nil
+}
+
+/* Time
+数据库存储格式：datetime **/
+type Time struct {
+	time.Time
+}
+
+func (m *Time) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	var str string
+
+	if bAry, ok := value.([]byte); ok && len(bAry) > 0 {
+		str = saData.BytesToStr(bAry)
+		if str == "" {
+			return nil
+		}
+		m.Time = saData.StrToTime(saData.TimeFormat_Default, str)
+	} else if str, ok = value.(string); ok && len(str) > 0 {
+		m.Time = saData.StrToTime(saData.TimeFormat_Default, str)
+	}
+	return nil
+}
+
+func (m Time) Value() (driver.Value, error) {
+	str := saData.TimeStr(m.Time, saData.TimeFormat_Default)
+	return str, nil
+}
+
+func (m *Time) Now() {
+	now := time.Now()
+	if m == nil {
+		m = &Time{now}
+	} else {
+		m.Time = now
+	}
+}
+
+func (m *Time) IsZero() bool {
+	if m == nil || m.IsZero() {
+		return true
+	}
+	return false
 }

@@ -28,17 +28,17 @@ func RegisterHandle(key string, handle CacheHandle) {
 /**
 该接口的handle不会自动注册的，因为各业务内handle可能都会有一点点差异*/
 func MGetWithFunc(key string, id string, handle CacheHandle) (value interface{}, err error) {
-	if key == "" || id == "" {
+	if key == "" {
 		return
 	}
 
-	item := _cache[key]
-	if item == nil {
-		item = new(cache)
+	cacheValue := _cache[key]
+	if cacheValue == nil {
+		cacheValue = new(cache)
 	}
 
 	var c *cacheItem = nil
-	for _, v := range item.ary {
+	for _, v := range cacheValue.ary {
 		if v.id == id {
 			c = &v
 			break
@@ -50,16 +50,11 @@ func MGetWithFunc(key string, id string, handle CacheHandle) (value interface{},
 		defer _locker.Unlock()
 
 		c.cnt++
-		if c.cnt > item.maxCnt {
-			item.maxCnt = c.cnt
+		if c.cnt > cacheValue.maxCnt {
+			cacheValue.maxCnt = c.cnt
 		}
 		return c.v, nil
 	} else if handle != nil {
-		//最多保存50类数据
-		if len(_cache) > 50 {
-			return nil, nil
-		}
-
 		v, err := handle(id)
 		if err != nil {
 			return nil, err
@@ -69,25 +64,31 @@ func MGetWithFunc(key string, id string, handle CacheHandle) (value interface{},
 		_locker.Lock()
 		defer _locker.Unlock()
 
-		c.cnt = saHit.Int(item.maxCnt > 1, item.maxCnt/2, 1)
+		c.cnt = saHit.Int(cacheValue.maxCnt > 1, cacheValue.maxCnt/2, 1)
 		c.v = v
 		c.id = id
-		if len(item.ary) < 20 {
-			item.ary = append(item.ary, *c)
+		if len(cacheValue.ary) < 100 {
+			cacheValue.ary = append(cacheValue.ary, *c)
 		} else {
 			//取次数最小的，替换掉
 			var min *cacheItem
 			var idx = 0
-			for i, v := range item.ary {
+			for i, v := range cacheValue.ary {
 				if min == nil || min.cnt == 0 || min.cnt > v.cnt {
 					min = &v
 					idx = i
 				}
 			}
 			if min != nil && min.cnt >= 0 {
-				item.ary = append(item.ary[:idx], item.ary[idx+1:]...)
+				cacheValue.ary = append(cacheValue.ary[:idx], cacheValue.ary[idx+1:]...)
 			}
 		}
+
+		//最多保存50类数据
+		if len(_cache) < 50 {
+			_cache[key] = cacheValue
+		}
+		return v, nil
 	}
 	return nil, nil
 }
