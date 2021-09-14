@@ -1,10 +1,7 @@
 package saData
 
 import (
-	"crypto/md5"
 	"errors"
-	"fmt"
-	"io"
 	"math/rand"
 	"net/url"
 	"regexp"
@@ -198,56 +195,12 @@ func TrimH5Tags(src string) (str string) {
 	return s
 }
 
+/** 返回13位字符串 */
 func RandomStr() string {
-	t := time.Now().UnixNano() / 1000
+	t := time.Now().Unix()
 	r := rand.Intn(1000)
-	s := I64tos(t) + Itos(r)
-
-	h := md5.New()
-	_, _ = io.WriteString(h, s)
-	s = fmt.Sprintf("%x", h.Sum(nil))
-	return s
-}
-
-// int64和88进制字符转换
-func I64ToCharBase(v int64) string {
-	if v <= 0 {
-		return ""
-	}
-
-	ary := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^*()_=+<>.?/[]{}|`~"
-	var axis string
-
-	if v%int64(len(ary)) == 0 {
-		axis = string(ary[len(ary)-1]) + axis
-		v -= int64(len(ary))
-	} else {
-		axis = string(ary[(v%int64(len(ary)))-1]) + axis
-	}
-	v /= int64(len(ary))
-
-	return axis
-}
-func CharBaseToI64(str string) int64 {
-	if str == "" {
-		return 0
-	}
-
-	var v int64
-	ary := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^*()_=+<>.?/[]{}|`~"
-	for i := len(str) - 1; i >= 0; i-- {
-		for j := 0; j < len(ary); j++ {
-			if ary[j] == str[i] {
-				var tv int64 = int64(j) + 1
-				for k := 0; k < len(str)-1-i; k++ {
-					tv *= int64(len(ary))
-				}
-				v += tv
-				break
-			}
-		}
-	}
-	return v
+	t = t*1000 + int64(r)
+	return I64tos(t)
 }
 
 // 通过内存操作，效率极高，但是有风险。只在数据量很大、效率要求高的场景使用

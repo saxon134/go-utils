@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+/**
+int64和字符串互转，转成的字符串固定长度
+数字范围较小，如8位字符串，最大能表示的数字为999999999
+*/
+
 var _source = []string{
 	"2", "3", "4", "5", "6", "7", "8", "9",
 	"A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
@@ -14,15 +19,15 @@ const salt = 192
 const prime1 = 7
 const prime2 = 13
 
-func Id2Code(id int64, length int) (code string) {
-	return Id2CodeWithSource(id, length, _source)
+func IdToCode(id int64, length int) (code string) {
+	return IdToCodeWithSource(id, length, _source)
 }
 
-func Code2Id(code string, length int) (id int64) {
-	return Code2IdWithSource(code, length, _source)
+func CodeToId(code string, length int) (id int64) {
+	return CodeToIdWithSource(code, length, _source)
 }
 
-func Id2CodeWithSource(id int64, length int, source []string) (code string) {
+func IdToCodeWithSource(id int64, length int, source []string) (code string) {
 	if len(source) == 0 {
 		source = _source
 	}
@@ -59,7 +64,7 @@ func Id2CodeWithSource(id int64, length int, source []string) (code string) {
 	return
 }
 
-func Code2IdWithSource(code string, length int, source []string) (id int64) {
+func CodeToIdWithSource(code string, length int, source []string) (id int64) {
 	if len(source) == 0 {
 		source = _source
 	}
