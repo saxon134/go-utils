@@ -177,6 +177,9 @@ func GenerateTbl(set Set) {
 						} else {
 							columnType = "integer unsigned"
 						}
+					} else if tag == "float" || tag == "double" {
+						columnDefault = "0"
+						columnType = tag
 					} else if tag == "tinyint" {
 						columnDefault = "0"
 						columnType = "tinyint unsigned"

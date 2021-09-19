@@ -20,7 +20,7 @@ func (t *ServiceHandle) RegisterHandlers(handlers map[string]HandleFunc) {
 
 func (t *ServiceHandle) Api(c context.Context, args *Request, res *Response) error {
 	if args == nil {
-		return saError.ErrorParams
+		return saError.Error{Code: saError.NormalErrorCode, Msg: "参数有误"}
 	}
 
 	handle, _ := _handlers[args.Method]

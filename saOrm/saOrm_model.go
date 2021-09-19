@@ -110,7 +110,7 @@ func (m *CompressIds) Scan(value interface{}) error {
 		ary := strings.Split(s, ",")
 		if len(ary) > 0 {
 			for _, v := range ary {
-				if i64 := saData.CharBaseToI64(v); i64 > 0 {
+				if i64 := saData.CharToId(v); i64 > 0 {
 					*m = append(*m, i64)
 				}
 			}
@@ -220,7 +220,7 @@ func (m Time) Value() (driver.Value, error) {
 	return str, nil
 }
 
-func (m *Time) Now() {
+func (m *Time) SetNow() {
 	now := time.Now()
 	if m == nil {
 		m = &Time{now}

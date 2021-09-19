@@ -4,14 +4,11 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"runtime"
-	"strconv"
-	"strings"
 )
 
 type Error struct {
 	Code   int    `json:"code"`
 	Msg    string `json:"msg"`
-	Err    string `json:"err"`
 	Caller string `json:"caller"`
 }
 
@@ -23,7 +20,7 @@ func (e Error) Error() string {
 func (e Error) String() string {
 	s := ""
 	if e.Code > 0 {
-		s = strings.Join([]string{strconv.Itoa(e.Code), e.Msg, e.Err, e.Caller}, " ")
+		s = fmt.Sprintf("%d %s \n%s", e.Code, e.Msg, e.Caller)
 	}
 	return s
 }
@@ -34,7 +31,7 @@ func NewError(err interface{}) error {
 		return nil
 	}
 
-	var e = Error{Code: NormalErrorCode, Msg: "", Err: "", Caller: ""}
+	var e = Error{Code: NormalErrorCode, Msg: "", Caller: ""}
 	if s, ok := err.(string); ok {
 		e.Msg = s
 	} else if sae, ok := err.(Error); ok {
@@ -42,25 +39,28 @@ func NewError(err interface{}) error {
 	} else if sae, ok := err.(*Error); ok {
 		return *sae
 	} else if ev, ok := err.(error); ok {
-		e.Err = ev.Error()
+		e.Msg = ev.Error()
 	}
 	return e
 }
 
 /**
- * 会打印调用栈信息，建议只在类似controller最上层位置调用
- * @params err 可接收提示信息(err.Msg)和error类型
- * @params params 可接收错误信息(err.Err)和error类型
- * 注意：params参数会覆盖err参数
+ * @params err 可接收string和error类型
+ * @params params 可接收int,string,error类型
+ * 注意：params参数会覆盖err中相同类型数据
+ * 常见用法：err传字符串，params空 -> code则是NormalErrorCode，msg为传的字符串
+ * 常见用法：err传字符串，params传code值 -> 则是Error{code, msg}类型
+ * 常见用法：err传err，其他为空 -> code则是SensitiveErrorCode，msg为err.error()
  */
 func StackError(err interface{}, params ...interface{}) error {
 	if err == nil {
 		return nil
 	}
 
-	var resErr = Error{Code: NormalErrorCode, Msg: "", Err: "", Caller: "\n"}
+	var resErr = Error{Code: NormalErrorCode, Msg: "", Caller: ""}
 	if s, ok := err.(string); ok {
 		resErr.Msg = s
+		resErr.Code = NormalErrorCode
 	} else {
 		e, ok := err.(*Error)
 		if ok == false {
@@ -71,7 +71,6 @@ func StackError(err interface{}, params ...interface{}) error {
 		}
 
 		if e != nil {
-			resErr.Err = e.Err
 			if len(e.Msg) > 0 {
 				resErr.Msg = e.Msg
 			}
@@ -79,10 +78,15 @@ func StackError(err interface{}, params ...interface{}) error {
 				resErr.Code = e.Code
 			}
 			if e.Caller != "" {
-				resErr.Caller += e.Caller + "\n"
+				if resErr.Caller == "" {
+					resErr.Caller = e.Caller
+				} else {
+					resErr.Caller = e.Caller + "\n" + resErr.Caller
+				}
 			}
 		} else if e, ok := err.(error); ok {
-			resErr.Err = e.Error()
+			resErr.Msg = e.Error()
+			resErr.Code = SensitiveErrorCode
 		} else {
 			return nil
 		}
@@ -96,7 +100,7 @@ func StackError(err interface{}, params ...interface{}) error {
 				}
 			} else if s, ok := v.(string); ok {
 				if s != "" {
-					resErr.Err = s
+					resErr.Msg = s
 				}
 			} else {
 				e, ok := err.(*Error)
@@ -108,7 +112,6 @@ func StackError(err interface{}, params ...interface{}) error {
 				}
 
 				if e != nil {
-					resErr.Err = e.Err
 					if len(e.Msg) > 0 {
 						resErr.Msg = e.Msg
 					}
@@ -116,10 +119,10 @@ func StackError(err interface{}, params ...interface{}) error {
 						resErr.Code = e.Code
 					}
 					if e.Caller != "" {
-						resErr.Caller += e.Caller + "\n"
+						resErr.Caller = e.Caller + "\n" + resErr.Caller
 					}
 				} else if e, ok := err.(error); ok {
-					resErr.Err = e.Error()
+					resErr.Msg = e.Error()
 				}
 			}
 		}
@@ -127,11 +130,11 @@ func StackError(err interface{}, params ...interface{}) error {
 
 	//获取调用栈
 	pc := make([]uintptr, 1)
-	n := runtime.Callers(1, pc)
+	n := runtime.Callers(2, pc)
 	if n >= 1 {
 		f := runtime.FuncForPC(pc[0])
 		file, line := f.FileLine(pc[0])
-		resErr.Caller += fmt.Sprintf("%s:%d\n", file, line)
+		resErr.Caller = fmt.Sprintf("%s:%d\n", file, line) + resErr.Caller
 	}
 	return &resErr
 }

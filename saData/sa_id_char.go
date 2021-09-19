@@ -1,11 +1,15 @@
 package saData
 
+import "strings"
+
 /**
 int64和字符串互转，转成的字符串非固定长度，可指定最小长度
 数字范围较大，超出范围字符长度自动加1位
+emw都表示0，避免出现连续e的情况
 */
 
-const defaultSource = "em8trxizqkp9bs2ng4uwv5cjh3d6y7af"
+var defaultSource = "e8trxizqkp9bs2ng4uv5cjh3d6y7af"
+var zeroAry = []string{"e", "m", "w"}
 
 //0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^*()_=+<>.?/[]{}|`~
 
@@ -28,9 +32,14 @@ func IdToCharWithSource(v int64, minLen int, source string) string {
 
 	var axis string
 	var sLen = int64(len(source))
+	var zeroIdx = 0 //控制零值时在zeroAry间轮询
 	for {
 		if v%sLen == 0 {
-			axis = string(source[0]) + axis
+			axis = zeroAry[zeroIdx] + axis
+			zeroIdx++
+			if zeroIdx+1 >= len(zeroAry) {
+				zeroIdx = 0
+			}
 		} else {
 			axis = string(source[(v%sLen)]) + axis
 		}
@@ -43,7 +52,11 @@ func IdToCharWithSource(v int64, minLen int, source string) string {
 
 	for i := 0; i < minLen; i++ {
 		if len(axis) < minLen {
-			axis = source[:1] + axis
+			axis = zeroAry[zeroIdx] + axis
+			zeroIdx++
+			if zeroIdx+1 >= len(zeroAry) {
+				zeroIdx = 0
+			}
 		}
 	}
 
@@ -57,6 +70,11 @@ func CharToIdWithSource(str string, source string) int64 {
 
 	if len(source) == 0 {
 		source = defaultSource
+	}
+
+	//所有零值都替换成第一个
+	for _, s := range zeroAry {
+		str = strings.Replace(str, s, zeroAry[0], -1)
 	}
 
 	var v int64

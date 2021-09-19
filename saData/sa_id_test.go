@@ -16,8 +16,8 @@ func TestId2Code(t *testing.T) {
 	//fmt.Println("========================")
 
 	for _, id := range ids {
-		encoded := I64ToChar(id)
-		decoded := CharToI64(encoded)
+		encoded := IdToChar(id)
+		decoded := CharToId(encoded)
 		fmt.Println(id, " => ", encoded, " => ", decoded)
 	}
 }
