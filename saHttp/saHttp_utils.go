@@ -9,8 +9,10 @@ import (
 	"github.com/saxon134/go-utils/saError"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -20,35 +22,6 @@ func Get(url string, params map[string]string) (res string, err error) {
 
 func Post(url string, params map[string]string) (res string, err error) {
 	return ToRequest("POST", url, params, nil)
-}
-
-func PostJson(uri string, obj interface{}) (res string, contentType string, err error) {
-	jsonData, err := json.Marshal(obj)
-	if err != nil {
-		return "", "", err
-	}
-
-	jsonData = bytes.Replace(jsonData, []byte("\\u003c"), []byte("<"), -1)
-	jsonData = bytes.Replace(jsonData, []byte("\\u003e"), []byte(">"), -1)
-	jsonData = bytes.Replace(jsonData, []byte("\\u0026"), []byte("&"), -1)
-
-	body := bytes.NewBuffer([]byte(jsonData))
-	response, err := http.Post(uri, "application/json;charset=utf-8", body)
-	if err != nil {
-		return "", "", err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("http get error : uri=%v , statusCode=%v", uri, response.StatusCode)
-	}
-
-	if responseData, err := ioutil.ReadAll(response.Body); err == nil {
-		contentType = response.Header.Get("Content-Type")
-		return string(responseData), contentType, err
-	} else {
-		return "", "", err
-	}
 }
 
 func PostRequest(uri string, obj interface{}, headers map[string]string) (res string, err error) {
@@ -94,6 +67,35 @@ func PostRequest(uri string, obj interface{}, headers map[string]string) (res st
 		}
 	} else {
 		return "", saError.NewError("error:" + saData.Itos(status))
+	}
+}
+
+func PostJson(uri string, obj interface{}) (res string, contentType string, err error) {
+	jsonData, err := json.Marshal(obj)
+	if err != nil {
+		return "", "", err
+	}
+
+	jsonData = bytes.Replace(jsonData, []byte("\\u003c"), []byte("<"), -1)
+	jsonData = bytes.Replace(jsonData, []byte("\\u003e"), []byte(">"), -1)
+	jsonData = bytes.Replace(jsonData, []byte("\\u0026"), []byte("&"), -1)
+
+	body := bytes.NewBuffer([]byte(jsonData))
+	response, err := http.Post(uri, "application/json;charset=utf-8", body)
+	if err != nil {
+		return "", "", err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return "", "", fmt.Errorf("http get error : uri=%v , statusCode=%v", uri, response.StatusCode)
+	}
+
+	if responseData, err := ioutil.ReadAll(response.Body); err == nil {
+		contentType = response.Header.Get("Content-Type")
+		return string(responseData), contentType, err
+	} else {
+		return "", "", err
 	}
 }
 
@@ -162,6 +164,75 @@ func Download(url string) (localFilePath string, err error) {
 		return tmpFilePath, nil
 	}
 	return "", err
+}
+
+//file -> name:文件参数名  path:本地文件路径
+func Upload(url string, fileParams map[string]string, params map[string]string, headers map[string]string) (res string, err error) {
+	if fileParams == nil || len(fileParams) == 0 || fileParams["name"] == "" || fileParams["path"] == "" {
+		err = errors.New("文件内容为空")
+		return
+	}
+
+	//新建请求body
+	var requestBody = &bytes.Buffer{}
+	var contentType = ""
+	writer := multipart.NewWriter(requestBody)
+	{
+		// 文件写入 body
+		var file *os.File
+		file, err = os.Open(fileParams["path"])
+		if err != nil {
+			return "", err
+		}
+
+		var part io.Writer
+		part, err = writer.CreateFormFile(fileParams["name"], filepath.Base(fileParams["path"]))
+		if err != nil {
+			return "", err
+		}
+		_, err = io.Copy(part, file)
+		file.Close()
+
+		// 其他参数列表写入 body
+		for k, v := range params {
+			if err = writer.WriteField(k, v); err != nil {
+				return "", err
+			}
+		}
+		if err = writer.Close(); err != nil {
+			return "", err
+		}
+
+		contentType = writer.FormDataContentType()
+	}
+
+	// 创建请求
+	httpRequest, _ := http.NewRequest("POST", url, requestBody)
+
+	// 添加请求头
+	if headers != nil {
+		for k, v := range headers {
+			httpRequest.Header.Add(k, v)
+		}
+	}
+	httpRequest.Header.Del("Content-Type")
+	httpRequest.Header.Add("Content-Type", contentType)
+
+	// 发送请求
+	client := &http.Client{}
+	var doResp *http.Response
+	doResp, err = client.Do(httpRequest)
+	if err != nil {
+		return
+	}
+	defer doResp.Body.Close()
+
+	var response []byte
+	response, err = ioutil.ReadAll(doResp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(response), nil
 }
 
 func ToRequest(method string, url string, params map[string]string, header map[string]string) (res string, err error) {

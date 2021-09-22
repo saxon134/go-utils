@@ -34,6 +34,52 @@ const (
 	TimeFormate_secondStr //20060102150405
 )
 
+func (m SaTimeFormat) Format() string {
+	switch m {
+	case TimeFormat_Default:
+		return "2006-01-02 15:04:05"
+	case TimeFormat_hhmm:
+		return "15:04"
+	case TimeFormat_sys_default:
+		return "2006-01-02T15:04:05Z"
+	case TimeFormat_yymm_Dotted:
+		return "2006.01"
+	case TimeFormat_yymmdd_Dotted:
+		return "2006.01.02"
+	case TimeFormat_yymmddhhmm_Dotted:
+		return "2006.01.02 15:04"
+	case TimeFormat_Dotted:
+	return "2006.01.02 15:04:05"
+	case TimeFormat_yymm_Line:
+		return "2006-01"
+	case TimeFormat_yymmdd_Line:
+	return "2006-01-02"
+	case TimeFormat_yymmddhhmm_Line:
+		return "2006-01-02 15:04"
+	case TimeFormat_yymm_Chinese:
+	return "2006年01月"
+	case TimeFormat_yymmdd_Chinese:
+		return "2006年01月02日"
+	case TimeFormat_yymmddhhmm_Chinese:
+	return "2006年01月02日 15点04分"
+	case TimeFormat_Chinese:
+		return "2006年01月02日 15时04分05秒"
+	case TimeFormate_yearStr:
+		return "2006"
+	case TimeFormate_monthStr:
+		return "200601"
+	case TimeFormate_dayStr:
+		return "20060102"
+	case TimeFormate_hourStr:
+	return "2006010215"
+	case TimeFormate_minuteStr:
+		return "200601021504"
+	case TimeFormate_secondStr:
+		return "20060102150405"
+	}
+	return "2006-01-02 15:04:05"
+}
+
 func Now() *time.Time {
 	t := time.Now()
 	return &t

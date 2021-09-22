@@ -215,11 +215,10 @@ func GenerateTbl(set Set) {
 						}
 					} else if tag == "created" {
 						columnType = "datetime"
-						if columnDefault == "" {
-							columnDefault = "CURRENT_TIMESTAMP"
-						}
+						columnDefault = "CURRENT_TIMESTAMP"
 					} else if tag == "updated" {
 						columnType = "datetime"
+						columnDefault = "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
 					} else if tag == "datetime" {
 						columnType = "datetime"
 					} else if tag == "oss" || tag == "img" {

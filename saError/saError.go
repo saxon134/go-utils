@@ -40,6 +40,29 @@ func NewError(err interface{}) error {
 		return *sae
 	} else if ev, ok := err.(error); ok {
 		e.Msg = ev.Error()
+		e.Code = SensitiveErrorCode
+	}
+	return e
+}
+
+// err只接收字符串和error类型
+func NewSensitiveError(err interface{}) error {
+	if err == nil {
+		return nil
+	}
+
+	var e = Error{Code: SensitiveErrorCode, Msg: "", Caller: ""}
+	if s, ok := err.(string); ok {
+		e.Msg = s
+	} else if sae, ok := err.(Error); ok {
+		e = sae
+		e.Code = SensitiveErrorCode
+	} else if sae, ok := err.(*Error); ok {
+		e= *sae
+		e.Code = SensitiveErrorCode
+	} else if ev, ok := err.(error); ok {
+		e.Msg = ev.Error()
+		e.Code = SensitiveErrorCode
 	}
 	return e
 }
