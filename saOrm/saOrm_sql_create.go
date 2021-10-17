@@ -19,14 +19,16 @@ type Set struct {
 	DeleteImgRootFun string
 }
 
-func GenerateTbl(set Set) {
+func CreateTbl(obj interface{}) {
 	//默认值处理
+	var set Set
 	{
 		set.Options = saHit.Str(set.Options == "", "tbl", set.Options)
 		set.DB = saHit.Str(set.DB == "", "common.DB", set.DB)
 		set.PK = saHit.Str(set.PK == "", "Id", set.PK)
 		set.AddImgRootFun = saHit.Str(set.AddImgRootFun == "", "saImg.AddDefaultUriRoot", set.AddImgRootFun)
 		set.DeleteImgRootFun = saHit.Str(set.DeleteImgRootFun == "", "saImg.DeleteUriRoot", set.DeleteImgRootFun)
+		set.Obj = obj
 	}
 
 	//反射，判断输入类型是否有误
@@ -54,8 +56,6 @@ func GenerateTbl(set Set) {
 		snake string
 		tags  []string
 	}
-	hasFromDB := true
-	hasToDB := true
 
 	//获取结构体基本属性数据
 	{
@@ -113,6 +113,11 @@ func GenerateTbl(set Set) {
 				if columns[i].snake == "base_model" {
 					createSqlTxt += "  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n" +
 						"  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n"
+					continue
+				} else if columns[i].snake == "base_model_with_delete" {
+					createSqlTxt += "  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n" +
+						"  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n" +
+						"  `deleted_at` datetime DEFAULT NULL,\n"
 					continue
 				}
 
@@ -370,51 +375,6 @@ func GenerateTbl(set Set) {
 			createSqlTxt += "\n) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;\n"
 			fmt.Println("-- 建表参考语句：")
 			fmt.Println(createSqlTxt)
-		}
-
-		//生成tbl sql文件
-		if false {
-			//todo 换成网络地址
-			tpl_f, err := os.OpenFile("/Users/jiang/go.yf/go-utils/saGen/template/tbl_sql.tpl", os.O_RDONLY, 0600)
-			if err != nil {
-				fmt.Println(err.Error())
-				return
-			}
-
-			b, _ := ioutil.ReadAll(tpl_f)
-			_ = tpl_f.Close()
-			tplStr := string(b)
-			tplStr = strings.Replace(tplStr, "{{CreateSql}}", createSqlTxt, 1)
-			tplStr = strings.Replace(tplStr, "{{Package}}", pkgName, 1)
-			tplStr = strings.Replace(tplStr, "{{Model}}", structName, -1)
-			tplStr = strings.Replace(tplStr, "{{TblName}}", tblName, -1)
-
-			if hasFromDB {
-				fromDbSqlTxt += `
-	m.FromDB()
-				`
-			}
-			if hasToDB {
-				toDbSqlTxt += `
-	if err = m.ToDB(); err != nil {
-		return
-	}
-				`
-			}
-
-			tplStr = strings.Replace(tplStr, "{{FromDBSql}}", fromDbSqlTxt, -1)
-			tplStr = strings.Replace(tplStr, "{{ToDBSql}}", toDbSqlTxt, -1)
-
-			f_n := "./models/" + saData.SnakeStr(pkgName) + "/" + saData.CamelStr(strings.TrimPrefix(structName, "Tbl")) + "_sql.go"
-			if err = createPath(f_n); err != nil {
-				fmt.Println(err.Error())
-				return
-			}
-
-			if err = ioutil.WriteFile(f_n, []byte(tplStr), 0644); err != nil {
-				fmt.Println(err.Error())
-				return
-			}
 		}
 	}
 

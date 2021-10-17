@@ -6,7 +6,7 @@ type localLog struct {
 }
 
 func (m *localLog) Log(a ...interface{}) {
-	fmt.Println(a)
+	fmt.Println(a...)
 }
 
 func initLocalLog() *localLog {

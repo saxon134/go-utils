@@ -4,8 +4,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saImg"
-	"reflect"
 	"gorm.io/gorm"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -321,6 +321,6 @@ func ToDB(obj interface{}) error {
 	return nil
 }
 
-func (m *DB)Insert(obj interface{}) (tx *gorm.DB) {
+func (m *DB) Insert(obj interface{}) (tx *gorm.DB) {
 	return m.Create(obj)
 }

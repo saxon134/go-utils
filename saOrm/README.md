@@ -23,9 +23,9 @@
 
   type:"varchar(32);created;comment:状态 2-正常 1-取消了;default:12;phone;required;in(ms,md);comment:字段;<=23;phone;required;default;err:缺少参数"
 
-- Gen：
+- GenTblSql：
 
-    代码生成器，可以生成controller、serve、http参数校验、orm数据校验函数、管理后台页面、接口文档
+    生成数据库操作SQL，如果表存在则生成建表语句；如果表存在，则生成修改表结构语句
 
 - DB：
 

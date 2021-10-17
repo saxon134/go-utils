@@ -8,6 +8,7 @@ require (
 	github.com/RichardKnop/machinery v1.10.0
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
 	github.com/astaxie/beego v1.12.3
+	github.com/beego/beego/v2 v2.0.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/garyburd/redigo v1.6.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect

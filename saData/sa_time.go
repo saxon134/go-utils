@@ -20,6 +20,7 @@ const (
 	TimeFormat_yymm_Line       //"2006-01"
 	TimeFormat_yymmdd_Line     //"2006-01-02"
 	TimeFormat_yymmddhhmm_Line //"2006-01-02 15:04"
+	TimeFormat_yymmddhhmmss_Line //"2006-01-02 15:04:05"
 
 	TimeFormat_yymm_Chinese       //"2006年01月"
 	TimeFormat_yymmdd_Chinese     //"2006年01月02日"
@@ -49,13 +50,15 @@ func (m SaTimeFormat) Format() string {
 	case TimeFormat_yymmddhhmm_Dotted:
 		return "2006.01.02 15:04"
 	case TimeFormat_Dotted:
-	return "2006.01.02 15:04:05"
+		return "2006.01.02 15:04:05"
 	case TimeFormat_yymm_Line:
 		return "2006-01"
 	case TimeFormat_yymmdd_Line:
-	return "2006-01-02"
+		return "2006-01-02"
 	case TimeFormat_yymmddhhmm_Line:
 		return "2006-01-02 15:04"
+	case TimeFormat_yymmddhhmmss_Line:
+		return "2006-01-02 15:04:05"
 	case TimeFormat_yymm_Chinese:
 	return "2006年01月"
 	case TimeFormat_yymmdd_Chinese:
@@ -137,7 +140,8 @@ func TimeStr(t time.Time, format SaTimeFormat) string {
 		s = yS + "-" + mS + "-" + dS
 	case TimeFormat_yymmddhhmm_Line:
 		s = yS + "-" + mS + "-" + dS + " " + hourS + ":" + minuteS
-
+	case TimeFormat_yymmddhhmmss_Line:
+		s = yS + "-" + mS + "-" + dS + " " + hourS + ":" + minuteS + ":" + secondS
 	case TimeFormat_yymm_Chinese:
 		s = yS + "年" + mS + "月"
 	case TimeFormat_yymmdd_Chinese:

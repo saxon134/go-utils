@@ -191,6 +191,29 @@ func (m Price) Value() (driver.Value, error) {
 	return saData.Itos(i), nil
 }
 
+
+/* LiPrice
+数据库存储格式：整数，厘为单位 **/
+type LiPrice float32
+
+func (m *LiPrice) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	i, err := saData.ToInt(value)
+	if err == nil {
+		*m = LiPrice(saData.Fen2Yuan(i, saData.RoundTypeDefault))
+	}
+	return err
+}
+
+func (m LiPrice) Value() (driver.Value, error) {
+	i := saData.Yuan2Fen(float32(m), saData.RoundTypeDefault)
+	return saData.Itos(i), nil
+}
+
+
 /* Time
 数据库存储格式：datetime **/
 type Time struct {
