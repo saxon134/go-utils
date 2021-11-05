@@ -1,6 +1,8 @@
 package saOrm
 
-import "time"
+import (
+	"time"
+)
 
 type BaseModel struct {
 	Id        int64      `json:"id"`
@@ -8,7 +10,7 @@ type BaseModel struct {
 }
 
 type BaseModelWithDelete struct {
-	Id        int64      `json:"id"`
-	CreatedAt *time.Time `orm:"datetime;created" json:"createdAt"`
+	BaseModel
 	DeletedAt *time.Time `orm:"datetime;default:null" json:"deletedAt"`
 }
+

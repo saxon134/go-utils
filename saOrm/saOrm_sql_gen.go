@@ -62,7 +62,7 @@ func GenTblSql(db *DB, values ...interface{}) {
 		db.ScanRows(rows, &colums)
 
 		//创建表
-		if len(colums) == 0 {
+		if len(colums) <= 2 {
 			CreateTbl(obj)
 		} else
 		//修改表

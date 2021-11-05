@@ -82,11 +82,9 @@ func ToMap(data interface{}) (map[string]interface{}, error) {
 		keyAry := v.MapKeys()
 		cnt := len(keyAry)
 		ret := make(map[string]interface{}, cnt)
-		for i := 0; i < cnt; i++ {
-			key := keyAry[i].String()
-			if key != "" {
-				ret[key] = v.MapIndex(keyAry[i]).Interface()
-			}
+		for _,key:=range keyAry {
+			key_s:=fmt.Sprint(key.Convert(v.Type().Key()))
+			ret[key_s] = v.MapIndex(key).Interface()
 		}
 		return ret, nil
 	} else if vKind == reflect.Struct || vKind == reflect.Ptr || vKind == reflect.Interface {

@@ -295,14 +295,14 @@ func AlterTbl(db *DB, tblName string, obj interface{}) {
 			}
 
 			if existed == nil || existed.ColumnName == "" {
-				alterSql += fmt.Sprintf("alter table %s add column %s %s", tblName, m.ColumnName, m.ColumnType)
+				alterSql += fmt.Sprintf("alter table %s add column `%s` %s", tblName, m.ColumnName, m.ColumnType)
 				if m.ColumnDefault != "" {
 					alterSql += " default " + m.ColumnDefault
 				}
 				if m.ColumnComment != "" {
-					alterSql += " comment:'" + m.ColumnComment + "'"
+					alterSql += " comment '" + m.ColumnComment + "'"
 				}
-				alterSql += ";\n"
+				alterSql += ", ALGORITHM=INPLACE, LOCK=NONE;\n"
 			} else if m.ColumnName != "id" && m.ColumnName != "created_at" && m.ColumnName != "updated_at" && m.ColumnName != "deleted_at" {
 				sql := ""
 				m.ColumnDefault = saHit.Str(m.ColumnDefault == "''", "", m.ColumnDefault)
@@ -310,10 +310,7 @@ func AlterTbl(db *DB, tblName string, obj interface{}) {
 					m.ColumnComment != existed.ColumnComment ||
 					m.IsNullable != existed.IsNullable {
 
-					fmt.Println(existed.ColumnType, existed.ColumnComment, existed.IsNullable)
-					fmt.Println(m.ColumnType, m.ColumnComment, m.IsNullable)
-
-					sql = fmt.Sprintf("alter table %s modify column %s %s", tblName, m.ColumnName, m.ColumnType)
+					sql = fmt.Sprintf("alter table %s modify column `%s` %s", tblName, m.ColumnName, m.ColumnType)
 					if m.IsNullable == "false" {
 						if strings.Contains(sql, "not null") == false {
 							sql += " not null"
@@ -323,7 +320,7 @@ func AlterTbl(db *DB, tblName string, obj interface{}) {
 						sql += " default " + m.ColumnDefault
 					}
 					if m.ColumnComment != "" {
-						sql += " comment:'" + m.ColumnComment + "'"
+						sql += " comment '" + m.ColumnComment + "'"
 					}
 					sql += ";\n"
 					alterSql += sql
@@ -333,6 +330,25 @@ func AlterTbl(db *DB, tblName string, obj interface{}) {
 		if alterSql != "" {
 			fmt.Println("-- 表结构变更：" + tblName)
 			fmt.Println(alterSql)
+		}
+
+		//查找已删除字段
+		var delColumns = ""
+		for _, tbl := range tblColumns {
+			existed := false
+			for _, v := range modelColumns {
+				if v.ColumnName == tbl.ColumnName {
+					existed = true
+					break
+				}
+			}
+			if existed == false && tbl.ColumnName != "" {
+				delColumns += tbl.ColumnName + ","
+			}
+		}
+		if len(delColumns) > 0 {
+			fmt.Println("-- 表结构已删除字段（注意：也有可能是修改了字段名称，请自行判断）")
+			fmt.Println("-- ", tblName, ":", delColumns, "\n")
 		}
 	}
 }

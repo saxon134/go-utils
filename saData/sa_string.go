@@ -262,3 +262,51 @@ func ConnPath(r string, path string) (full string) {
 
 	return full
 }
+
+//根据后缀判断是否是图片
+func IsImg(url string) bool {
+	if url == "" {
+		return false
+	}
+
+	var ary = strings.Split(url, "?")
+	if len(ary) == 0 {
+		return false
+	}
+
+	ary = strings.Split(ary[0], ".")
+	if len(ary) == 0 {
+		return false
+	}
+
+	suffix := strings.ToLower(ary[len(ary)-1])
+	switch suffix {
+	case "png", "jpg", "jpeg", "bmp", "gif", "tif":
+		return true
+	}
+	return false
+}
+
+//根据后缀判断是否是视频
+func IsVideo(url string) bool {
+	if url == "" {
+		return false
+	}
+
+	var ary = strings.Split(url, "?")
+	if len(ary) == 0 {
+		return false
+	}
+
+	ary = strings.Split(ary[0], ".")
+	if len(ary) == 0 {
+		return false
+	}
+
+	suffix := strings.ToLower(ary[len(ary)-1])
+	switch suffix {
+	case "mov", "mp4", "3gp", "flv", "rm", "rmvb", "avi", "mpg", "mlv", "mpe", "mpeg", "dat":
+		return true
+	}
+	return false
+}

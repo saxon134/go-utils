@@ -176,6 +176,45 @@ func TimeStr(t time.Time, format SaTimeFormat) string {
 	return s
 }
 
+func AdaptToTime(s string) time.Time {
+	if s==""{
+		return time.Time{}
+	}
+
+	switch len(s) {
+	case 0:
+		return time.Time{}
+	case 20: //2006-01-02T15:04:05Z
+		var t = StrToTime(TimeFormat_sys_default, s)
+		if t.IsZero() ==false {
+			return t
+		}
+	case 19: //2006-01-02 15:04:05
+		var t = StrToTime(TimeFormat_Default, s)
+		if t.IsZero() ==false {
+			return t
+		}
+	case 16: //2006-01-02 15:04
+		var t = StrToTime(TimeFormat_yymmddhhmm_Line, s)
+		if t.IsZero() ==false {
+			return t
+		}
+	case 10: //2006-01-02
+		var t = StrToTime(TimeFormat_yymmdd_Line, s)
+		if t.IsZero() ==false {
+			return t
+		}
+	case 8: //20060102
+		var t = StrToTime(TimeFormate_dayStr, s)
+		if t.IsZero() ==false {
+			return t
+		}
+	default:
+		return time.Time{}
+	}
+	return time.Time{}
+}
+
 func StrToTime(format SaTimeFormat, s string) time.Time {
 	formatStr := "2006-01-02 15:04:05"
 	switch format {

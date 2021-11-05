@@ -8,8 +8,9 @@ require (
 	github.com/RichardKnop/machinery v1.10.0
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
 	github.com/astaxie/beego v1.12.3
-	github.com/beego/beego/v2 v2.0.1 // indirect
+	github.com/beego/beego/v2 v2.0.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/garyburd/redigo v1.6.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
@@ -21,5 +22,6 @@ require (
 	github.com/shopspring/decimal v1.2.0
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
-	gorm.io/gorm v1.20.12
+	gorm.io/driver/mysql v1.1.2
+	gorm.io/gorm v1.21.12
 )

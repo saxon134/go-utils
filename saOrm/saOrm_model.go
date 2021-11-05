@@ -192,6 +192,27 @@ func (m Price) Value() (driver.Value, error) {
 }
 
 
+/* Weight
+数据库存储格式：整数，克为单位 **/
+type Weight float32
+
+func (m *Weight) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	i, err := saData.ToInt(value)
+	if err == nil {
+		*m = Weight(i/1000)
+	}
+	return err
+}
+
+func (m Weight) Value() (driver.Value, error) {
+	i := m * 1000
+	return saData.Itos(int(i)), nil
+}
+
 /* LiPrice
 数据库存储格式：整数，厘为单位 **/
 type LiPrice float32
@@ -250,6 +271,10 @@ func (m *Time) SetNow() {
 	} else {
 		m.Time = now
 	}
+}
+
+func Now() Time{
+	return Time{time.Now()}
 }
 
 func (m *Time) IsZero() bool {
