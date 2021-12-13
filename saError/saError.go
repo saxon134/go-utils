@@ -45,6 +45,13 @@ func NewError(err interface{}) error {
 	return e
 }
 
+func NewBeDisplayedError(err string)  error{
+	return Error{
+		Code:   BeDisplayedErrorCode,
+		Msg:    err,
+	}
+}
+
 // err只接收字符串和error类型
 func NewSensitiveError(err interface{}) error {
 	if err == nil {

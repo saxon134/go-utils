@@ -17,9 +17,9 @@ const (
 	TimeFormat_yymmddhhmm_Dotted //"2006.01.02 15:04"
 	TimeFormat_Dotted            //"2006.01.02 15:04:05"
 
-	TimeFormat_yymm_Line       //"2006-01"
-	TimeFormat_yymmdd_Line     //"2006-01-02"
-	TimeFormat_yymmddhhmm_Line //"2006-01-02 15:04"
+	TimeFormat_yymm_Line         //"2006-01"
+	TimeFormat_yymmdd_Line       //"2006-01-02"
+	TimeFormat_yymmddhhmm_Line   //"2006-01-02 15:04"
 	TimeFormat_yymmddhhmmss_Line //"2006-01-02 15:04:05"
 
 	TimeFormat_yymm_Chinese       //"2006年01月"
@@ -60,11 +60,11 @@ func (m SaTimeFormat) Format() string {
 	case TimeFormat_yymmddhhmmss_Line:
 		return "2006-01-02 15:04:05"
 	case TimeFormat_yymm_Chinese:
-	return "2006年01月"
+		return "2006年01月"
 	case TimeFormat_yymmdd_Chinese:
 		return "2006年01月02日"
 	case TimeFormat_yymmddhhmm_Chinese:
-	return "2006年01月02日 15点04分"
+		return "2006年01月02日 15点04分"
 	case TimeFormat_Chinese:
 		return "2006年01月02日 15时04分05秒"
 	case TimeFormate_yearStr:
@@ -74,7 +74,7 @@ func (m SaTimeFormat) Format() string {
 	case TimeFormate_dayStr:
 		return "20060102"
 	case TimeFormate_hourStr:
-	return "2006010215"
+		return "2006010215"
 	case TimeFormate_minuteStr:
 		return "200601021504"
 	case TimeFormate_secondStr:
@@ -89,6 +89,10 @@ func Now() *time.Time {
 }
 
 func TimeStr(t time.Time, format SaTimeFormat) string {
+	if t.IsZero() {
+		return ""
+	}
+
 	s := ""
 	y := t.Year()
 	m := t.Month()
@@ -177,7 +181,7 @@ func TimeStr(t time.Time, format SaTimeFormat) string {
 }
 
 func AdaptToTime(s string) time.Time {
-	if s==""{
+	if s == "" {
 		return time.Time{}
 	}
 
@@ -186,27 +190,27 @@ func AdaptToTime(s string) time.Time {
 		return time.Time{}
 	case 20: //2006-01-02T15:04:05Z
 		var t = StrToTime(TimeFormat_sys_default, s)
-		if t.IsZero() ==false {
+		if t.IsZero() == false {
 			return t
 		}
 	case 19: //2006-01-02 15:04:05
 		var t = StrToTime(TimeFormat_Default, s)
-		if t.IsZero() ==false {
+		if t.IsZero() == false {
 			return t
 		}
 	case 16: //2006-01-02 15:04
 		var t = StrToTime(TimeFormat_yymmddhhmm_Line, s)
-		if t.IsZero() ==false {
+		if t.IsZero() == false {
 			return t
 		}
 	case 10: //2006-01-02
 		var t = StrToTime(TimeFormat_yymmdd_Line, s)
-		if t.IsZero() ==false {
+		if t.IsZero() == false {
 			return t
 		}
 	case 8: //20060102
 		var t = StrToTime(TimeFormate_dayStr, s)
-		if t.IsZero() ==false {
+		if t.IsZero() == false {
 			return t
 		}
 	default:

@@ -177,6 +177,10 @@ func CreateTbl(obj interface{}) {
 						tag = strings.TrimPrefix(tag, "int")
 						if tag == "8" {
 							columnType = "tinyint unsigned"
+							if columns[i].snake == "status" || columns[i].snake == "type" {
+								columnType = "tinyint"
+								columnDefault = saHit.Str(columnDefault == "", "-1", columnDefault)
+							}
 						} else if tag == "64" {
 							columnType = "bigint unsigned"
 						} else {
@@ -187,7 +191,7 @@ func CreateTbl(obj interface{}) {
 						columnType = tag
 					} else if tag == "tinyint" {
 						columnDefault = "0"
-						columnType = "tinyint unsigned"
+						columnType = "tinyint"
 					} else if strings.HasPrefix(tag, "in(") {
 						if strings.Contains(tag, ":") {
 							tag = strings.TrimPrefix(tag, "in(")

@@ -15,7 +15,7 @@ import (
 
 var _manager *BrokerManager
 
-//host: redis://127.0.0.1:6379  queue: tioBroker  concurrency:并发数
+//host: redis://pass@127.0.0.1:6379  queue: tioBroker  concurrency:并发数
 func Init(host string, queue string, concurrency int) *BrokerManager {
 	if host == "" || queue == "" {
 		return nil

@@ -1,6 +1,7 @@
 package saImg
 
 import (
+	"github.com/saxon134/go-utils/saData"
 	"net/url"
 	"strings"
 )
@@ -74,4 +75,13 @@ func DeleteUriRoot(s string) string {
 		}
 	}
 	return s
+}
+
+func ConnectUri(host string, url string) string {
+	if strings.HasPrefix(host, "http") &&
+		url != "" &&
+		strings.HasPrefix(url, "http") == false {
+		url = saData.ConnPath(host, url)
+	}
+	return url
 }
