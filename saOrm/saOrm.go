@@ -23,7 +23,9 @@ func Open(dsn string) *DB {
 
 	var db *gorm.DB
 	var err error
-	db, err = gorm.Open(mysql.New(mysqlConfig), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
+	db, err = gorm.Open(mysql.New(mysqlConfig), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 	if err != nil {
 		panic("MySQL启动异常" + err.Error())
 	}

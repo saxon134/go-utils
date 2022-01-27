@@ -186,7 +186,7 @@ func (m *aliOss) GetTxt(uri string) (res string, err error) {
 	return string(v), nil
 }
 
-func (m *aliOss) UploadTxt(destination string, v string) (url string, err error) {
+func (m *aliOss) UploadTxt(destination string, v string) (path string, err error) {
 	if destination == "" || v == "" {
 		return "", errors.New("缺参数")
 	}

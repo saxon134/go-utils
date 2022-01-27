@@ -24,6 +24,11 @@ func ToBytes(data interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func String(data interface{}) string {
+	s, _ := ToStr(data)
+	return s
+}
+
 func ToStr(data interface{}) (string, error) {
 	if data == nil {
 		return "", nil
@@ -82,8 +87,8 @@ func ToMap(data interface{}) (map[string]interface{}, error) {
 		keyAry := v.MapKeys()
 		cnt := len(keyAry)
 		ret := make(map[string]interface{}, cnt)
-		for _,key:=range keyAry {
-			key_s:=fmt.Sprint(key.Convert(v.Type().Key()))
+		for _, key := range keyAry {
+			key_s := fmt.Sprint(key.Convert(v.Type().Key()))
 			ret[key_s] = v.MapIndex(key).Interface()
 		}
 		return ret, nil
@@ -542,5 +547,14 @@ func StrToModel(str string, m interface{}) error {
 	}()
 
 	err := json.Unmarshal(StrToBytes(str), m)
+	return err
+}
+
+func BytesToModel(b []byte, m interface{}) error {
+	defer func() {
+		_ = recover()
+	}()
+
+	err := json.Unmarshal(b, m)
 	return err
 }

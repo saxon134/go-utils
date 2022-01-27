@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-//x = true 十六进制小写格式
-func Md5(s string, x bool) string {
+//lowercase = true 小写格式
+func Md5(s string, lowercase bool) string {
 	h := md5.New()
 	if _, err := io.WriteString(h, s); err == nil {
-		if x {
+		if lowercase {
 			s = fmt.Sprintf("%x", h.Sum(nil))
 		} else {
 			s = string(h.Sum(nil))
@@ -23,10 +23,11 @@ func Md5(s string, x bool) string {
 	return ""
 }
 
-func Sha256(s string, secret string, x bool) string {
+//lowercase = true 小写格式
+func Sha256(s string, secret string, lowercase bool) string {
 	h := hmac.New(sha256.New, []byte(secret))
 	if _, err := io.WriteString(h, s); err == nil {
-		if x {
+		if lowercase {
 			return fmt.Sprintf("%x", h.Sum(nil))
 		} else {
 			return string(h.Sum(nil))

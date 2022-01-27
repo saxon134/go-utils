@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saImg"
-	"github.com/saxon134/go-utils/saOss"
 	"strings"
 	"time"
 )
@@ -54,7 +53,7 @@ func (m StringAry) Value() (driver.Value, error) {
 	return "", err
 }
 
-func (m StringAry) IsSame(n StringAry) bool {
+func (m StringAry) IsSameImages(n StringAry) bool {
 	if len(m) != len(n) {
 		return false
 	}
@@ -144,92 +143,8 @@ func (m CompressIds) Value() (driver.Value, error) {
 	return "", nil
 }
 
-/* RichTxt
-数据库存储格式：json或者内容字符，当内容小于250时，直接存入数据库；否则存入OSS **/
-type RichTxt struct {
-	Md5     string `json:"-"`
-	Path    string `json:"-"`
-	Content string `json:"content,omitempty"` //该字段不一定有值，只有当内容小于250的时候，才会有值
-	//Type int 后续扩展类型的时候可以用
-}
-
-/*
-全部为空，Md5&Content为空
-未上传到OSS，Md5&Content有值，Path为空
-上传到OSS，Md5&Path有值，Content为空，需要获取content，需要调用Txt接口
-*/
-func (m *RichTxt) Scan(value interface{}) error {
-	if value == nil {
-		return nil
-	}
-
-	bAry, ok := value.([]byte)
-	if ok && len(bAry) > 0 {
-		str := saData.BytesToStr(bAry)
-		err := saData.StrToModel(str, m)
-		if err == nil {
-			return nil
-		}
-
-		m.Content = str
-		m.Md5 = saData.Md5(str, true)
-		m.Path = ""
-		return nil
-	}
-
-	return nil
-}
-
-func (m RichTxt) Value() (driver.Value, error) {
-	if len(m.Content) <= 250 {
-		return m.Content, nil
-	}
-
-	if m.Path != "" {
-		m.Path = saImg.DeleteUriRoot(m.Path)
-		m.Md5 = saData.Md5(m.Content, true)
-		return saData.ToStr(m)
-	}
-	return "", nil
-}
-
-func (m *RichTxt) Upload(v *RichTxt, oss saOss.SaOss, txt string, path string) (err error) {
-	if v == nil || txt == "" {
-		return
-	}
-	if len(txt) < 200 {
-		v.Path = ""
-		v.Content = txt
-	} else {
-		v.Path, err = oss.UploadTxt(path, txt)
-		if err != nil {
-			return err
-		}
-	}
-	m.Md5 = saData.Md5(txt, true)
-	return nil
-}
-
-func (m *RichTxt) Txt(oss saOss.SaOss) (txt string, err error) {
-	if m == nil {
-		return "", nil
-	}
-	if m.Path != "" {
-		txt, err = oss.GetTxt(m.Path)
-		if len(txt) > 0 && len(m.Md5) == 0 {
-			m.Md5 = saData.Md5(txt, true)
-		}
-		return
-	}
-
-	if len(m.Content) > 0 && len(m.Md5) == 0 {
-		m.Md5 = saData.Md5(m.Content, true)
-	}
-	return m.Content, nil
-}
-
 /* Price
-数据库存储格式：整数，分为单位 **/
+数据库存储格式：整数，分为单位，故不存在四舍五入一说 **/
 type Price float32
 
 func (m *Price) Scan(value interface{}) error {
