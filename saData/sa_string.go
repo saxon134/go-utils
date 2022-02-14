@@ -103,6 +103,36 @@ func TrimSuffixSpace(s string) string {
 	return string(s)
 }
 
+//去除 ' ' '\n' '\r' '\t' 前缀和后缀
+func TrimPreSuffixSpace(s string) string {
+	s = TrimPrefixSpace(s)
+	s = TrimSuffixSpace(s)
+	return string(s)
+}
+
+//去除所有 ' ' '\n' '\r' '\t'
+func TrimSpace(s string) string {
+	if s != "" {
+		var i = 0
+		for {
+			var c = string(s[i : i + 1])
+			if c == " " || c == "\n" || c == "\t" || c == "\r" {
+				if i ==0 {
+					s = s[i+1:]
+				} else {
+					s = s[0:i] + s[i+1:]
+				}
+			} else {
+				i++
+			}
+			if i >= len(s) {
+				break
+			}
+		}
+	}
+	return string(s)
+}
+
 func GetSuffix(s string) string {
 	if s == "" {
 		return ""
