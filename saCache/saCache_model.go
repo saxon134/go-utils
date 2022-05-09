@@ -2,6 +2,7 @@ package saCache
 
 type cache struct {
 	maxCnt   int
+	totalCnt int
 	lastTime int64 //10位时间戳
 	ary      []cacheItem
 }

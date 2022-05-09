@@ -48,7 +48,7 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 	}
 
 	now := time.Now().Unix()
-	retentionSecond := 0
+	var retentionSecond int64
 	if mode != "" {
 		var isMinute = true
 		if strings.HasSuffix(mode, "s") {
@@ -68,6 +68,7 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 	if cacheKind == nil {
 		cacheKind = new(cache)
 	}
+	cacheKind.totalCnt++
 
 	var c *cacheItem = nil
 	for _, v := range cacheKind.ary {
@@ -107,20 +108,28 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 			cacheKind.ary = append(cacheKind.ary, *c)
 		} else {
 			//取次数最小的，替换掉
-			if mode == "" || mode == "r" {
-				var min *cacheItem
-				var idx = 0
-				for i, v := range cacheKind.ary {
-					if min == nil || min.cnt == 0 || min.cnt > v.cnt {
-						min = &v
-						idx = i
+			var min1 *cacheItem
+			var min2 *cacheItem
+			var idx1 = 0
+			var idx2 = 0
+			for i, v := range cacheKind.ary {
+				if v.lastTime+retentionSecond < now {
+					if min1 == nil || min1.cnt == 0 || min1.cnt > v.cnt {
+						min1 = &v
+						idx1 = i
+					}
+				} else {
+					if min2 == nil || min2.cnt == 0 || min2.cnt > v.cnt {
+						min2 = &v
+						idx2 = i
 					}
 				}
-				if min != nil && min.cnt >= 0 {
-					cacheKind.ary = append(cacheKind.ary[:idx], cacheKind.ary[idx+1:]...)
-				}
-			} else {
+			}
 
+			if min1 != nil && min1.cnt > 0 {
+				cacheKind.ary = append(cacheKind.ary[:idx1], cacheKind.ary[idx1+1:]...)
+			} else if min2 != nil && min2.cnt > 0 {
+				cacheKind.ary = append(cacheKind.ary[:idx2], cacheKind.ary[idx2+1:]...)
 			}
 		}
 
@@ -128,7 +137,20 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 		if len(_cache) < maxCountForKind {
 			_cache[key] = cacheKind
 		} else {
+			var min *cache
+			var minK string
+			for k, v := range _cache {
+				if v.lastTime+retentionSecond < now {
+					if min == nil || min.totalCnt == 0 || min.totalCnt > v.totalCnt {
+						min = v
+						minK = k
+					}
+				}
+			}
 
+			if min != nil && min.totalCnt > 0 {
+				_cache[minK] = cacheKind
+			}
 		}
 		return v, nil
 	}
