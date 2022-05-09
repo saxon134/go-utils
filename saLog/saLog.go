@@ -87,7 +87,16 @@ func SetLogsPerSecond(cnt int) {
 }
 
 func Log(a ...interface{}) {
-	Err(a...)
+	if log == nil {
+		return
+	}
+
+	//输出日志
+	var s = ""
+	for _, v := range a {
+		s += fmt.Sprint(v) + " "
+	}
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " L " + s
 }
 
 func Err(a ...interface{}) {
@@ -115,7 +124,7 @@ func Err(a ...interface{}) {
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " E\n" + s
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " E " + s
 }
 
 func Warn(a ...interface{}) {
@@ -147,7 +156,7 @@ func Warn(a ...interface{}) {
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " W\n" + s
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " W " + s
 	if len(logChan) >= 5 {
 		if logLevel == InfoLevel {
 			logLevel = WarnLevel
@@ -182,7 +191,7 @@ func Info(a ...interface{}) {
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " W\n" + s
+	logChan <- saData.TimeStr(time.Now(), saData.TimeFormat_Default) + " I " + s
 	if len(logChan) >= 5 {
 		if logLevel == InfoLevel {
 			logLevel = WarnLevel

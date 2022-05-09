@@ -1,9 +1,16 @@
 package saCache
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestCache(t *testing.T) {
-	Get("appInfo", "1", func() (interface{}, error) {
+	v, err := MGetWithFunc("appInfo", "1", func(id string) (interface{}, error) {
 		return "测试应用", nil
 	})
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(v)
 }

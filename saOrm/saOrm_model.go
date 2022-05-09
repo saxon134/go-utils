@@ -265,8 +265,8 @@ func (m *Time) SetNow() {
 	}
 }
 
-func Now() Time {
-	return Time{time.Now()}
+func Now() *Time {
+	return &Time{time.Now()}
 }
 
 func (m *Time) IsZero() bool {

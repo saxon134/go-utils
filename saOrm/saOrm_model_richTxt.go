@@ -48,10 +48,6 @@ func (m *RichTxt) Scan(value interface{}) error {
 }
 
 func (m RichTxt) Value() (driver.Value, error) {
-	if m.Type == RichTxtTypeNull {
-		return nil, errors.New("RichTxt缺少类型")
-	}
-
 	str, _ := saData.ToStr(m)
 	if saData.StrLen(str) > 250 {
 		return nil, errors.New("RichTxt长度超过限制")

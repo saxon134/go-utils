@@ -1,9 +1,16 @@
+/**
+一般建议：
+各项目自行定义code值及对应的返回给前端的错误信息
+业务代码内不固定错误文案
+Msg是错误信息，只打印到日志
+*/
 package saError
 
 import (
 	"fmt"
 	"gorm.io/gorm"
 	"runtime"
+	"strings"
 )
 
 type Error struct {
@@ -45,10 +52,10 @@ func NewError(err interface{}) error {
 	return e
 }
 
-func NewBeDisplayedError(err string)  error{
+func NewBeDisplayedError(err string) error {
 	return Error{
-		Code:   BeDisplayedErrorCode,
-		Msg:    err,
+		Code: BeDisplayedErrorCode,
+		Msg:  err,
 	}
 }
 
@@ -65,7 +72,7 @@ func NewSensitiveError(err interface{}) error {
 		e = sae
 		e.Code = SensitiveErrorCode
 	} else if sae, ok := err.(*Error); ok {
-		e= *sae
+		e = *sae
 		e.Code = SensitiveErrorCode
 	} else if ev, ok := err.(error); ok {
 		e.Msg = ev.Error()
@@ -170,7 +177,7 @@ func StackError(err interface{}, params ...interface{}) error {
 }
 
 func DbErr(err error) bool {
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && err != gorm.ErrRecordNotFound && strings.Contains(err.Error(), "no row") == false {
 		return true
 	}
 	return false

@@ -1,19 +1,28 @@
 package saCache
 
 import (
+	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saHit"
+	"strings"
 	"sync"
+	"time"
 )
 
 type CacheHandle func(id string) (interface{}, error)
 
-var _cache = make(map[string]*cache, 20)
+//最多保存的类型，超出会覆盖掉最早访问的存储项
+const maxCountForKind = 50
+
+//每个项目最多保存的数量，超出会按照参数mode规则去替换
+const maxCountForOneKind = 100
+
+var _cache = make(map[string]*cache, maxCountForKind)
 var _locker sync.RWMutex
 var _handle map[string]CacheHandle
 
-/**
-建议都提前调用该接口注册方法，注册后其他获取缓存接口行为才会一致
-否则获取缓存可能无法命中 */
+// RegisterHandle
+// 建议都提前调用该接口注册方法，注册后其他获取缓存接口行为才会一致
+// 否则获取缓存可能无法命中
 func RegisterHandle(key string, handle CacheHandle) {
 	if key == "" || handle == nil {
 		return
@@ -25,20 +34,43 @@ func RegisterHandle(key string, handle CacheHandle) {
 	_handle[key] = handle
 }
 
-/**
-该接口的handle不会自动注册的，因为各业务内handle可能都会有一点点差异*/
-func MGetWithFunc(key string, id string, handle CacheHandle) (value interface{}, err error) {
+// MGetWithFunc
+// 该接口的handle不会自动注册的，因为各业务内handle可能都会有一点点差异
+// mode
+//    r或者空 -替换使用频次最低的存储项，
+//             典型场景：缓存存在数据库的配置，减少数据库压力
+//    5m      -替换最后访问时间最早的那个，如果最早的那个在5m之内，则还是会替换访问次数最少的存储项
+//             5m支持范围：10s - 60m
+//             典型场景：IP限流
+func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value interface{}, err error) {
 	if key == "" {
 		return
 	}
 
-	cacheValue := _cache[key]
-	if cacheValue == nil {
-		cacheValue = new(cache)
+	now := time.Now().Unix()
+	retentionSecond := 0
+	if mode != "" {
+		var isMinute = true
+		if strings.HasSuffix(mode, "s") {
+			isMinute = false
+		}
+		t, _ := saData.ToInt(mode[:len(mode)-1])
+		if isMinute == false && t < 10 {
+			//最小10秒
+		} else if t > 0 && t <= 60 {
+			if isMinute {
+				retentionSecond += 60 * 60
+			}
+		}
+	}
+
+	cacheKind := _cache[key]
+	if cacheKind == nil {
+		cacheKind = new(cache)
 	}
 
 	var c *cacheItem = nil
-	for _, v := range cacheValue.ary {
+	for _, v := range cacheKind.ary {
 		if v.id == id {
 			c = &v
 			break
@@ -50,9 +82,10 @@ func MGetWithFunc(key string, id string, handle CacheHandle) (value interface{},
 		defer _locker.Unlock()
 
 		c.cnt++
-		if c.cnt > cacheValue.maxCnt {
-			cacheValue.maxCnt = c.cnt
+		if c.cnt > cacheKind.maxCnt {
+			cacheKind.maxCnt = c.cnt
 		}
+		c.lastTime = now
 		return c.v, nil
 	} else if handle != nil {
 		v, err := handle(id)
@@ -64,39 +97,47 @@ func MGetWithFunc(key string, id string, handle CacheHandle) (value interface{},
 		_locker.Lock()
 		defer _locker.Unlock()
 
-		c.cnt = saHit.Int(cacheValue.maxCnt > 1, cacheValue.maxCnt/2, 1)
+		c.cnt = saHit.Int(cacheKind.maxCnt > 1, cacheKind.maxCnt/2, 1)
 		c.v = v
 		c.id = id
-		if len(cacheValue.ary) < 100 {
-			cacheValue.ary = append(cacheValue.ary, *c)
+		c.lastTime = now
+
+		//每个类目最多保存的数量
+		if len(cacheKind.ary) < maxCountForOneKind {
+			cacheKind.ary = append(cacheKind.ary, *c)
 		} else {
 			//取次数最小的，替换掉
-			var min *cacheItem
-			var idx = 0
-			for i, v := range cacheValue.ary {
-				if min == nil || min.cnt == 0 || min.cnt > v.cnt {
-					min = &v
-					idx = i
+			if mode == "" || mode == "r" {
+				var min *cacheItem
+				var idx = 0
+				for i, v := range cacheKind.ary {
+					if min == nil || min.cnt == 0 || min.cnt > v.cnt {
+						min = &v
+						idx = i
+					}
 				}
-			}
-			if min != nil && min.cnt >= 0 {
-				cacheValue.ary = append(cacheValue.ary[:idx], cacheValue.ary[idx+1:]...)
+				if min != nil && min.cnt >= 0 {
+					cacheKind.ary = append(cacheKind.ary[:idx], cacheKind.ary[idx+1:]...)
+				}
+			} else {
+
 			}
 		}
 
 		//最多保存50类数据
-		if len(_cache) < 50 {
-			_cache[key] = cacheValue
+		if len(_cache) < maxCountForKind {
+			_cache[key] = cacheKind
+		} else {
+
 		}
 		return v, nil
 	}
 	return nil, nil
 }
 
-/**
-只有提前调用了RegisterHandle将方法注册进来后才可以调用该接口，否则返回数据会是空的
-除非之前有调用MGetWithFunc有缓存才可能命中*/
-func MGet(key string, id string) (value interface{}, err error) {
-	value, err = MGetWithFunc(key, id, _handle[key])
+// MGet
+// 只有提前调用了RegisterHandle将方法注册进来后才可以调用该接口，否则返回数据会是空的
+func MGet(key string, mode string, id string) (value interface{}, err error) {
+	value, err = MGetWithFunc(key, id, mode, _handle[key])
 	return
 }
