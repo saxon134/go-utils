@@ -43,7 +43,7 @@ func RegisterHandle(key string, handle CacheHandle) {
 //    5m      -替换最后访问时间最早的那个，如果最早的那个在5m之内，则还是会替换访问次数最少的存储项
 //             5m支持范围：10s - 60m
 //             典型场景：IP限流
-func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value interface{}, err error) {
+func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value interface{}, cnt int, err error) {
 	if key == "" {
 		return
 	}
@@ -95,11 +95,17 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 			cacheKind.MaxCnt = c.Cnt
 		}
 		c.LastTime = now
+		if handle != nil {
+			v, err := handle(id)
+			if err != nil {
+				c.V = v
+			}
+		}
 		cacheKind.Ary[cIdx] = *c
 	} else if handle != nil {
 		v, err := handle(id)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		c = new(cacheItem)
@@ -145,7 +151,7 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 			}
 		}
 	} else {
-		return nil, errors.New("取值方法缺失")
+		return nil, 0, errors.New("取值方法缺失")
 	}
 
 	//最多保存50类数据
@@ -165,12 +171,12 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 	}
 
 	_cache[key] = cacheKind
-	return c.V, nil
+	return c.V, c.Cnt, nil
 }
 
 // MGet
 // 只有提前调用了RegisterHandle将方法注册进来后才可以调用该接口，否则返回数据会是空的
-func MGet(key string, mode string, id string) (value interface{}, err error) {
-	value, err = MGetWithFunc(key, id, mode, _handle[key])
+func MGet(key string, mode string, id string) (value interface{}, cnt int, err error) {
+	value, cnt, err = MGetWithFunc(key, id, mode, _handle[key])
 	return
 }
