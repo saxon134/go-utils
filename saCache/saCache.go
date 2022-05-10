@@ -165,8 +165,7 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 	}
 
 	_cache[key] = cacheKind
-
-	return nil, nil
+	return c.V, nil
 }
 
 // MGet
