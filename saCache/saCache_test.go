@@ -3,21 +3,20 @@ package saCache
 import (
 	"fmt"
 	"github.com/saxon134/go-utils/saData"
-	mathrand "math/rand"
 	"testing"
+	"time"
 )
 
 func TestCache(t *testing.T) {
 	for i := 0; i < 1000; i++ {
-		r := mathrand.Intn(50)
-		v, err := MGetWithFunc("appInfo", "key-"+saData.Itos(r), "10s", func(id string) (interface{}, error) {
-			return i, nil
+		r := i%20 + 1
+		_, _ = MGetWithFunc("appInfo", "key-"+saData.Itos(r), "10s", func(id string) (interface{}, error) {
+			return r, nil
 		})
-		if err != nil {
-			fmt.Println("error:", err)
-		}
-		fmt.Println(r, v)
+		_, _ = MGetWithFunc("appInfo", "key-0", "10s", func(id string) (interface{}, error) {
+			return "230", nil
+		})
 		fmt.Println(saData.String(_cache))
+		time.Sleep(time.Millisecond)
 	}
-
 }

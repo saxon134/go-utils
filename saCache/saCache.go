@@ -1,6 +1,7 @@
 package saCache
 
 import (
+	"errors"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saHit"
 	"strings"
@@ -14,7 +15,7 @@ type CacheHandle func(id string) (interface{}, error)
 const maxCountForKind = 50
 
 //每个项目最多保存的数量，超出会按照参数mode规则去替换
-const maxCountForOneKind = 100
+const maxCountForOneKind = 50
 
 var _cache = make(map[string]*cache, maxCountForKind)
 var _locker sync.RWMutex
@@ -54,40 +55,47 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 		if strings.HasSuffix(mode, "s") {
 			isMinute = false
 		}
-		t, _ := saData.ToInt(mode[:len(mode)-1])
+		t, _ := saData.ToInt64(mode[:len(mode)-1])
 		if isMinute == false && t < 10 {
 			//最小10秒
 		} else if t > 0 && t <= 60 {
 			if isMinute {
 				retentionSecond += 60 * 60
+			} else {
+				retentionSecond += t
 			}
 		}
 	}
 
+	_locker.Lock()
+	defer _locker.Unlock()
+
 	cacheKind := _cache[key]
 	if cacheKind == nil {
 		cacheKind = new(cache)
+		cacheKind.Ary = make([]cacheItem, 0, 100)
+		cacheKind.MaxCnt = 1
 	}
-	cacheKind.totalCnt++
+	cacheKind.TotalCnt++
+	cacheKind.LastTime = now
 
 	var c *cacheItem = nil
-	for _, v := range cacheKind.ary {
-		if v.id == id {
+	var cIdx = -1
+	for i, v := range cacheKind.Ary {
+		if v.Id == id {
 			c = &v
+			cIdx = i
 			break
 		}
 	}
 
-	if c != nil {
-		_locker.Lock()
-		defer _locker.Unlock()
-
-		c.cnt++
-		if c.cnt > cacheKind.maxCnt {
-			cacheKind.maxCnt = c.cnt
+	if cIdx >= 0 {
+		c.Cnt++
+		if c.Cnt > cacheKind.MaxCnt {
+			cacheKind.MaxCnt = c.Cnt
 		}
-		c.lastTime = now
-		return c.v, nil
+		c.LastTime = now
+		cacheKind.Ary[cIdx] = *c
 	} else if handle != nil {
 		v, err := handle(id)
 		if err != nil {
@@ -95,65 +103,69 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 		}
 
 		c = new(cacheItem)
-		_locker.Lock()
-		defer _locker.Unlock()
-
-		c.cnt = saHit.Int(cacheKind.maxCnt > 1, cacheKind.maxCnt/2, 1)
-		c.v = v
-		c.id = id
-		c.lastTime = now
+		c.Cnt = saHit.Int(cacheKind.MaxCnt > 1, cacheKind.MaxCnt/2, 1)
+		c.V = v
+		c.Id = id
+		c.LastTime = now
 
 		//每个类目最多保存的数量
-		if len(cacheKind.ary) < maxCountForOneKind {
-			cacheKind.ary = append(cacheKind.ary, *c)
+		if len(cacheKind.Ary) < maxCountForOneKind {
+			cacheKind.Ary = append(cacheKind.Ary, *c)
 		} else {
-			//取次数最小的，替换掉
-			var min1 *cacheItem
-			var min2 *cacheItem
-			var idx1 = 0
-			var idx2 = 0
-			for i, v := range cacheKind.ary {
-				if v.lastTime+retentionSecond < now {
-					if min1 == nil || min1.cnt == 0 || min1.cnt > v.cnt {
-						min1 = &v
-						idx1 = i
+			//取次数最小的，替换掉；idx1是超时，idx2是未超时
+			var minIdx1 = -1
+			var minIdx2 = -1
+			for i, v := range cacheKind.Ary {
+				if v.LastTime+retentionSecond < now {
+					if minIdx1 == -1 || cacheKind.Ary[minIdx1].Cnt > v.Cnt {
+						minIdx1 = i
 					}
 				} else {
-					if min2 == nil || min2.cnt == 0 || min2.cnt > v.cnt {
-						min2 = &v
-						idx2 = i
+					if minIdx2 == -1 || cacheKind.Ary[minIdx2].Cnt > v.Cnt {
+						minIdx2 = i
 					}
 				}
 			}
 
-			if min1 != nil && min1.cnt > 0 {
-				cacheKind.ary = append(cacheKind.ary[:idx1], cacheKind.ary[idx1+1:]...)
-			} else if min2 != nil && min2.cnt > 0 {
-				cacheKind.ary = append(cacheKind.ary[:idx2], cacheKind.ary[idx2+1:]...)
-			}
-		}
-
-		//最多保存50类数据
-		if len(_cache) < maxCountForKind {
-			_cache[key] = cacheKind
-		} else {
-			var min *cache
-			var minK string
-			for k, v := range _cache {
-				if v.lastTime+retentionSecond < now {
-					if min == nil || min.totalCnt == 0 || min.totalCnt > v.totalCnt {
-						min = v
-						minK = k
+			if retentionSecond > 0 {
+				//优先删除已超时的数据
+				if minIdx1 >= 0 {
+					cacheKind.Ary = append(cacheKind.Ary[:minIdx1], cacheKind.Ary[minIdx1+1:]...)
+				} else if minIdx2 >= 0 {
+					cacheKind.Ary = append(cacheKind.Ary[:minIdx2], cacheKind.Ary[minIdx2+1:]...)
+				}
+			} else {
+				if minIdx1 >= 0 {
+					if minIdx2 == -1 || cacheKind.Ary[minIdx1].Cnt < cacheKind.Ary[minIdx2].Cnt {
+						cacheKind.Ary = append(cacheKind.Ary[:minIdx1], cacheKind.Ary[minIdx1+1:]...)
 					}
+				} else {
+					cacheKind.Ary = append(cacheKind.Ary[:minIdx2], cacheKind.Ary[minIdx2+1:]...)
 				}
 			}
-
-			if min != nil && min.totalCnt > 0 {
-				_cache[minK] = cacheKind
-			}
 		}
-		return v, nil
+	} else {
+		return nil, errors.New("取值方法缺失")
 	}
+
+	//最多保存50类数据
+	if len(_cache) >= maxCountForKind && _cache[key] == nil {
+		var min *cache
+		var minK string
+		for k, v := range _cache {
+			if min == nil || min.TotalCnt == 0 || min.TotalCnt > v.TotalCnt {
+				min = v
+				minK = k
+			}
+		}
+
+		if minK != "" {
+			delete(_cache, minK)
+		}
+	}
+
+	_cache[key] = cacheKind
+
 	return nil, nil
 }
 

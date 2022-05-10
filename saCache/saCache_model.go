@@ -1,15 +1,15 @@
 package saCache
 
 type cache struct {
-	maxCnt   int
-	totalCnt int
-	lastTime int64 //10位时间戳
-	ary      []cacheItem
+	MaxCnt   int
+	TotalCnt int
+	LastTime int64
+	Ary      []cacheItem
 }
 
 type cacheItem struct {
-	cnt      int
-	id       string
-	lastTime int64 //10位时间戳
-	v        interface{}
+	Cnt      int
+	Id       string
+	LastTime int64 //10位时间戳
+	V        interface{}
 }
