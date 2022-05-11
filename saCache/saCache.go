@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saHit"
-	"strings"
 	"sync"
 	"time"
 )
@@ -41,7 +40,7 @@ func RegisterHandle(key string, handle CacheHandle) {
 //    r或者空 -替换使用频次最低的存储项，
 //             典型场景：缓存存在数据库的配置，减少数据库压力
 //    5m      -替换最后访问时间最早的那个，如果最早的那个在5m之内，则还是会替换访问次数最少的存储项
-//             5m支持范围：10s - 60m
+//             5m支持范围：10s - 24h 默认10s
 //             典型场景：IP限流
 func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value interface{}, cnt int, err error) {
 	if key == "" {
@@ -49,20 +48,21 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 	}
 
 	now := time.Now().Unix()
-	var retentionSecond int64
+	var retentionSecond int64 = 10
 	if mode != "" {
-		var isMinute = true
-		if strings.HasSuffix(mode, "s") {
-			isMinute = false
-		}
+		m := mode[len(mode)-1:]
 		t, _ := saData.ToInt64(mode[:len(mode)-1])
-		if isMinute == false && t < 10 {
-			//最小10秒
-		} else if t > 0 && t <= 60 {
-			if isMinute {
-				retentionSecond += 60 * 60
-			} else {
-				retentionSecond += t
+		if t > 0 && t <= 60 {
+			if m == "h" {
+				if t <= 24 {
+					retentionSecond = t * 60 * 60
+				}
+			} else if m == "m" {
+				retentionSecond = t * 60
+			} else if m == "s" {
+				if t > 10 {
+					retentionSecond = t
+				}
 			}
 		}
 	}
@@ -75,9 +75,9 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 		cacheKind = new(cache)
 		cacheKind.Ary = make([]cacheItem, 0, 100)
 		cacheKind.MaxCnt = 1
+		cacheKind.LastTime = now //只有新建的时候才设置时间
 	}
 	cacheKind.TotalCnt++
-	cacheKind.LastTime = now
 
 	var c *cacheItem = nil
 	var cIdx = -1
@@ -94,7 +94,6 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 		if c.Cnt > cacheKind.MaxCnt {
 			cacheKind.MaxCnt = c.Cnt
 		}
-		c.LastTime = now
 		if handle != nil {
 			v, err := handle(id)
 			if err != nil {
@@ -112,7 +111,7 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 		c.Cnt = saHit.Int(cacheKind.MaxCnt > 1, cacheKind.MaxCnt/2, 1)
 		c.V = v
 		c.Id = id
-		c.LastTime = now
+		c.LastTime = now //只有新建的时候才设置时间
 
 		//每个类目最多保存的数量
 		if len(cacheKind.Ary) < maxCountForOneKind {
