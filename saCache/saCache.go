@@ -3,7 +3,6 @@ package saCache
 import (
 	"errors"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saHit"
 	"sync"
 	"time"
 )
@@ -40,11 +39,11 @@ func RegisterHandle(key string, handle CacheHandle) {
 //    r或者空 -替换使用频次最低的存储项，
 //             典型场景：缓存存在数据库的配置，减少数据库压力
 //    5m      -替换最后访问时间最早的那个，如果最早的那个在5m之内，则还是会替换访问次数最少的存储项
-//             5m支持范围：10s - 24h 默认10s
+//             5m支持范围：10s - 60m 默认10s
 //             典型场景：IP限流
 func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value interface{}, cnt int, err error) {
-	if key == "" {
-		return
+	if key == "" || id == "" || handle == nil {
+		return nil, 0, errors.New("缺少参数或取值方法")
 	}
 
 	now := time.Now().Unix()
@@ -52,17 +51,13 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 	if mode != "" {
 		m := mode[len(mode)-1:]
 		t, _ := saData.ToInt64(mode[:len(mode)-1])
-		if t > 0 && t <= 60 {
-			if m == "h" {
-				if t <= 24 {
-					retentionSecond = t * 60 * 60
-				}
-			} else if m == "m" {
+		if m == "m" {
+			if t > 0 && t <= 60 {
 				retentionSecond = t * 60
-			} else if m == "s" {
-				if t > 10 {
-					retentionSecond = t
-				}
+			}
+		} else if m == "s" {
+			if t > 10 && t <= 60 {
+				retentionSecond = t
 			}
 		}
 	}
@@ -75,82 +70,61 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 		cacheKind = new(cache)
 		cacheKind.Ary = make([]cacheItem, 0, 100)
 		cacheKind.MaxCnt = 1
+		cacheKind.TotalCnt = 1
 		cacheKind.LastTime = now //只有新建的时候才设置时间
 	}
 	cacheKind.TotalCnt++
 
-	var c *cacheItem = nil
-	var cIdx = -1
+	var item *cacheItem = nil
+	var itemIdx = -1
 	for i, v := range cacheKind.Ary {
 		if v.Id == id {
-			c = &v
-			cIdx = i
+			item = &v
+			itemIdx = i
 			break
 		}
 	}
 
-	if cIdx >= 0 {
-		c.Cnt++
-		if c.Cnt > cacheKind.MaxCnt {
-			cacheKind.MaxCnt = c.Cnt
+	//不存在，或已过期
+	if itemIdx < 0 || item.LastTime+retentionSecond < now {
+		if itemIdx >= 0 {
+			cacheKind.Ary = append(cacheKind.Ary[:itemIdx], cacheKind.Ary[itemIdx+1:]...)
 		}
-		if handle != nil {
-			v, err := handle(id)
-			if err != nil {
-				c.V = v
-			}
-		}
-		cacheKind.Ary[cIdx] = *c
-	} else if handle != nil {
+
 		v, err := handle(id)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		c = new(cacheItem)
-		c.Cnt = saHit.Int(cacheKind.MaxCnt > 1, cacheKind.MaxCnt/2, 1)
-		c.V = v
-		c.Id = id
-		c.LastTime = now //只有新建的时候才设置时间
-
+		item = &cacheItem{
+			Cnt:      1,
+			Id:       id,
+			LastTime: now,
+			V:        v,
+		}
 		//每个类目最多保存的数量
-		if len(cacheKind.Ary) < maxCountForOneKind {
-			cacheKind.Ary = append(cacheKind.Ary, *c)
-		} else {
-			//取次数最小的，替换掉；idx1是超时，idx2是未超时
-			var minIdx1 = -1
-			var minIdx2 = -1
+		if len(cacheKind.Ary) >= maxCountForOneKind {
+			//取次数最小的，替换掉
+			var minIdx = -1
 			for i, v := range cacheKind.Ary {
-				if v.LastTime+retentionSecond < now {
-					if minIdx1 == -1 || cacheKind.Ary[minIdx1].Cnt > v.Cnt {
-						minIdx1 = i
-					}
-				} else {
-					if minIdx2 == -1 || cacheKind.Ary[minIdx2].Cnt > v.Cnt {
-						minIdx2 = i
-					}
+				if minIdx == -1 || cacheKind.Ary[minIdx].Cnt > v.Cnt {
+					minIdx = i
 				}
 			}
+			cacheKind.Ary = append(cacheKind.Ary[:minIdx], cacheKind.Ary[minIdx+1:]...)
+		}
+		cacheKind.Ary = append(cacheKind.Ary, *item)
+	} else {
+		item.Cnt++
+		cacheKind.Ary[itemIdx] = *item
 
-			if retentionSecond > 0 {
-				//优先删除已超时的数据
-				if minIdx1 >= 0 {
-					cacheKind.Ary = append(cacheKind.Ary[:minIdx1], cacheKind.Ary[minIdx1+1:]...)
-				} else if minIdx2 >= 0 {
-					cacheKind.Ary = append(cacheKind.Ary[:minIdx2], cacheKind.Ary[minIdx2+1:]...)
-				}
-			} else {
-				if minIdx1 >= 0 {
-					if minIdx2 == -1 || cacheKind.Ary[minIdx1].Cnt < cacheKind.Ary[minIdx2].Cnt {
-						cacheKind.Ary = append(cacheKind.Ary[:minIdx1], cacheKind.Ary[minIdx1+1:]...)
-					}
-				} else {
-					cacheKind.Ary = append(cacheKind.Ary[:minIdx2], cacheKind.Ary[minIdx2+1:]...)
-				}
+		//更新最大次数，新增加的时候会使用到
+		cacheKind.MaxCnt = 0
+		for _, v := range cacheKind.Ary {
+			if v.Cnt > cacheKind.MaxCnt {
+				cacheKind.MaxCnt = v.Cnt
 			}
 		}
-	} else {
-		return nil, 0, errors.New("取值方法缺失")
 	}
 
 	//最多保存50类数据
@@ -170,7 +144,7 @@ func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value
 	}
 
 	_cache[key] = cacheKind
-	return c.V, c.Cnt, nil
+	return item.V, item.Cnt, nil
 }
 
 // MGet
