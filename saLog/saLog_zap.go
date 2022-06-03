@@ -26,6 +26,7 @@ func initZapLog() *zapLog {
 		zaprotatelogs.WithLinkName("latest_log"),
 		zaprotatelogs.WithMaxAge(7*24*time.Hour),
 		zaprotatelogs.WithRotationTime(24*time.Hour),
+		zaprotatelogs.WithRotationSize(100*1024*1024),
 	)
 	if err != nil {
 		return nil

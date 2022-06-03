@@ -6,7 +6,7 @@ import (
 	"github.com/RichardKnop/machinery/v1/backends/result"
 	"github.com/RichardKnop/machinery/v1/config"
 	"github.com/RichardKnop/machinery/v1/tasks"
-	"github.com/astaxie/beego/logs"
+	"github.com/saxon134/go-utils/saError"
 	"github.com/saxon134/go-utils/saHit"
 	"sync"
 	"time"
@@ -60,18 +60,38 @@ func (m *BrokerManager) GetResultByTaskName(name string) *result.AsyncResult {
 	return m.taskResult[name]
 }
 
-// 监听任务
-func (m *BrokerManager) Run() {
+// run启动broker
+func (m *BrokerManager) run() {
 	m.concurrency = saHit.Int(m.concurrency > 0, m.concurrency, 10)
-	m.work = m.taskCenter.NewWorker("test", m.concurrency)
+	m.work = m.taskCenter.NewWorker("sa-broker", m.concurrency)
 	err := m.work.Launch()
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-// 执行任务
-func (m *BrokerManager) Do() error {
+// do 执行任务
+func (m *BrokerManager) do(name string, values ...interface{}) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	//任务名
+	m.currentName = name
+
+	//参数
+	if v, ok := m.taskMapSignature[m.currentName]; ok {
+		for k, arg := range v.Args {
+			if k < len(values) {
+				arg.Value = values[k]
+			}
+
+			if k < len(v.Args) {
+				v.Args[k] = arg
+			}
+		}
+	}
+
+	//发送任务
 	if v, ok := m.taskMapSignature[m.currentName]; ok {
 		res, err := m.taskCenter.SendTask(v)
 		if err != nil {
@@ -84,12 +104,15 @@ func (m *BrokerManager) Do() error {
 	return nil
 }
 
-func (m *BrokerManager) Switch(name string) (res *BrokerManager) {
+// doDelay 延迟执行任务
+func (m *BrokerManager) doDelay(name string, seconds int64, values ...interface{}) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	//任务名
 	m.currentName = name
-	res = m
-	return
-}
-func (m *BrokerManager) SetParams(values ...interface{}) (res *BrokerManager) {
+
+	//参数
 	if v, ok := m.taskMapSignature[m.currentName]; ok {
 		for k, arg := range v.Args {
 			if k < len(values) {
@@ -101,21 +124,18 @@ func (m *BrokerManager) SetParams(values ...interface{}) (res *BrokerManager) {
 			}
 		}
 	}
-	res = m
-	return
-}
 
-// 延迟执行任务
-func (m *BrokerManager) DoDelay(seconds int64) {
+	//发送任务
 	if v, ok := m.taskMapSignature[m.currentName]; ok {
 		delayTime := time.Now().UTC().Add(time.Second * time.Duration(seconds))
 		v.ETA = &delayTime
 		res, err := m.taskCenter.SendTask(v)
 		if err != nil {
-			logs.Error("DoDelay job任务执行错误", err, v)
+			return saError.StackError(err)
 		}
 		m.taskResult[m.currentName] = res
 	}
+	return nil
 }
 
 func (m *BrokerManager) parseTaskMapFuncAndSignature() {

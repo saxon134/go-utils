@@ -15,7 +15,7 @@ import (
 
 var _manager *BrokerManager
 
-//host: redis://pass@127.0.0.1:6379  queue: tioBroker  concurrency:并发数
+//Init host: redis://pass@127.0.0.1:6379  queue: tioBroker  concurrency:并发数
 func Init(host string, queue string, concurrency int) *BrokerManager {
 	if host == "" || queue == "" {
 		return nil
@@ -24,7 +24,7 @@ func Init(host string, queue string, concurrency int) *BrokerManager {
 	return initInstance(host, queue, concurrency)
 }
 
-//必须一次性注册所有任务
+//RegisterJobs 必须一次性注册所有任务
 func RegisterJobs(jobs ...RemoteJobModel) error {
 	if _manager == nil {
 		return errors.New("未注册remote job")
@@ -40,7 +40,7 @@ func RegisterJobs(jobs ...RemoteJobModel) error {
 		return err
 	}
 
-	go _manager.Run()
+	go _manager.run()
 	return nil
 }
 
@@ -50,8 +50,6 @@ func Send(name string, params interface{}) error {
 		return err
 	}
 
-	_manager.lock.Lock()
-	defer _manager.lock.Unlock()
-	err = _manager.Switch(name).SetParams(str).Do()
+	err = _manager.do(name, str)
 	return err
 }

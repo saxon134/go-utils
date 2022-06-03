@@ -270,7 +270,7 @@ func Now() *Time {
 }
 
 func (m *Time) IsZero() bool {
-	if m == nil || m.IsZero() {
+	if m == nil || m.Time.IsZero() {
 		return true
 	}
 	return false

@@ -8,6 +8,7 @@ package saError
 
 import (
 	"fmt"
+	"github.com/saxon134/go-utils/saLog"
 	"gorm.io/gorm"
 	"runtime"
 	"strings"
@@ -137,7 +138,11 @@ func StackError(err interface{}, params ...interface{}) error {
 				}
 			} else if s, ok := v.(string); ok {
 				if s != "" {
-					resErr.Msg = s
+					if resErr.Code != SensitiveErrorCode && resErr.Code != NormalErrorCode {
+						resErr.Msg += s
+					} else {
+						saLog.Err(s)
+					}
 				}
 			} else {
 				e, ok := err.(*Error)
@@ -150,7 +155,11 @@ func StackError(err interface{}, params ...interface{}) error {
 
 				if e != nil {
 					if len(e.Msg) > 0 {
-						resErr.Msg = e.Msg
+						if resErr.Code != SensitiveErrorCode && resErr.Code != NormalErrorCode {
+							resErr.Msg += s
+						} else {
+							saLog.Err(s)
+						}
 					}
 					if e.Code > 0 {
 						resErr.Code = e.Code
@@ -159,7 +168,11 @@ func StackError(err interface{}, params ...interface{}) error {
 						resErr.Caller = e.Caller + "\n" + resErr.Caller
 					}
 				} else if e, ok := err.(error); ok {
-					resErr.Msg = e.Error()
+					if resErr.Code != SensitiveErrorCode && resErr.Code != NormalErrorCode {
+						resErr.Msg += e.Error()
+					} else {
+						saLog.Err(e)
+					}
 				}
 			}
 		}

@@ -81,15 +81,49 @@ func FormatIds(str string) string {
 	return str
 }
 
-func InArray(item interface{}, ary interface{}) bool {
-	val := reflect.ValueOf(ary)
-	switch val.Kind() {
-	case reflect.Slice, reflect.Array:
-		for i := 0; i < val.Len(); i++ {
-			if reflect.DeepEqual(item, val.Index(i).Interface()) {
+//注意：只支持基础类型数据
+func InArray(item interface{}, ary interface{}) (exist bool) {
+	v1 := String(item)
+	switch vv := ary.(type) {
+	case []int64:
+		for _, v := range vv {
+			v2 := I64tos(v)
+			if v1 == v2 {
 				return true
 			}
 		}
+		return false
+	case []int8:
+		for _, v := range vv {
+			v2 := Itos(int(v))
+			if v1 == v2 {
+				return true
+			}
+		}
+		return false
+	case []int:
+		for _, v := range vv {
+			v2 := Itos(v)
+			if v1 == v2 {
+				return true
+			}
+		}
+		return false
+	case []string:
+		for _, v := range vv {
+			if v1 == v {
+				return true
+			}
+		}
+		return false
+	case []interface{}:
+		for _, v := range vv {
+			v2 := String(v)
+			if v1 == v2 {
+				return true
+			}
+		}
+		return false
 	}
 	return false
 }

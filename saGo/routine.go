@@ -9,14 +9,16 @@ import (
 type Routine struct {
 	routineMaxCnt  int              //goroutine最大并发数量
 	routineMaxTime time.Duration    //所有任务执行最大时间
-	routineChan    chan struct{}    //控制goroutine并发数量
 	paramsChan     chan interface{} //传输参数
 	handle         func(params interface{})
 }
 
-/**
-通过channel，分发事务，控制事务并发数量
-*/
+// NewRoutine
+// @Description: 通过channel，分发事务，控制事务并发数量
+// @param routineMaxCnt 协程数量
+// @param routineMaxTime 所有任务执行完最大总时间。单个任务协程无法被打断，时间控制没有意义。
+// @param handle
+// @return *Routine
 func NewRoutine(routineMaxCnt int, routineMaxTime time.Duration, handle func(params interface{})) *Routine {
 	if routineMaxCnt <= 0 {
 		routineMaxCnt = 20
@@ -25,56 +27,66 @@ func NewRoutine(routineMaxCnt int, routineMaxTime time.Duration, handle func(par
 	m := &Routine{
 		routineMaxCnt:  routineMaxCnt,
 		routineMaxTime: routineMaxTime,
-		routineChan:    make(chan struct{}, routineMaxCnt),
 		paramsChan:     make(chan interface{}, routineMaxCnt+1),
 		handle:         handle,
 	}
+
+	if m.routineMaxCnt > 1 {
+		for i := 0; i < m.routineMaxCnt; i++ {
+			go func() {
+				defer func() {
+					if e := recover(); e != nil {
+						saLog.Err(e)
+					}
+				}()
+
+				if m.routineMaxTime > 1 {
+					ctx, cancelFunc := context.WithTimeout(context.Background(), m.routineMaxTime)
+					for {
+						v, ok := <-m.paramsChan
+						if ok == false {
+							cancelFunc()
+							return
+						}
+
+						select {
+						case <-ctx.Done():
+							saLog.Err("saGo routine time out...")
+							cancelFunc()
+							return
+						default:
+							m.handle(v)
+						}
+					}
+				} else {
+					for {
+						v, ok := <-m.paramsChan
+						if ok == false {
+							return
+						}
+						m.handle(v)
+					}
+				}
+			}()
+		}
+	}
+
 	return m
 }
 
-/**
-任务数量大于最大协程数时会阻塞
-*/
+// Do
+// @Description: 执行协程任务，任务数量大于最大协程数时会阻塞
+// @receiver r
+// @param params
 func (r *Routine) Do(params interface{}) {
-	if r.routineMaxCnt == 0 {
+	if r.routineMaxCnt == 0 || r.paramsChan == nil {
 		panic("请通过NewRoutine初始化")
 		return
 	}
 
-	r.paramsChan <- params
-	if len(r.routineChan) < r.routineMaxCnt {
-		r.routineChan <- struct{}{}
-		go func() {
-			defer func() {
-				recover()
-				_ = <-r.routineChan
-			}()
-
-			if r.routineMaxTime > 0 {
-				ctx, _ := context.WithTimeout(context.Background(), r.routineMaxTime)
-				for {
-					v, ok := <-r.paramsChan
-					if ok == false {
-						return
-					}
-
-					select {
-					case <-ctx.Done():
-						saLog.Err("saGo routine time out...")
-						return
-					default:
-						r.handle(v)
-					}
-				}
-			} else {
-				for {
-					v, ok := <-r.paramsChan
-					if ok == false {
-						return
-					}
-					r.handle(v)
-				}
-			}
-		}()
+	if r.routineMaxCnt > 1 {
+		r.paramsChan <- params
+	} else {
+		r.handle(params)
 	}
 }

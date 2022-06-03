@@ -56,7 +56,9 @@ func (lock *Lock) Unlock() (err error) {
 	if lock.startTimeSecond <= 0 {
 		_, err = lock.conn.Do("del", lock.key())
 	}
-	lock.c <- 1 //退出刷新时间协程
+	if lock.c != nil {
+		lock.c <- 1 //退出刷新时间协程
+	}
 	return
 }
 
