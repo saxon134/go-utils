@@ -374,16 +374,39 @@ func ToFloat32(d interface{}) (float32, error) {
 	if f, ok := d.(float32); ok {
 		return f, nil
 	}
+
 	if f, ok := d.(float64); ok {
 		return float32(f), nil
 	}
-	if f, err := ToInt(d); err == nil {
-		return float32(f), nil
-	}
+
 	if s, ok := d.(string); ok {
-		if f, err := strconv.ParseFloat(s, 32); err == nil {
+		f, err := strconv.ParseFloat(s, 32)
+		if err == nil {
 			return float32(f), nil
 		}
+	}
+
+	f, err := ToInt(d)
+	if err == nil {
+		return float32(f), nil
+	}
+	return 0, errors.New("类型不匹配")
+}
+
+func ToFloat64(d interface{}) (float64, error) {
+	if f, ok := d.(float64); ok {
+		return f, nil
+	}
+	if f, ok := d.(float32); ok {
+		return float64(f), nil
+	}
+	if s, ok := d.(string); ok {
+		if f, err := strconv.ParseFloat(s, 64); err == nil {
+			return f, nil
+		}
+	}
+	if f, err := ToInt(d); err == nil {
+		return float64(f), nil
 	}
 	return 0, errors.New("类型不匹配")
 }

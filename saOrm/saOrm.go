@@ -45,13 +45,15 @@ func Open(dsn string, conf Conf) *DB {
 	return _db
 }
 
-//每次调用都会生成一个新的会话，为了避免全局会话影响
+// Session
+// @Description: 每次调用都会生成一个新的会话，为了避免全局会话影响
 func (m *DB) Session() *gorm.DB {
 	tx := _db.DB.Session(&gorm.Session{})
 	return tx
 }
 
-//func All(rows *sql.Rows, aryPtr QueryAry) error {
+//
+//func Scan(rows *sql.Rows, aryPtr QueryAry) error {
 //	defer rows.Close()
 //
 //	var cnt int64

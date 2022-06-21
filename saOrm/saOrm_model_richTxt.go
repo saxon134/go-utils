@@ -12,20 +12,18 @@ import (
 type RichTxtType int
 
 const (
-	RichTxtTypeNull RichTxtType = iota
-	RichTxtTypeTxt  RichTxtType = 1 //纯文本
-	RichTxtTypeHtml RichTxtType = 2 //富文本
-	RichTxtTypeJson RichTxtType = 3 //json
+	RichTxtTypeTxt  RichTxtType = iota //文本
+	RichTxtTypeJson RichTxtType = 1    //json
 )
 
-//json时对象格式应该是这样的，由前端控制，后端不做解析
+//json时对象格式应该是这样的，也可以自行扩展
 type RtItem struct {
 	Title string `json:"title"`
 	Desc  string `json:"desc"`
-	Img string `json:"img"`
+	Img   string `json:"img"`
 }
 
-/* 数据库存储格式：json或者内容字符，当内容小于250时，直接存入数据库；否则存入OSS，content存储路径
+/* 数据库存储格式：json或者内容字符，当内容小于200时，直接存入数据库；否则存入OSS，content存储路径
 不管存储在哪里，MD5都是原始content的MD5 **/
 type RichTxt struct {
 	Type    RichTxtType `json:"type,omitempty"`
@@ -60,11 +58,6 @@ func (m *RichTxt) Save(oss saOss.SaOss, t RichTxtType, txt string, path string) 
 		return errors.New("RichTxt数据有误")
 	}
 
-	//默认为旧数据类型
-	if t == RichTxtTypeNull {
-		t = m.Type
-	}
-
 	//数据无变化
 	md5 := saData.Md5(txt, true)
 	if md5 == m.Md5 {
@@ -89,6 +82,7 @@ func (m *RichTxt) Save(oss saOss.SaOss, t RichTxtType, txt string, path string) 
 		return saError.StackError(err)
 	}
 	m.Md5 = md5
+	m.InOss = true
 	return nil
 }
 
