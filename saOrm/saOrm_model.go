@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-/* StringAry
-数据库存储格式：json **/
+// StringAry
+// 数据库存储格式：json
 type StringAry []string
 
 func (m StringAry) TrimSpace() StringAry {
@@ -67,8 +67,8 @@ func (m StringAry) IsSameImages(n StringAry) bool {
 	return true
 }
 
-/* Ids
-数据库存储格式： id1,id2,id3 **/
+// Ids
+// 数据库存储格式： id1,id2,id3
 type Ids []int64
 
 func (m *Ids) Scan(value interface{}) error {
@@ -105,8 +105,8 @@ func (m Ids) Value() (driver.Value, error) {
 	return "", nil
 }
 
-/* CompressIds
-数据库存储格式：字符串，ID转换为88进制，逗号分隔 **/
+// CompressIds
+// 数据库存储格式：字符串，ID转换为88进制，逗号分隔
 type CompressIds []int64
 
 func (m *CompressIds) Scan(value interface{}) error {
@@ -143,8 +143,8 @@ func (m CompressIds) Value() (driver.Value, error) {
 	return "", nil
 }
 
-/* Price
-数据库存储格式：整数，分为单位，故不存在四舍五入一说 **/
+// Price
+// 数据库存储格式：整数，分为单位，故不存在四舍五入一说
 type Price float32
 
 func (m *Price) Scan(value interface{}) error {
@@ -164,8 +164,8 @@ func (m Price) Value() (driver.Value, error) {
 	return saData.Itos(i), nil
 }
 
-/* LiPrice
-数据库存储格式：整数，厘为单位 **/
+// LiPrice
+// 数据库存储格式：整数，厘为单位
 type LiPrice float32
 
 func (m *LiPrice) Scan(value interface{}) error {
@@ -185,8 +185,8 @@ func (m LiPrice) Value() (driver.Value, error) {
 	return saData.Itos(i), nil
 }
 
-/* Weight
-数据库存储格式：整数，克为单位 **/
+// Weight
+// 数据库存储格式：整数，克为单位
 type Weight float32
 
 func (m *Weight) Scan(value interface{}) error {
@@ -206,8 +206,8 @@ func (m Weight) Value() (driver.Value, error) {
 	return saData.Itos(int(i)), nil
 }
 
-/* Rate
-数据库存储格式：整数，万份之一为单位，如：0.23% **/
+// Rate
+// 数据库存储格式：整数，万份之一为单位，如：0.23%
 type Rate float32
 
 func (m *Rate) Scan(value interface{}) error {
@@ -227,8 +227,8 @@ func (m Rate) Value() (driver.Value, error) {
 	return saData.Itos(int(i)), nil
 }
 
-/* Time
-数据库存储格式：datetime **/
+// Time
+// 数据库存储格式：datetime
 type Time struct {
 	time.Time
 }

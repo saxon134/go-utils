@@ -175,23 +175,30 @@ func CreateTbl(obj interface{}) {
 					} else if strings.HasPrefix(tag, "int") {
 						columnDefault = "0"
 						tag = strings.TrimPrefix(tag, "int")
-						if tag == "8" {
-							columnType = "tinyint unsigned"
+						if strings.HasPrefix(tag, "8") {
+							columnType = "tinyint"
 							if columns[i].snake == "status" || columns[i].snake == "type" {
 								columnType = "tinyint"
 								columnDefault = saHit.Str(columnDefault == "", "-1", columnDefault)
 							}
-						} else if tag == "64" {
-							columnType = "bigint unsigned"
+						} else if strings.HasPrefix(tag, "64") {
+							columnType = "bigint"
 						} else {
-							columnType = "integer unsigned"
+							columnType = "integer"
+						}
+
+						if strings.Contains(tag, "unsigned") {
+							columnType += " unsigned"
 						}
 					} else if tag == "float" || tag == "double" {
 						columnDefault = "0"
 						columnType = tag
-					} else if tag == "tinyint" {
+					} else if strings.HasPrefix(tag, "tinyint") {
 						columnDefault = "0"
 						columnType = "tinyint"
+						if strings.Contains(tag, "unsigned") {
+							columnType += " unsigned"
+						}
 					} else if strings.HasPrefix(tag, "in(") {
 						if strings.Contains(tag, ":") {
 							tag = strings.TrimPrefix(tag, "in(")
@@ -202,7 +209,7 @@ func CreateTbl(obj interface{}) {
 						columnType = tag
 					} else if tag == "signed" {
 						columnSigned = true
-					} else if tag == "required" {
+					} else if tag == "required" || tag == "not null" {
 						createSqlTxt += " NOT NULL"
 					} else if strings.HasPrefix(tag, "comment") {
 						columnComment = "'" + strings.TrimPrefix(tag, "comment:") + "'"
@@ -335,7 +342,7 @@ func CreateTbl(obj interface{}) {
 						if columns[i].snake == "name" {
 							columnType = "varchar(60)"
 						} else if columns[i].snake == "title" {
-							columnType = "varchar(250)"
+							columnType = "varchar(120)"
 						} else if columns[i].snake == "cover" {
 							columnType = "varchar(120)"
 						} else if columns[i].snake == "img" {

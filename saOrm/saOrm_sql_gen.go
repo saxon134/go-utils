@@ -7,12 +7,11 @@ import (
 	"reflect"
 )
 
-/**
-生成修改数据库表结构语句
-数据库不存在则生成建表语句，不存在则查看差异，生成差异代码；
-建议如果返回值为true，则panic，因为数据库表结构跟model定义不一致；
-values项必须为指针
-*/
+// GenTblSql
+// 生成修改数据库表结构语句
+// 数据库不存在则生成建表语句，不存在则查看差异，生成差异代码；
+// 建议如果返回值为true，则panic，因为数据库表结构跟model定义不一致；
+// values项必须为指针
 func GenTblSql(db *DB, values ...interface{}) {
 	if db == nil || values == nil || len(values) == 0 {
 		fmt.Println("Error:参数类型有误")

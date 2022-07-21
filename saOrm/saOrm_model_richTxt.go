@@ -16,15 +16,17 @@ const (
 	RichTxtTypeJson RichTxtType = 1    //json
 )
 
-//json时对象格式应该是这样的，也可以自行扩展
+// RtItem
+// json时对象格式应该是这样的，也可以自行扩展
 type RtItem struct {
 	Title string `json:"title"`
 	Desc  string `json:"desc"`
 	Img   string `json:"img"`
 }
 
-/* 数据库存储格式：json或者内容字符，当内容小于200时，直接存入数据库；否则存入OSS，content存储路径
-不管存储在哪里，MD5都是原始content的MD5 **/
+// RichTxt
+// 数据库存储格式：json或者内容字符，当内容小于200时，直接存入数据库；否则存入OSS，content存储路径
+// 不管存储在哪里，MD5都是原始content的MD5
 type RichTxt struct {
 	Type    RichTxtType `json:"type,omitempty"`
 	Md5     string      `json:"md5,omitempty"`

@@ -17,7 +17,8 @@ type Column struct {
 	ColumnComment string `json:"column_comment"`
 }
 
-/**修改数据库SQL*/
+// AlterTbl
+// 修改数据库SQL
 func AlterTbl(db *DB, tblName string, obj interface{}) {
 	if db == nil || tblName == "" || obj == nil {
 		return
@@ -176,23 +177,30 @@ func AlterTbl(db *DB, tblName string, obj interface{}) {
 				} else if strings.HasPrefix(tag, "int") {
 					filed.ColumnDefault = "0"
 					tag = strings.TrimPrefix(tag, "int")
-					if tag == "8" {
-						filed.ColumnType = "tinyint unsigned"
+					if strings.HasPrefix(tag, "8") {
+						filed.ColumnType = "tinyint"
 						if columns[i].snake == "status" || columns[i].snake == "type" {
 							filed.ColumnType = "tinyint"
 							filed.ColumnDefault = saHit.Str(filed.ColumnDefault == "", "-1", filed.ColumnDefault)
 						}
-					} else if tag == "64" {
-						filed.ColumnType = "bigint unsigned"
+					} else if strings.HasPrefix(tag, "64") {
+						filed.ColumnType = "bigint"
 					} else {
-						filed.ColumnType = "integer unsigned"
+						filed.ColumnType = "integer"
+					}
+
+					if strings.Contains(tag, "unsigned") {
+						filed.ColumnType += " unsigned"
 					}
 				} else if tag == "float" || tag == "double" {
 					filed.ColumnDefault = "0"
 					filed.ColumnType = tag
-				} else if tag == "tinyint" {
+				} else if strings.HasPrefix(tag, "tinyint") {
 					filed.ColumnDefault = "0"
 					filed.ColumnType = "tinyint"
+					if strings.Contains(tag, "unsigned") {
+						filed.ColumnType += " unsigned"
+					}
 				} else if strings.HasPrefix(tag, "in(") {
 					if strings.Contains(tag, ":") {
 						tag = strings.TrimPrefix(tag, "in(")
