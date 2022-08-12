@@ -3,7 +3,6 @@ package saOrm
 import (
 	"fmt"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saError"
 	"reflect"
 )
 
@@ -52,20 +51,20 @@ func GenTblSql(db *DB, values ...interface{}) {
 
 		//查询数据表是否已经存在
 		colums := []string{}
-		rows, err := db.Raw("SHOW TABLES LIKE '"+tblName+"'", &colums).Rows()
-		if saError.DbErr(err) {
-			fmt.Println("查询表是否存在失败：", tblName)
-			fmt.Println(err)
-			continue
+		db.Raw("SHOW TABLES LIKE '" + tblName + "'").Scan(&colums)
+		existed := false
+		for _, v := range colums {
+			if v == tblName {
+				existed = true
+				break
+			}
 		}
-		db.ScanRows(rows, &colums)
 
 		//创建表
-		if len(colums) <= 2 {
+		if existed == false {
 			CreateTbl(obj)
-		} else
-		//修改表
-		{
+		} else {
+			//修改表
 			AlterTbl(db, tblName, obj)
 		}
 	}

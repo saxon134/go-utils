@@ -52,7 +52,7 @@ func FromDb(obj interface{}) error {
 		}
 
 		if isOss == false {
-			if columnName == "Img" || columnName == "Cover" || columnName == "ImgAry" {
+			if columnName == "Img" || columnName == "Cover" || columnName == "Avatar" || columnName == "ImgAry" {
 				isOss = true
 			}
 		}
@@ -230,7 +230,7 @@ func ToDB(obj interface{}) error {
 			}
 		case reflect.String:
 			if lte == 0 {
-				if columnName == "Cover" || columnName == "Img" {
+				if columnName == "Cover" || columnName == "Img" || columnName == "Avatar" {
 					lte = 120
 					isOss = true
 				} else if columnName == "name" {
@@ -270,7 +270,7 @@ func ToDB(obj interface{}) error {
 			if isOss {
 				s := saImg.DeleteUriRoot(columnStr)
 				if s != columnStr {
-					reflectValue.Field(i).SetString(saImg.AddDefaultUriRoot(s))
+					reflectValue.Field(i).SetString(s)
 				}
 			}
 			if isPhone && saData.IsPhone(columnStr) == false {

@@ -6,7 +6,8 @@ import (
 	"strings"
 )
 
-var _imgUriRoot string
+var _mainDomain string
+var _domainAry []string //包含 _mainDomain
 var _styleStrAry = []string{
 	"?x-oss-process=style/default-style",
 	"?x-oss-process=style/small-style",
@@ -15,8 +16,19 @@ var _styleStrAry = []string{
 	"?x-oss-process=style/banner-style",
 }
 
-func Init(urlRoot string, styleAry []string) {
-	_imgUriRoot = urlRoot
+// Init
+// @Description: 初始化
+// @param domains 多个域名，分号隔开。第一个为默认输出的域名，其他域名在删除时会自动删除
+// @param styleAry 样式组，删除时会自动移除
+func Init(domains string, styleAry []string) {
+	_domainAry = strings.Split(domains, ";")
+	if len(_domainAry) > 0 {
+		for i, v := range _domainAry {
+			_domainAry[i] = strings.TrimSuffix(v, "/")
+		}
+		_mainDomain = _domainAry[0]
+	}
+
 	if len(styleAry) > 0 {
 		_styleStrAry = styleAry
 	}
@@ -27,17 +39,12 @@ func AddDefaultUriRoot(s string) string {
 }
 
 func AddUriRoot(s string, style ImgStyle) string {
-	if s == "" {
+	if s == "" || _mainDomain == "" {
 		return s
 	}
 
 	if strings.HasPrefix(s, "http") == false {
-		r := _imgUriRoot
-		if r == "" {
-			return s
-		}
-
-		s = r + s
+		s = saData.ConnPath(_mainDomain, s)
 	}
 
 	for _, v := range _styleStrAry {
@@ -56,8 +63,8 @@ func AddUriRoot(s string, style ImgStyle) string {
 }
 
 func DeleteUriRoot(s string) string {
-	if s == "" {
-		return ""
+	if s == "" || len(_domainAry) == 0 {
+		return s
 	}
 
 	u, err := url.Parse(s)
@@ -65,9 +72,10 @@ func DeleteUriRoot(s string) string {
 		return s
 	}
 
-	root := u.Scheme + "://" + u.Host + "/"
-	if r := _imgUriRoot; r != "" {
-		if root == r {
+	root := u.Scheme + "://" + u.Host
+	root = strings.TrimSuffix(root, "/")
+	for _, r := range _domainAry {
+		if r == root {
 			s = strings.Replace(s, root, "", 1)
 			for _, v := range _styleStrAry {
 				s = strings.Replace(s, v, "", -1)

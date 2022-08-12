@@ -34,12 +34,12 @@ func AlterTbl(db *DB, tblName string, obj interface{}) {
 	fieldNum := reflectType.NumField()
 	for i := 0; i < fieldNum; i++ {
 		fieldName := reflectType.Field(i).Name
-		tag := reflectType.Field(i).Tag.Get("type")
+		tag := reflectType.Field(i).Tag.Get("orm")
 		if tag == "" {
-			tag = reflectType.Field(i).Tag.Get("gorm")
+			tag = reflectType.Field(i).Tag.Get("type")
 		}
 		if tag == "" {
-			tag = reflectType.Field(i).Tag.Get("orm")
+			tag = reflectType.Field(i).Tag.Get("gorm")
 		}
 
 		v := struct {
