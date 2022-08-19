@@ -115,9 +115,9 @@ func TrimSpace(s string) string {
 	if s != "" {
 		var i = 0
 		for {
-			var c = string(s[i : i + 1])
+			var c = string(s[i : i+1])
 			if c == " " || c == "\n" || c == "\t" || c == "\r" {
-				if i ==0 {
+				if i == 0 {
 					s = s[i+1:]
 				} else {
 					s = s[0:i] + s[i+1:]
@@ -243,17 +243,24 @@ func BytesToStr(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
+// QueryEncode 将字符串进行query编码
 func QueryEncode(s string) string {
 	if s != "" {
-		v := url.Values{}
-		v.Add("k", s)
-		s = v.Encode()
-		return string([]rune(s)[2:])
+		return url.QueryEscape(s)
 	}
 	return ""
 }
 
-//query & map 互转
+// QueryDecode 对字符串进行query解码
+func QueryDecode(s string) string {
+	res, err := url.QueryUnescape(s)
+	if err != nil {
+		return ""
+	}
+	return res
+}
+
+// MapToQuery query & map 互转
 func MapToQuery(m map[string]string) string {
 	if m != nil {
 		urlV := url.Values{}

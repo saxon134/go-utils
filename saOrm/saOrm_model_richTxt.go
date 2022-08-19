@@ -1,3 +1,5 @@
+//废弃，后续使用ImgTxt
+
 package saOrm
 
 import (
@@ -27,6 +29,7 @@ type RtItem struct {
 // RichTxt
 // 数据库存储格式：json或者内容字符，当内容小于200时，直接存入数据库；否则存入OSS，content存储路径
 // 不管存储在哪里，MD5都是原始content的MD5
+//Deprecated
 type RichTxt struct {
 	Type    RichTxtType `json:"type,omitempty"`
 	Md5     string      `json:"md5,omitempty"`

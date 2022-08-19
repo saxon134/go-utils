@@ -52,7 +52,7 @@ func FromDb(obj interface{}) error {
 		}
 
 		if isOss == false {
-			if columnName == "Img" || columnName == "Cover" || columnName == "Avatar" || columnName == "ImgAry" {
+			if columnName == "Img" || columnName == "Cover" || columnName == "Avatar" {
 				isOss = true
 			}
 		}
@@ -299,11 +299,6 @@ func ToDB(obj interface{}) error {
 				reflectValue.Field(i).Set(reflect.ValueOf(&now))
 			}
 		case reflect.Slice, reflect.Array:
-			if isOss == false {
-				if columnName == "imgAry" {
-					isOss = true
-				}
-			}
 			if isOss {
 				v := reflectValue.Field(i)
 				vLen := v.Len()
