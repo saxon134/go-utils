@@ -2,12 +2,9 @@ package saBroker
 
 import (
 	"fmt"
-	"github.com/RichardKnop/machinery/v1"
 	"github.com/RichardKnop/machinery/v1/backends/result"
 	"github.com/RichardKnop/machinery/v1/config"
 	"github.com/RichardKnop/machinery/v1/tasks"
-	"github.com/saxon134/go-utils/saError"
-	"github.com/saxon134/go-utils/saHit"
 	"sync"
 	"time"
 )
@@ -62,7 +59,9 @@ func (m *BrokerManager) GetResultByTaskName(name string) *result.AsyncResult {
 
 // run启动broker
 func (m *BrokerManager) run() {
-	m.concurrency = saHit.Int(m.concurrency > 0, m.concurrency, 10)
+	if m.concurrency <= 0 {
+		m.concurrency = 10
+	}
 	m.work = m.taskCenter.NewWorker("sa-broker", m.concurrency)
 	err := m.work.Launch()
 	if err != nil {
@@ -131,7 +130,7 @@ func (m *BrokerManager) doDelay(name string, seconds int64, values ...interface{
 		v.ETA = &delayTime
 		res, err := m.taskCenter.SendTask(v)
 		if err != nil {
-			return saError.StackError(err)
+			return err
 		}
 		m.taskResult[m.currentName] = res
 	}

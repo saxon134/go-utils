@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "./proto";
+
+service Api {
+  rpc RpcApi(Request) returns (Response) {}
+}
+
+message Message {
+  string Data = 1;
+}
+
+message Request {
+  string Method = 1;
+  string Data = 2;
+}
+
+message Response {
+  string Data = 1;
+}

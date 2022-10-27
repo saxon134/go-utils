@@ -1,8 +1,8 @@
 package saTask
 
 import (
+	"errors"
 	"github.com/astaxie/beego/toolbox"
-	"github.com/pkg/errors"
 )
 
 func Init(handlers ...Handle) {

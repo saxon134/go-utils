@@ -71,7 +71,7 @@ func (m *ImgTxt) Save(oss saOss.SaOss, path string) (err error) {
 
 	//数据较大，存到oss
 	if path == "" {
-		path = "rt/imgTxt/" + saData.TimeStr(time.Now(), saData.TimeFormat_yymmdd_Line) + "/"
+		path = "imgTxt/0/" + saData.TimeStr(time.Now(), saData.TimeFormat_yymmdd_Line) + "/"
 	}
 	m.Path, err = oss.UploadTxt(path, valueStr)
 	if err != nil {

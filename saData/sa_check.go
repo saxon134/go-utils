@@ -11,6 +11,10 @@ import (
 //验证参数
 func ValidCheck(ptr interface{}) (err error) {
 	objT := reflect.TypeOf(ptr)
+	if objT.Kind() == reflect.Map {
+		return nil
+	}
+
 	objV := reflect.ValueOf(ptr)
 	if objT.Kind() == reflect.Struct || (objT.Kind() == reflect.Ptr && objT.Elem().Kind() == reflect.Struct) {
 		objT = objT.Elem()
