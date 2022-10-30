@@ -1,9 +1,9 @@
-package saKit
+package saMicro
 
 import (
 	"context"
 	"github.com/go-kit/kit/transport/grpc"
-	"github.com/saxon134/go-utils/saKit/proto"
+	"github.com/saxon134/go-utils/saMicro/proto"
 )
 
 type grpcServer struct {

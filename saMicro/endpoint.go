@@ -1,10 +1,10 @@
-package saKit
+package saMicro
 
 import (
 	"context"
 	"fmt"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/saxon134/go-utils/saKit/proto"
+	"github.com/saxon134/go-utils/saMicro/proto"
 	"golang.org/x/time/rate"
 )
 

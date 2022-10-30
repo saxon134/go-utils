@@ -1,16 +1,28 @@
-package client
+package saMicro
 
 import (
 	"context"
 	"github.com/go-kit/kit/endpoint"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
-	"github.com/saxon134/go-utils/saKit"
-	"github.com/saxon134/go-utils/saKit/proto"
+	"github.com/saxon134/go-utils/saMicro/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
-func NewGRPCClient(conn *grpc.ClientConn) saKit.Service {
+func InitClient(address string) (cl Service, err error) {
+	var conn *grpc.ClientConn
+	conn, err = grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	cl = NewGRPCClient(conn)
+	return
+}
+
+func NewGRPCClient(conn *grpc.ClientConn) Service {
 	options := []grpctransport.ClientOption{
 		grpctransport.ClientBefore(func(ctx context.Context, md *metadata.MD) context.Context {
 			ctx = metadata.NewOutgoingContext(context.Background(), *md)
@@ -28,7 +40,7 @@ func NewGRPCClient(conn *grpc.ClientConn) saKit.Service {
 			proto.Response{},
 			options...).Endpoint()
 	}
-	return saKit.ApiEndPoint{
+	return ApiEndPoint{
 		EndPoint: apiEndpoint,
 	}
 }
