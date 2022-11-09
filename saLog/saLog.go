@@ -14,7 +14,6 @@ const (
 	NullType LogType = iota
 	LocalType
 	ZapType
-	BeegoType
 )
 
 type LogLevel int8
@@ -34,9 +33,6 @@ func Init(l LogLevel, t LogType) {
 	} else if t == ZapType {
 		log = initZapLog()
 		log.Log("zap log初始化成功~")
-	} else if t == BeegoType {
-		log = initBeegoLog()
-		log.Log("beego log初始化成功~")
 	}
 
 	if log == nil {
