@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saImg"
+	"github.com/saxon134/go-utils/saTime"
 	"strings"
 	"time"
 )
@@ -244,15 +245,21 @@ func (m *Time) Scan(value interface{}) error {
 		if str == "" {
 			return nil
 		}
-		m.Time = saData.StrToTime(saData.TimeFormat_Default, str)
+		t := saTime.StrToTime(str, saTime.FormatDefault)
+		if t != nil {
+			m.Time = *t
+		}
 	} else if str, ok = value.(string); ok && len(str) > 0 {
-		m.Time = saData.StrToTime(saData.TimeFormat_Default, str)
+		t := saTime.StrToTime(str, saTime.FormatDefault)
+		if t != nil {
+			m.Time = *t
+		}
 	}
 	return nil
 }
 
 func (m Time) Value() (driver.Value, error) {
-	str := saData.TimeStr(m.Time, saData.TimeFormat_Default)
+	str := saTime.TimeToStr(&m.Time, saTime.FormatDefault)
 	return str, nil
 }
 

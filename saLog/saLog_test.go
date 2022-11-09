@@ -7,7 +7,7 @@ import (
 )
 
 func TestSaLog(t *testing.T) {
-	Init(InfoLevel, BeegoType)
+	Init(InfoLevel, ZapType)
 	err := f1()
 	Err(err)
 }

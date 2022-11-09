@@ -6,7 +6,7 @@ import (
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saError"
 	"github.com/saxon134/go-utils/saOss"
-	"time"
+	"github.com/saxon134/go-utils/saTime"
 )
 
 const _ValueMaxLength = 500
@@ -71,7 +71,7 @@ func (m *ImgTxt) Save(oss saOss.SaOss, path string) (err error) {
 
 	//数据较大，存到oss
 	if path == "" {
-		path = "imgTxt/0/" + saData.TimeStr(time.Now(), saData.TimeFormat_yymmdd_Line) + "/"
+		path = "imgTxt/0/" + saTime.TimeToStr(saTime.Now(), saTime.FormatYMD) + "/"
 	}
 	m.Path, err = oss.UploadTxt(path, valueStr)
 	if err != nil {

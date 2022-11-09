@@ -8,7 +8,7 @@ import (
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saError"
 	"github.com/saxon134/go-utils/saOss"
-	"time"
+	"github.com/saxon134/go-utils/saTime"
 )
 
 type RichTxtType int
@@ -80,7 +80,7 @@ func (m *RichTxt) Save(oss saOss.SaOss, t RichTxtType, txt string, path string) 
 
 	//数据较大，存到oss
 	if path == "" {
-		path = "rt/default/" + saData.TimeStr(time.Now(), saData.TimeFormat_yymmdd_Line) + "/"
+		path = "rt/default/" + saTime.TimeToStr(saTime.Now(), saTime.FormatYMD) + "/"
 	}
 	m.Content, err = oss.UploadTxt(path, txt)
 	if err != nil {

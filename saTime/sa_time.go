@@ -1,4 +1,4 @@
-package saData
+package saTime
 
 import (
 	"time"
@@ -32,7 +32,7 @@ func Now() *time.Time {
 	return &t
 }
 
-func Str(t *time.Time, format string) string {
+func TimeToStr(t *time.Time, format string) string {
 	if t == nil || t.IsZero() {
 		return ""
 	}
