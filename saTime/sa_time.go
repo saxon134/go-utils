@@ -12,7 +12,11 @@ const (
 	FormatYMDHM  = "2006-01-02 15:04"
 	FormatYMD    = "2006-01-02"
 	FormatY      = "2006"
+	FormatHMS    = "15:04:05"
 	FormatHM     = "15:04"
+	FormatH      = "15"
+	FormatM      = "04"
+	FormatS      = "05"
 
 	FormatYMDHMSZh = "2006年01月02日 15点04分05秒"
 	FormatYMDHMZh  = "2006年01月02日 15点04分"
