@@ -4,9 +4,8 @@ import (
 	"bytes"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/saxon134/go-utils/saHit"
 	"reflect"
 	"strconv"
 )
@@ -49,7 +48,9 @@ func ToStr(data interface{}) (string, error) {
 	bAry, err := json.Marshal(data)
 	if err == nil && bAry != nil {
 		s := BytesToStr(bAry)
-		s = saHit.Str(s == "null", "", s)
+		if s == "null" {
+			s = ""
+		}
 		return s, nil
 	}
 	return "", err

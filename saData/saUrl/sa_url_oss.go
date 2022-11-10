@@ -1,9 +1,19 @@
-package saImg
+package saUrl
 
 import (
-	"github.com/saxon134/go-utils/saData"
 	"net/url"
 	"strings"
+)
+
+type OssImgStyle int8
+
+const (
+	NullImgStyle OssImgStyle = iota
+	DefaultImgStyle
+	SmallImgStyle
+	CoverImgStyle
+	ImgTxtImgStyle
+	BannerImgStyle
 )
 
 var _mainDomain string
@@ -38,13 +48,13 @@ func AddDefaultUriRoot(s string) string {
 	return AddUriRoot(s, NullImgStyle)
 }
 
-func AddUriRoot(s string, style ImgStyle) string {
+func AddUriRoot(s string, style OssImgStyle) string {
 	if s == "" || _mainDomain == "" {
 		return s
 	}
 
 	if strings.HasPrefix(s, "http") == false {
-		s = saData.ConnPath(_mainDomain, s)
+		s = ConnPath(_mainDomain, s)
 	}
 
 	for _, v := range _styleStrAry {
@@ -89,7 +99,7 @@ func ConnectUri(host string, url string) string {
 	if strings.HasPrefix(host, "http") &&
 		url != "" &&
 		strings.HasPrefix(url, "http") == false {
-		url = saData.ConnPath(host, url)
+		url = ConnPath(host, url)
 	}
 	return url
 }

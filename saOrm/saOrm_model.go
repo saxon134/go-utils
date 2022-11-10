@@ -4,8 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saImg"
-	"github.com/saxon134/go-utils/saTime"
+	"github.com/saxon134/go-utils/saData/saTime"
+	"github.com/saxon134/go-utils/saData/saUrl"
 	"strings"
 	"time"
 )
@@ -59,8 +59,8 @@ func (m StringAry) IsSameImages(n StringAry) bool {
 		return false
 	}
 	for i, s := range m {
-		s = saImg.DeleteUriRoot(s)
-		n[i] = saImg.DeleteUriRoot(n[i])
+		s = saUrl.DeleteUriRoot(s)
+		n[i] = saUrl.DeleteUriRoot(n[i])
 		if s != n[i] {
 			return false
 		}
@@ -245,12 +245,12 @@ func (m *Time) Scan(value interface{}) error {
 		if str == "" {
 			return nil
 		}
-		t := saTime.StrToTime(str, saTime.FormatDefault)
+		t := saTime.TimeFromStr(str, saTime.FormatDefault)
 		if t != nil {
 			m.Time = *t
 		}
 	} else if str, ok = value.(string); ok && len(str) > 0 {
-		t := saTime.StrToTime(str, saTime.FormatDefault)
+		t := saTime.TimeFromStr(str, saTime.FormatDefault)
 		if t != nil {
 			m.Time = *t
 		}

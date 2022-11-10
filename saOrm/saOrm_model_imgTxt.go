@@ -4,9 +4,9 @@ import (
 	"database/sql/driver"
 	"errors"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saError"
+	"github.com/saxon134/go-utils/saData/saError"
+	"github.com/saxon134/go-utils/saData/saTime"
 	"github.com/saxon134/go-utils/saOss"
-	"github.com/saxon134/go-utils/saTime"
 )
 
 const _ValueMaxLength = 500

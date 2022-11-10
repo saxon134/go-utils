@@ -3,7 +3,7 @@ package saOrm
 import (
 	"github.com/pkg/errors"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saImg"
+	"github.com/saxon134/go-utils/saData/saUrl"
 	"gorm.io/gorm"
 	"reflect"
 	"strings"
@@ -60,7 +60,7 @@ func FromDb(obj interface{}) error {
 		if isOss {
 			if columnKind == reflect.String {
 				str := reflectValue.Field(i).String()
-				s := saImg.AddDefaultUriRoot(str)
+				s := saUrl.AddDefaultUriRoot(str)
 				if s != str {
 					reflectValue.Field(i).SetString(s)
 				}
@@ -69,7 +69,7 @@ func FromDb(obj interface{}) error {
 				vLen := v.Len()
 				for j := 0; j < vLen; j++ {
 					str := v.Index(j).String()
-					s := saImg.AddDefaultUriRoot(str)
+					s := saUrl.AddDefaultUriRoot(str)
 					if s != str {
 						v.Index(j).SetString(s)
 					}
@@ -268,7 +268,7 @@ func ToDB(obj interface{}) error {
 				}
 			}
 			if isOss {
-				s := saImg.DeleteUriRoot(columnStr)
+				s := saUrl.DeleteUriRoot(columnStr)
 				if s != columnStr {
 					reflectValue.Field(i).SetString(s)
 				}
@@ -305,7 +305,7 @@ func ToDB(obj interface{}) error {
 				v = v.Slice(0, vLen)
 				for j := 0; j < vLen; j++ {
 					str := v.String()
-					s := saImg.DeleteUriRoot(str)
+					s := saUrl.DeleteUriRoot(str)
 					if s != str {
 						v.Field(j).SetString(s)
 					}

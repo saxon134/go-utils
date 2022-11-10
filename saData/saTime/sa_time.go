@@ -46,7 +46,7 @@ func TimeToStr(t *time.Time, format string) string {
 	return t.Format(format)
 }
 
-func StrToTime(s string, format string) *time.Time {
+func TimeFromStr(s string, format string) *time.Time {
 	if format == "" {
 		format = FormatDefault
 	}
@@ -71,15 +71,15 @@ func AdaptTime(s string) *time.Time {
 	case 0:
 		return &time.Time{}
 	case 20: //2006-01-02T15:04:05Z
-		return StrToTime(FormatSystem, s)
+		return TimeFromStr(s, FormatSystem)
 	case 19: //2006-01-02 15:04:05
-		return StrToTime(FormatDefault, s)
+		return TimeFromStr(s, FormatDefault)
 	case 16: //2006-01-02 15:04
-		return StrToTime(FormatYMDHM, s)
+		return TimeFromStr(s, FormatYMDHM)
 	case 10: //2006-01-02
-		return StrToTime(FormatYMD, s)
+		return TimeFromStr(s, FormatYMD)
 	case 8: //20060102
-		return StrToTime(FormatYMDSimple, s)
+		return TimeFromStr(s, FormatYMDSimple)
 	}
 	return nil
 }

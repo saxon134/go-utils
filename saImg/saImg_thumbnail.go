@@ -24,7 +24,7 @@ func calculateRatioFit(srcWidth, srcHeight, maxWidth int) (int, int) {
 	}
 }
 
-// 生成缩略图
+// MakeThumbnail 生成缩略图
 func MakeThumbnail(imagePath, savePath string, maxWidth int) error {
 	file, _ := os.Open(imagePath)
 	defer file.Close()

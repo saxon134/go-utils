@@ -3,7 +3,6 @@ package saData
 import (
 	"errors"
 	"math/rand"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -241,63 +240,6 @@ func StrToBytes(s string) []byte {
 }
 func BytesToStr(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
-}
-
-// QueryEncode 将字符串进行query编码
-func QueryEncode(s string) string {
-	if s != "" {
-		return url.QueryEscape(s)
-	}
-	return ""
-}
-
-// QueryDecode 对字符串进行query解码
-func QueryDecode(s string) string {
-	res, err := url.QueryUnescape(s)
-	if err != nil {
-		return ""
-	}
-	return res
-}
-
-// MapToQuery query & map 互转
-func MapToQuery(m map[string]string) string {
-	if m != nil {
-		urlV := url.Values{}
-		for k, v := range m {
-			if k != "" {
-				urlV.Add(k, v)
-			}
-		}
-		return urlV.Encode()
-	}
-	return ""
-}
-func QueryToMap(urlStr string) map[string]string {
-	values, _ := url.ParseQuery(urlStr)
-	m := map[string]string{}
-	for k, v := range values {
-		if k != "" {
-			m[k] = v[0]
-		}
-	}
-
-	return m
-}
-
-//返回结果是： /r/path
-func ConnPath(r string, path string) (full string) {
-	r = strings.TrimSuffix(r, "/")
-	path = strings.TrimPrefix(path, "/")
-	path = strings.TrimSuffix(path, "/")
-
-	if len(r) > 0 {
-		full = r + "/" + path
-	} else {
-		full = path
-	}
-
-	return full
 }
 
 //根据后缀判断是否是图片

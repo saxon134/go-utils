@@ -2,7 +2,7 @@ package saLog
 
 import (
 	"fmt"
-	"github.com/saxon134/go-utils/saTime"
+	"github.com/saxon134/go-utils/saData/saTime"
 	"net/http"
 	"strings"
 	"time"

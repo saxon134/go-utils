@@ -1,7 +1,7 @@
 package saOrm
 
 import (
-	"github.com/saxon134/go-utils/saHit"
+	"github.com/saxon134/go-utils/saData/saHit"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )

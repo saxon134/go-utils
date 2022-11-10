@@ -6,7 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saError"
+	"github.com/saxon134/go-utils/saData/saError"
+	"github.com/saxon134/go-utils/saData/saUrl"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -246,7 +247,7 @@ func ToRequest(method string, url string, params map[string]string, header map[s
 	var req *http.Request
 	if method == "GET" {
 		if len(params) > 0 {
-			paramsStr := saData.MapToQuery(params)
+			paramsStr := saUrl.QueryFromMap(params)
 			if strings.HasSuffix(url, "?") == false {
 				url += "?"
 			}
@@ -257,7 +258,7 @@ func ToRequest(method string, url string, params map[string]string, header map[s
 			return "", err
 		}
 	} else if method == "POST" {
-		bodyStr := strings.TrimSpace(saData.MapToQuery(params))
+		bodyStr := strings.TrimSpace(saUrl.QueryFromMap(params))
 		req, err = http.NewRequest("POST", url, strings.NewReader(bodyStr))
 		if err != nil {
 			return "", err

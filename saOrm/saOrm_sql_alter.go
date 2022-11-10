@@ -3,8 +3,8 @@ package saOrm
 import (
 	"fmt"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saError"
-	"github.com/saxon134/go-utils/saHit"
+	"github.com/saxon134/go-utils/saData/saError"
+	"github.com/saxon134/go-utils/saData/saHit"
 	"reflect"
 	"strings"
 )
