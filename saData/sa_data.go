@@ -40,9 +40,11 @@ func ToStr(data interface{}) (string, error) {
 	case string:
 		return v, nil
 	case int, int8, int16, int64, float32, float64:
-		return fmt.Sprint(data), nil
+		return fmt.Sprint(v), nil
 	case *string:
 		return *v, nil
+	case []uint8:
+		return string(v), nil
 	}
 
 	bAry, err := json.Marshal(data)
