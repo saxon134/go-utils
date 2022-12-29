@@ -254,6 +254,8 @@ func (m *Time) Scan(value interface{}) error {
 		if t != nil {
 			m.Time = *t
 		}
+	} else if t, ok := value.(time.Time); ok && t.IsZero() == false {
+		m.Time = t
 	}
 	return nil
 }
