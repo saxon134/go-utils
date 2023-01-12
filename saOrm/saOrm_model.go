@@ -245,15 +245,9 @@ func (m *Time) Scan(value interface{}) error {
 		if str == "" {
 			return nil
 		}
-		t := saTime.TimeFromStr(str, saTime.FormatDefault)
-		if t != nil {
-			m.Time = *t
-		}
+		m.Time = saTime.TimeFromStr(str, saTime.FormatDefault)
 	} else if str, ok = value.(string); ok && len(str) > 0 {
-		t := saTime.TimeFromStr(str, saTime.FormatDefault)
-		if t != nil {
-			m.Time = *t
-		}
+		m.Time = saTime.TimeFromStr(str, saTime.FormatDefault)
 	} else if t, ok := value.(time.Time); ok && t.IsZero() == false {
 		m.Time = t
 	}
@@ -261,7 +255,7 @@ func (m *Time) Scan(value interface{}) error {
 }
 
 func (m Time) Value() (driver.Value, error) {
-	str := saTime.TimeToStr(&m.Time, saTime.FormatDefault)
+	str := saTime.TimeToStr(m.Time, saTime.FormatDefault)
 	return str, nil
 }
 

@@ -28,16 +28,12 @@ const (
 
 	FormatYMDHMSSimple = "20060102150405"
 	FormatYMDHMSimple  = "200601021504"
+	FormatYMDHimple    = "2006010215"
 	FormatYMDSimple    = "20060102"
 )
 
-func Now() *time.Time {
-	t := time.Now()
-	return &t
-}
-
-func TimeToStr(t *time.Time, format string) string {
-	if t == nil || t.IsZero() {
+func TimeToStr(t time.Time, format string) string {
+	if t.IsZero() {
 		return ""
 	}
 	if format == "" {
@@ -46,7 +42,7 @@ func TimeToStr(t *time.Time, format string) string {
 	return t.Format(format)
 }
 
-func TimeFromStr(s string, format string) *time.Time {
+func TimeFromStr(s string, format string) time.Time {
 	if format == "" {
 		format = FormatDefault
 	}
@@ -57,19 +53,20 @@ func TimeFromStr(s string, format string) *time.Time {
 	}
 	t, _ := time.ParseInLocation(format, s, location)
 	if t.IsZero() == false {
-		return &t
+		return t
 	}
-	return nil
+
+	return time.Time{}
 }
 
-func AdaptTime(s string) *time.Time {
+func AdaptTime(s string) time.Time {
 	if s == "" {
-		return &time.Time{}
+		return time.Time{}
 	}
 
 	switch len(s) {
 	case 0:
-		return &time.Time{}
+		return time.Time{}
 	case 20: //2006-01-02T15:04:05Z
 		return TimeFromStr(s, FormatSystem)
 	case 19: //2006-01-02 15:04:05
@@ -81,12 +78,12 @@ func AdaptTime(s string) *time.Time {
 	case 8: //20060102
 		return TimeFromStr(s, FormatYMDSimple)
 	}
-	return nil
+	return time.Time{}
 }
 
 //当年第几周
-func WeekIndex(t *time.Time) int {
-	if t == nil || t.IsZero() == true {
+func WeekIndex(t time.Time) int {
+	if t.IsZero() == true {
 		return -1
 	}
 

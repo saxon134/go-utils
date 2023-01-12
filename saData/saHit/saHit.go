@@ -31,3 +31,11 @@ func Int64(ok bool, a int64, b int64) int64 {
 		return b
 	}
 }
+
+func Float(ok bool, a float32, b float32) float32 {
+	if ok {
+		return a
+	} else {
+		return b
+	}
+}

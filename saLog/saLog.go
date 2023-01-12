@@ -92,7 +92,7 @@ func Log(a ...interface{}) {
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saTime.TimeToStr(saTime.Now(), saTime.FormatDefault) + " L " + s
+	logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " L " + s
 }
 
 func Err(a ...interface{}) {
@@ -120,7 +120,7 @@ func Err(a ...interface{}) {
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saTime.TimeToStr(saTime.Now(), saTime.FormatDefault) + " E " + s
+	logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " E " + s
 }
 
 func Warn(a ...interface{}) {
@@ -152,7 +152,7 @@ func Warn(a ...interface{}) {
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saTime.TimeToStr(saTime.Now(), saTime.FormatDefault) + " W " + s
+	logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " W " + s
 	if len(logChan) >= 5 {
 		if logLevel == InfoLevel {
 			logLevel = WarnLevel
@@ -187,7 +187,7 @@ func Info(a ...interface{}) {
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saTime.TimeToStr(saTime.Now(), saTime.FormatDefault) + " I " + s
+	logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " I " + s
 	if len(logChan) >= 5 {
 		if logLevel == InfoLevel {
 			logLevel = WarnLevel
