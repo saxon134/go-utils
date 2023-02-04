@@ -23,11 +23,6 @@ func ToBytes(data interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func String(data interface{}) string {
-	s, _ := ToStr(data)
-	return s
-}
-
 func ToStr(data interface{}) (string, error) {
 	if data == nil {
 		return "", nil
@@ -56,6 +51,11 @@ func ToStr(data interface{}) (string, error) {
 		return s, nil
 	}
 	return "", err
+}
+
+func String(data interface{}) string {
+	s, _ := ToStr(data)
+	return s
 }
 
 func ToMap(data interface{}) (map[string]interface{}, error) {
@@ -357,6 +357,11 @@ func ToInt(d interface{}) (int, error) {
 	return 0, errors.New("类型不匹配")
 }
 
+func Int(d interface{}) int {
+	var i, _ = ToInt(d)
+	return i
+}
+
 func ToInt8(d interface{}) (int8, error) {
 	if v, err := ToInt(d); err == nil {
 		return int8(v), nil
@@ -371,6 +376,79 @@ func ToInt32(d interface{}) (int32, error) {
 	} else {
 		return 0, err
 	}
+}
+
+func ToInt64(d interface{}) (int64, error) {
+	if i, ok := d.(int64); ok {
+		return i, nil
+	}
+
+	if i, ok := d.(int); ok {
+		return int64(i), nil
+	}
+
+	if s, ok := d.(string); ok {
+		if s == "" {
+			return 0, nil
+		}
+		return strconv.ParseInt(s, 10, 64)
+	}
+
+	if f, ok := d.(float64); ok {
+		return int64(f), nil
+	}
+
+	if i, ok := d.(bool); ok {
+		if i {
+			return 1, nil
+		}
+	}
+
+	if i, ok := d.(int32); ok {
+		return int64(i), nil
+	}
+
+	if i, ok := d.(int16); ok {
+		return int64(i), nil
+	}
+
+	if i, ok := d.(int8); ok {
+		return int64(i), nil
+	}
+
+	if i, ok := d.(uint8); ok {
+		return int64(i), nil
+	}
+
+	if i, ok := d.(uint16); ok {
+		return int64(i), nil
+	}
+
+	if i, ok := d.(uint32); ok {
+		return int64(i), nil
+	}
+
+	if i, ok := d.(uint64); ok {
+		return int64(i), nil
+	}
+
+	if f, ok := d.(float32); ok {
+		return int64(f), nil
+	}
+
+	if s, e := ToStr(d); e == nil {
+		if s == "" {
+			return 0, nil
+		}
+		return strconv.ParseInt(s, 10, 64)
+	}
+
+	return 0, errors.New("类型不匹配")
+}
+
+func Int64(d interface{}) int64 {
+	var i, _ = ToInt64(d)
+	return i
 }
 
 func ToFloat32(d interface{}) (float32, error) {
@@ -475,74 +553,6 @@ func ToBool(d interface{}) (bool, error) {
 	}
 
 	return false, errors.New("类型不匹配")
-}
-
-func ToInt64(d interface{}) (int64, error) {
-	if i, ok := d.(int64); ok {
-		return i, nil
-	}
-
-	if i, ok := d.(int); ok {
-		return int64(i), nil
-	}
-
-	if s, ok := d.(string); ok {
-		if s == "" {
-			return 0, nil
-		}
-		return strconv.ParseInt(s, 10, 64)
-	}
-
-	if f, ok := d.(float64); ok {
-		return int64(f), nil
-	}
-
-	if i, ok := d.(bool); ok {
-		if i {
-			return 1, nil
-		}
-	}
-
-	if i, ok := d.(int32); ok {
-		return int64(i), nil
-	}
-
-	if i, ok := d.(int16); ok {
-		return int64(i), nil
-	}
-
-	if i, ok := d.(int8); ok {
-		return int64(i), nil
-	}
-
-	if i, ok := d.(uint8); ok {
-		return int64(i), nil
-	}
-
-	if i, ok := d.(uint16); ok {
-		return int64(i), nil
-	}
-
-	if i, ok := d.(uint32); ok {
-		return int64(i), nil
-	}
-
-	if i, ok := d.(uint64); ok {
-		return int64(i), nil
-	}
-
-	if f, ok := d.(float32); ok {
-		return int64(f), nil
-	}
-
-	if s, e := ToStr(d); e == nil {
-		if s == "" {
-			return 0, nil
-		}
-		return strconv.ParseInt(s, 10, 64)
-	}
-
-	return 0, errors.New("类型不匹配")
 }
 
 func StrToData(str string) (interface{}, error) {

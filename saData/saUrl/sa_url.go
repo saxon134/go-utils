@@ -56,7 +56,7 @@ func ConnPath(r string, path string) (full string) {
 	if len(r) > 0 {
 		full = r + "/" + path
 	} else {
-		full = path
+		full = "/" + path
 	}
 
 	return full
