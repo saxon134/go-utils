@@ -95,11 +95,18 @@ func DeleteUriRoot(s string) string {
 	return s
 }
 
+// 返回格式：http://xxxx/xxx
 func ConnectUri(host string, url string) string {
 	if strings.HasPrefix(host, "http") &&
 		url != "" &&
 		strings.HasPrefix(url, "http") == false {
-		url = ConnPath(host, url)
+		host = strings.TrimSuffix(host, "/")
+		url = strings.TrimPrefix(url, "/")
+		url = strings.TrimSuffix(url, "/")
+		if url != "" {
+			return host + "/" + url
+		}
+		return host
 	}
-	return url
+	return host
 }

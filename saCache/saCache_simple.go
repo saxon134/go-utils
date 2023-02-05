@@ -14,6 +14,10 @@ type simpleCache struct {
 
 // SMGet 简单版本的缓存
 func SMGet(key string) (value interface{}) {
+	if simpleCacheData == nil {
+		simpleCacheData = map[string]simpleCache{}
+	}
+
 	data, ok := simpleCacheData[key]
 	if ok == false {
 		return nil
@@ -29,6 +33,10 @@ func SMGet(key string) (value interface{}) {
 
 // SMSet 简单版本的缓存 最多存储100条
 func SMSet(key string, value interface{}, duration time.Duration) {
+	if simpleCacheData == nil {
+		simpleCacheData = map[string]simpleCache{}
+	}
+	
 	if len(simpleCacheData) > 100 {
 		var timeAry = make([]int64, 0, len(simpleCacheData))
 		for _, v := range simpleCacheData {
