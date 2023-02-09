@@ -1,15 +1,11 @@
 package saCache
 
-type cache struct {
-	MaxCnt   int
-	TotalCnt int
-	LastTime int64
-	Ary      []cacheItem
-}
+import (
+	"time"
+)
 
-type cacheItem struct {
-	Cnt      int
-	Id       string
-	LastTime int64 //10位时间戳
-	V        interface{}
+type Cache struct {
+	Before   time.Time //有效期
+	Data     interface{}
+	UpdateAt time.Time //更新时间1秒内也不会更新
 }

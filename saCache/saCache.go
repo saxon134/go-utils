@@ -1,155 +1,87 @@
 package saCache
 
 import (
-	"errors"
-	"github.com/saxon134/go-utils/saData"
+	"sort"
 	"sync"
 	"time"
 )
 
-type CacheHandle func(id string) (interface{}, error)
+type CacheHandle func() (interface{}, error)
 
-//最多保存的类型，超出会覆盖掉最早访问的存储项
-const maxCountForKind = 50
+var cacheData map[string]*Cache
+var cacheLocker sync.RWMutex
 
-//每个项目最多保存的数量，超出会按照参数mode规则去替换
-const maxCountForOneKind = 50
+func MGet(key string) (value interface{}, expired bool) {
+	if cacheData == nil {
+		cacheData = map[string]*Cache{}
+	}
 
-var _cache = make(map[string]*cache, maxCountForKind)
-var _locker sync.RWMutex
-var _handle map[string]CacheHandle
+	data, ok := cacheData[key]
+	if ok == false || data == nil {
+		return nil, true
+	}
 
-// RegisterHandle
-// 建议都提前调用该接口注册方法，注册后其他获取缓存接口行为才会一致
-// 否则获取缓存可能无法命中
-func RegisterHandle(key string, handle CacheHandle) {
-	if key == "" || handle == nil {
+	var now = time.Now()
+	if data.Before.IsZero() || data.Before.After(now) {
+		value = data.Data
+		expired = true
+		delete(cacheData, key)
+		return value, true
+	}
+
+	return data.Data, false
+}
+
+// MSetWithFunc 最多500条，超出会删除最早的数据，一次性删除三分之一
+// 防止并发更新：调用handler前必须抢到锁，并且更新时间超过1秒
+func MSetWithFunc(key string, duration time.Duration, handler CacheHandle) {
+	if key == "" || duration <= time.Second || handler == nil {
 		return
 	}
-	if _handle == nil || len(_handle) == 0 {
-		_handle = make(map[string]CacheHandle, 20)
+
+	//大锁
+	cacheLocker.Lock()
+	defer cacheLocker.Unlock()
+
+	if cacheData == nil {
+		cacheData = map[string]*Cache{}
 	}
 
-	_handle[key] = handle
-}
+	if len(cacheData) >= 500 {
+		var timeAry = make([]int64, 0, len(cacheData))
+		for _, v := range cacheData {
+			timeAry = append(timeAry, v.Before.Unix())
+		}
+		sort.Slice(timeAry, func(i, j int) bool {
+			return timeAry[i] < timeAry[j]
+		})
 
-// MGetWithFunc
-// 该接口的handle不会自动注册的，因为各业务内handle可能都会有一点点差异
-// mode
-//    r或者空 -替换使用频次最低的存储项，
-//             典型场景：缓存存在数据库的配置，减少数据库压力
-//    5m      -替换最后访问时间最早的那个，如果最早的那个在5m之内，则还是会替换访问次数最少的存储项
-//             5m支持范围：10s - 60m 默认10s
-//             典型场景：IP限流
-func MGetWithFunc(key string, id string, mode string, handle CacheHandle) (value interface{}, cnt int, err error) {
-	if key == "" || id == "" || handle == nil {
-		return nil, 0, errors.New("缺少参数或取值方法")
-	}
-
-	now := time.Now().Unix()
-	var retentionSecond int64 = 10
-	if mode != "" {
-		m := mode[len(mode)-1:]
-		t, _ := saData.ToInt64(mode[:len(mode)-1])
-		if m == "m" {
-			if t > 0 && t <= 60 {
-				retentionSecond = t * 60
-			}
-		} else if m == "s" {
-			if t > 10 && t <= 60 {
-				retentionSecond = t
+		var t = timeAry[300]
+		for k, v := range cacheData {
+			if v.Before.Unix() < t {
+				delete(cacheData, k)
 			}
 		}
 	}
 
-	_locker.Lock()
-	defer _locker.Unlock()
-
-	cacheKind := _cache[key]
-	if cacheKind == nil {
-		cacheKind = new(cache)
-		cacheKind.Ary = make([]cacheItem, 0, 100)
-		cacheKind.MaxCnt = 1
-		cacheKind.TotalCnt = 1
-		cacheKind.LastTime = now //只有新建的时候才设置时间
-	}
-	cacheKind.TotalCnt++
-
-	var item *cacheItem = nil
-	var itemIdx = -1
-	for i, v := range cacheKind.Ary {
-		if v.Id == id {
-			item = &v
-			itemIdx = i
-			break
+	var data = cacheData[key]
+	if data == nil {
+		data = &Cache{
+			Before:   time.Now().Add(duration),
+			Data:     nil,
+			UpdateAt: time.Time{},
 		}
+		cacheData[key] = data
 	}
 
-	//不存在，或已过期
-	if itemIdx < 0 || item.LastTime+retentionSecond < now {
-		if itemIdx >= 0 {
-			cacheKind.Ary = append(cacheKind.Ary[:itemIdx], cacheKind.Ary[itemIdx+1:]...)
-		}
-
-		v, err := handle(id)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		item = &cacheItem{
-			Cnt:      1,
-			Id:       id,
-			LastTime: now,
-			V:        v,
-		}
-		//每个类目最多保存的数量
-		if len(cacheKind.Ary) >= maxCountForOneKind {
-			//取次数最小的，替换掉
-			var minIdx = -1
-			for i, v := range cacheKind.Ary {
-				if minIdx == -1 || cacheKind.Ary[minIdx].Cnt > v.Cnt {
-					minIdx = i
-				}
-			}
-			cacheKind.Ary = append(cacheKind.Ary[:minIdx], cacheKind.Ary[minIdx+1:]...)
-		}
-		cacheKind.Ary = append(cacheKind.Ary, *item)
-	} else {
-		item.Cnt++
-		cacheKind.Ary[itemIdx] = *item
-
-		//更新最大次数，新增加的时候会使用到
-		cacheKind.MaxCnt = 0
-		for _, v := range cacheKind.Ary {
-			if v.Cnt > cacheKind.MaxCnt {
-				cacheKind.MaxCnt = v.Cnt
-			}
-		}
+	if data.UpdateAt.IsZero() == false && data.UpdateAt.After(time.Now().Add(time.Second*-1)) {
+		return
 	}
 
-	//最多保存50类数据
-	if len(_cache) >= maxCountForKind && _cache[key] == nil {
-		var min *cache
-		var minK string
-		for k, v := range _cache {
-			if min == nil || min.TotalCnt == 0 || min.TotalCnt > v.TotalCnt {
-				min = v
-				minK = k
-			}
-		}
-
-		if minK != "" {
-			delete(_cache, minK)
-		}
+	v, e := handler()
+	if e != nil {
+		data.Data = v
+		data.UpdateAt = time.Now()
+		cacheData[key] = data
 	}
-
-	_cache[key] = cacheKind
-	return item.V, item.Cnt, nil
-}
-
-// MGet
-// 只有提前调用了RegisterHandle将方法注册进来后才可以调用该接口，否则返回数据会是空的
-func MGet(key string, mode string, id string) (value interface{}, cnt int, err error) {
-	value, cnt, err = MGetWithFunc(key, id, mode, _handle[key])
-	return
 }
