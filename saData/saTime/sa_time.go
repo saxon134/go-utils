@@ -32,6 +32,11 @@ const (
 	FormatYMDSimple    = "20060102"
 )
 
+func Now() *time.Time {
+	var t = time.Now()
+	return &t
+}
+
 func TimeToStr(t time.Time, format string) string {
 	if t.IsZero() {
 		return ""

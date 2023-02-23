@@ -14,9 +14,10 @@ const (
 	RoundTypeDown                     //向下取整 取2位小数 如：1.234 => 1.23  1.238 => 1.23
 )
 
-/** 格式化，解决小数点问题
-  提供四舍五入、上下取整方式
-  返回的元是2位小数 */
+// RoundYuan
+// 格式化，解决小数点问题
+// 提供四舍五入、上下取整方式
+// 返回的元是2位小数
 func RoundYuan(yuan interface{}, roundType ...RoundType) float32 {
 	round := RoundTypeDefault
 	if roundType != nil && len(roundType) > 0 {
@@ -75,10 +76,11 @@ func RoundYuan(yuan interface{}, roundType ...RoundType) float32 {
 	return 0
 }
 
-/** 解决精度丢失问题 例如：19.9 * 100 = 1889
-  提供四舍五入、上下取整方式
-  不可为负数，负数则返回0
-  返回的元是2位小数 */
+// Fen2Yuan
+// 解决精度丢失问题 例如：19.9 * 100 = 1889
+// 提供四舍五入、上下取整方式
+// 不可为负数，负数则返回0
+// 返回的元是2位小数
 func Fen2Yuan(fen interface{}, roundType ...RoundType) (yuan float32) {
 	round := RoundTypeDefault
 	if roundType != nil && len(roundType) > 0 {
@@ -137,9 +139,10 @@ func Fen2Yuan(fen interface{}, roundType ...RoundType) (yuan float32) {
 	return
 }
 
-/** 解决精度丢失问题 例如：19.9 * 100 = 1889
-  提供四舍五入、上下取整方式
-  不可为负数，负数则返回0 */
+// Yuan2Fen
+// 解决精度丢失问题 例如：19.9 * 100 = 1889
+// 提供四舍五入、上下取整方式
+// 不可为负数，负数则返回0
 func Yuan2Fen(yuan interface{}, roundType ...RoundType) (fen int) {
 	round := RoundTypeDefault
 	if roundType != nil && len(roundType) > 0 {
@@ -200,10 +203,11 @@ func Yuan2Fen(yuan interface{}, roundType ...RoundType) (fen int) {
 	return
 }
 
-/** 解决精度丢失问题 例如：19.9 * 100 = 1889
-  提供四舍五入、上下取整方式
-  不可为负数，负数则返回0
-  返回的元是3位小数 */
+// Li2Yuan
+// 解决精度丢失问题 例如：19.9 * 100 = 1889
+// 提供四舍五入、上下取整方式
+// 不可为负数，负数则返回0
+// 返回的元是3位小数
 func Li2Yuan(li interface{}, roundType ...RoundType) (yuan float32) {
 	round := RoundTypeDefault
 	if roundType != nil && len(roundType) > 0 {
@@ -262,9 +266,10 @@ func Li2Yuan(li interface{}, roundType ...RoundType) (yuan float32) {
 	return
 }
 
-/** 解决精度丢失问题 例如：19.9 * 100 = 1889
-  提供四舍五入、上下取整方式
-  不可为负数，负数则返回0 */
+// Yuan2Li
+// 解决精度丢失问题 例如：19.9 * 100 = 1889
+// 提供四舍五入、上下取整方式
+// 不可为负数，负数则返回0
 func Yuan2Li(yuan interface{}, roundType ...RoundType) (li int) {
 	round := RoundTypeDefault
 	if roundType != nil && len(roundType) > 0 {

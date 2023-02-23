@@ -176,13 +176,13 @@ func (m *LiPrice) Scan(value interface{}) error {
 
 	i, err := saData.ToInt(value)
 	if err == nil {
-		*m = LiPrice(saData.Fen2Yuan(i, saData.RoundTypeDefault))
+		*m = LiPrice(saData.Li2Yuan(i, saData.RoundTypeDefault))
 	}
 	return err
 }
 
 func (m LiPrice) Value() (driver.Value, error) {
-	i := saData.Yuan2Fen(float32(m), saData.RoundTypeDefault)
+	i := saData.Yuan2Li(float32(m), saData.RoundTypeDefault)
 	return saData.Itos(i), nil
 }
 
@@ -208,7 +208,7 @@ func (m Weight) Value() (driver.Value, error) {
 }
 
 // Rate
-// 数据库存储格式：整数，万份之一为单位，如：0.23%
+// 数据库存储格式：整数，百分比为单位，如：23%
 type Rate float32
 
 func (m *Rate) Scan(value interface{}) error {
@@ -218,13 +218,13 @@ func (m *Rate) Scan(value interface{}) error {
 
 	i, err := saData.ToInt(value)
 	if err == nil {
-		*m = Rate(i / 10000)
+		*m = Rate(i / 100)
 	}
 	return err
 }
 
 func (m Rate) Value() (driver.Value, error) {
-	i := m * 10000
+	i := m * 100
 	return saData.Itos(int(i)), nil
 }
 

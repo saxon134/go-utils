@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/garyburd/redigo/redis"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -160,4 +161,11 @@ func (r Redis) GetString(k string) (string, error) {
 	}
 
 	return "", errors.New("缺少key")
+}
+
+func (r Redis) IsError(err error) bool {
+	if err == nil || strings.Index(err.Error(), "nil returned") >= 0 {
+		return false
+	}
+	return true
 }

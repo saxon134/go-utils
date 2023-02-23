@@ -119,6 +119,15 @@ func CreateTbl(obj interface{}) {
 						"  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n" +
 						"  `deleted_at` datetime DEFAULT NULL,\n"
 					continue
+				} else if columns[i].snake == "create_at" {
+					createSqlTxt += "  `create_at` datetime DEFAULT CURRENT_TIMESTAMP,\n"
+					continue
+				} else if columns[i].snake == "update_at" {
+					createSqlTxt += "  `update_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n"
+					continue
+				} else if columns[i].snake == "delete_at" {
+					createSqlTxt += "  `delete_at` datetime DEFAULT NULL,\n"
+					continue
 				}
 
 				columnType := ""
