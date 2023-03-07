@@ -186,6 +186,27 @@ func (m LiPrice) Value() (driver.Value, error) {
 	return saData.Itos(i), nil
 }
 
+// PriceDigit4
+// 4位小数点钱
+type PriceDigit4 float32
+
+func (m *PriceDigit4) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	i, err := saData.ToInt(value)
+	if err == nil {
+		*m = PriceDigit4(saData.IntToFloat(i, 4, saData.RoundTypeDefault))
+	}
+	return err
+}
+
+func (m PriceDigit4) Value() (driver.Value, error) {
+	i := saData.FloatToInt(float32(m), 4, saData.RoundTypeDefault)
+	return saData.Itos(i), nil
+}
+
 // Weight
 // 数据库存储格式：整数，克为单位
 type Weight float32
