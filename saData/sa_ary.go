@@ -27,7 +27,7 @@ func GetIdByKeys(args map[string]interface{}, key1 string, key2 string) int64 {
 	return id
 }
 
-// []{1,2,3} => 1,2,3
+// AryToIds []{1,2,3} => ,1,2,3,
 func AryToIds(ary []int64) string {
 	if ary == nil || len(ary) == 0 {
 		return ""
@@ -40,23 +40,23 @@ func AryToIds(ary []int64) string {
 		}
 	}
 	if ids != "" {
-		ids = strings.TrimSuffix(ids, ",")
+		ids = "," + ids
 	}
 
 	return ids
 }
 
+// IdsToAry
 // 1,2,3 => []{1,2,3}
 func IdsToAry(str string) []int64 {
 	if str == "" {
 		return []int64{}
 	}
 
-	ary := strings.Split(str, ",")
+	var ary = strings.Split(str, ",")
 	idAry := make([]int64, 0, len(ary))
 	for _, v := range ary {
-		id, _ := ToInt64(v)
-		if id > 0 {
+		if id, _ := ToInt64(v); id > 0 {
 			idAry = append(idAry, id)
 		}
 	}
@@ -64,6 +64,8 @@ func IdsToAry(str string) []int64 {
 	return idAry
 }
 
+// FormatIds 前后加逗号是为了方便SQL查询过滤
+// 1,2,3 => ,1,2,3,
 func FormatIds(str string) string {
 	if str == "" {
 		return ""
@@ -81,7 +83,7 @@ func FormatIds(str string) string {
 	return str
 }
 
-//注意：只支持基础类型数据
+// InArray 注意：只支持基础类型数据
 func InArray(item interface{}, ary interface{}) (exist bool) {
 	v1 := String(item)
 	switch vv := ary.(type) {
@@ -141,7 +143,7 @@ func InArrayFun(ary interface{}, fun func(i int) bool) bool {
 	return false
 }
 
-//注意：只支持基础类型数据
+// 注意：只支持基础类型数据
 func AppendId(ary []int64, id int64) []int64 {
 	if id > 0 {
 		exist := false

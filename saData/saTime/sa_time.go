@@ -33,7 +33,7 @@ const (
 )
 
 func Now() *time.Time {
-	var t = time.Now()
+	var t = time.Now().Local()
 	return &t
 }
 
@@ -86,7 +86,7 @@ func AdaptTime(s string) time.Time {
 	return time.Time{}
 }
 
-//当年第几周
+// 当年第几周
 func WeekIndex(t time.Time) int {
 	if t.IsZero() == true {
 		return -1

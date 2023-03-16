@@ -2,16 +2,18 @@ package saData
 
 import "strings"
 
-/**
-int64和字符串互转，转成的字符串非固定长度，可指定最小长度
-数字范围较大，超出范围字符长度自动加1位
-emw都表示0，避免出现连续e的情况
-*/
+////////////////////////////////////////////////////////////////
+// int64和字符串互转，转成的字符串
+// 可指定最小长度，字符长度不固定
+// 数字范围较大，超出范围字符长度自动加1位
+// emw都表示0，避免出现连续e的情况
+////////////////////////////////////////////////////////////////
+
+var CodeSource = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ" //方便给人识别的编码
+// var MaxSource = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^*()_=+<>.?/[]{}|`~" //最大范围的编码
 
 var defaultSource = "e8trxizqkp9bs2ng4uv5cjh3d6y7af"
 var zeroAry = []string{"e", "m", "w"}
-
-//0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^*()_=+<>.?/[]{}|`~
 
 func IdToChar(v int64) string {
 	return IdToCharWithSource(v, 3, "")
