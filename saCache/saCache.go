@@ -77,30 +77,42 @@ func MSetWithFunc(key string, duration time.Duration, handler CacheHandle) (valu
 		cacheData[key] = data
 	}
 
-	//数据正常，并且未过期
-	if data.Data != nil && data.UpdateAt.IsZero() == false && data.UpdateAt.After(time.Now().Add(time.Second*-1)) {
-		return data.Data, false
-	}
-
 	//无数据情况，同步调用获取数据的处理
 	if data.Data == nil {
+		data.isUpdating = true
 		v, e := handler()
-		if e != nil {
+		if e == nil {
 			data.Data = v
 			data.UpdateAt = time.Now()
+			data.isUpdating = false
 			cacheData[key] = data
-			return data, false
+			return data.Data, false
 		}
 		return nil, false
 	}
 
-	//有数据，但是过期了，则异步调用获取数据的处理
+	//有数据，并且未过期
+	if data.Data != nil  {
+		var now = time.Now()
+
+		//未过期
+		if data.Before.IsZero() == false && data.Before.Before(now) {
+			return data.Data, false
+		}
+
+		//刚更新过，避免并发多次更新
+		if data.UpdateAt.IsZero()==false && data.UpdateAt.After(now.Add(time.Second*-1)) {
+			return data.Data, false
+		}
+	}
+
+	//有数据，但是过期了，先返回数据，再异步调用获取数据处理
 	if data.isUpdating == false {
 		data.isUpdating = true
 		cacheData[key] = data
 		go func() {
 			v, e := handler()
-			if e != nil {
+			if e == nil {
 				data.Data = v
 				data.UpdateAt = time.Now()
 				cacheData[key] = data

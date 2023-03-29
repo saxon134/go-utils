@@ -27,7 +27,10 @@ func (e Error) Error() string {
 func (e Error) String() string {
 	s := ""
 	if e.Code > 0 {
-		s = fmt.Sprintf("%d %s \n%s", e.Code, e.Msg, e.Caller)
+		s = fmt.Sprintf("%d %s", e.Code, e.Msg)
+		if e.Caller != "" {
+			s += "\n " + e.Caller
+		}
 	}
 	return s
 }
