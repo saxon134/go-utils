@@ -10,8 +10,9 @@ import (
 	"time"
 )
 
-// StringAry
-// 数据库存储格式：json
+/******* StringAry *********/
+/* 存储格式：json */
+
 type StringAry []string
 
 func (m StringAry) TrimSpace() StringAry {
@@ -68,8 +69,44 @@ func (m StringAry) IsSameImages(n StringAry) bool {
 	return true
 }
 
-// Ids
-// 数据库存储格式： id1,id2,id3
+/******** Dic ********/
+/* 存储格式：json */
+
+type Dic map[string]interface{}
+
+func (m *Dic) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	bAry, ok := value.([]byte)
+	if ok && len(bAry) > 0 {
+		err := json.Unmarshal(bAry, m)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func (m Dic) Value() (driver.Value, error) {
+	bAry, err := json.Marshal(m)
+	if err == nil && len(bAry) > 0 {
+		s := string(bAry)
+		if s == "null" {
+			return "", nil
+		}
+		return s, nil
+	}
+
+	return "", err
+}
+
+/*********** Ids **********/
+/* 存储格式： id1,id2,id3 */
+
 type Ids []int64
 
 func (m *Ids) Scan(value interface{}) error {
@@ -106,8 +143,9 @@ func (m Ids) Value() (driver.Value, error) {
 	return "", nil
 }
 
-// CompressIds
-// 数据库存储格式：字符串，ID转换为88进制，逗号分隔
+/**************** CompressIds ******************/
+/*存储格式： 字符串，ID转换为88进制，逗号分隔 */
+
 type CompressIds []int64
 
 func (m *CompressIds) Scan(value interface{}) error {
@@ -144,8 +182,9 @@ func (m CompressIds) Value() (driver.Value, error) {
 	return "", nil
 }
 
-// Price
-// 数据库存储格式：整数，分为单位，故不存在四舍五入一说
+/**************** Price ******************/
+/*存储格式： 整数，分为单位，故不存在四舍五入一说 */
+
 type Price float32
 
 func (m *Price) Scan(value interface{}) error {
@@ -165,8 +204,9 @@ func (m Price) Value() (driver.Value, error) {
 	return saData.Itos(i), nil
 }
 
-// LiPrice
-// 数据库存储格式：整数，厘为单位
+/********** LiPrice **********/
+/*存储格式： 整数，厘为单位 */
+
 type LiPrice float32
 
 func (m *LiPrice) Scan(value interface{}) error {
@@ -186,8 +226,9 @@ func (m LiPrice) Value() (driver.Value, error) {
 	return saData.Itos(i), nil
 }
 
-// PriceDigit4
-// 4位小数点钱
+/********** PriceDigit4 **********/
+/*存储格式： 4位小数点钱 */
+
 type PriceDigit4 float32
 
 func (m *PriceDigit4) Scan(value interface{}) error {
@@ -207,8 +248,9 @@ func (m PriceDigit4) Value() (driver.Value, error) {
 	return saData.Itos(i), nil
 }
 
-// Weight
-// 数据库存储格式：整数，克为单位
+/********** Weight **********/
+/*存储格式： 整数，克为单位 */
+
 type Weight float32
 
 func (m *Weight) Scan(value interface{}) error {
@@ -228,8 +270,9 @@ func (m Weight) Value() (driver.Value, error) {
 	return saData.Itos(int(i)), nil
 }
 
-// Rate
-// 数据库存储格式：整数，百分比为单位，如：23%
+/****************** Rate ******************/
+/*存储格式： 整数，百分比为单位，如：23% */
+
 type Rate float32
 
 func (m *Rate) Scan(value interface{}) error {
@@ -249,8 +292,9 @@ func (m Rate) Value() (driver.Value, error) {
 	return saData.Itos(int(i)), nil
 }
 
-// Time
-// 数据库存储格式：datetime
+/****************** Time ******************/
+/*存储格式： datetime */
+
 type Time struct {
 	time.Time
 }
