@@ -70,7 +70,7 @@ func Btos(b bool) string {
 	}
 }
 
-//去除 ' ' '\n' '\r' '\t'前缀，如果有多个也会去除
+// 去除 ' ' '\n' '\r' '\t'前缀，如果有多个也会去除
 func TrimPrefixSpace(s string) string {
 	if s != "" {
 		var start int = 0
@@ -86,7 +86,7 @@ func TrimPrefixSpace(s string) string {
 	return ""
 }
 
-//去除 ' ' '\n' '\r' '\t'后缀，如果有多个也会去除
+// 去除 ' ' '\n' '\r' '\t'后缀，如果有多个也会去除
 func TrimSuffixSpace(s string) string {
 	if s != "" {
 		var end int = StrLen(s)
@@ -102,14 +102,14 @@ func TrimSuffixSpace(s string) string {
 	return string(s)
 }
 
-//去除 ' ' '\n' '\r' '\t' 前缀和后缀
+// 去除 ' ' '\n' '\r' '\t' 前缀和后缀
 func TrimPreSuffixSpace(s string) string {
 	s = TrimPrefixSpace(s)
 	s = TrimSuffixSpace(s)
 	return string(s)
 }
 
-//去除所有 ' ' '\n' '\r' '\t'
+// 去除所有 ' ' '\n' '\r' '\t'
 func TrimSpace(s string) string {
 	if s != "" {
 		var i = 0
@@ -177,13 +177,13 @@ func SubStr(s string, start int, cnt int) string {
 	return string(r[start : start+cnt])
 }
 
-//rune长度
+// rune长度
 func StrLen(s string) int {
 	var r = []rune(string(s))
 	return len(r)
 }
 
-//rune长度，支持中文
+// rune长度，支持中文
 func LenCheck(m interface{}, max int) error {
 	str, _ := ToStr(m)
 	if StrLen(str) <= max {
@@ -193,8 +193,11 @@ func LenCheck(m interface{}, max int) error {
 	return errors.New("超出范围")
 }
 
-/* 去除字符串中H5的style、script；
-将标签转换为回车，去除连续回车，去除每段开始、结尾空格 */
+/*
+	去除字符串中H5的style、script；
+
+将标签转换为回车，去除连续回车，去除每段开始、结尾空格
+*/
 func TrimH5Tags(src string) (str string) {
 	s := string(src)
 
@@ -242,7 +245,20 @@ func BytesToStr(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-//根据后缀判断是否是图片
+// AppendString 字符串拼接 通过strings.Builder，效率更高
+func AppendStr(org string, elems ...string) string {
+	if len(elems) > 0 {
+		var b strings.Builder
+		b.WriteString(org)
+		for _, s := range elems {
+			b.WriteString(s)
+		}
+		return b.String()
+	}
+	return org
+}
+
+// 根据后缀判断是否是图片
 func IsImg(url string) bool {
 	if url == "" {
 		return false
@@ -266,7 +282,7 @@ func IsImg(url string) bool {
 	return false
 }
 
-//根据后缀判断是否是视频
+// 根据后缀判断是否是视频
 func IsVideo(url string) bool {
 	if url == "" {
 		return false
