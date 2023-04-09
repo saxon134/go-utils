@@ -54,7 +54,7 @@ func AddUriRoot(s string, style OssImgStyle) string {
 	}
 
 	if strings.HasPrefix(s, "http") == false {
-		s = ConnPath(_mainDomain, s)
+		s = ConnectUri(_mainDomain, s)
 	}
 
 	for _, v := range _styleStrAry {
