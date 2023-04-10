@@ -143,7 +143,7 @@ func InArrayFun(ary interface{}, fun func(i int) bool) bool {
 	return false
 }
 
-// 注意：只支持基础类型数据
+// 注意：只支持基础类型数据，会排除已存在的
 func AppendId(ary []int64, id int64) []int64 {
 	if id > 0 {
 		exist := false
@@ -156,6 +156,23 @@ func AppendId(ary []int64, id int64) []int64 {
 
 		if exist == false {
 			ary = append(ary, id)
+		}
+	}
+	return ary
+}
+
+func AppendStr(ary []string, str string) []string {
+	if str != "" {
+		exist := false
+		for _, v := range ary {
+			if v == str {
+				exist = true
+				break
+			}
+		}
+
+		if exist == false {
+			ary = append(ary, str)
 		}
 	}
 	return ary

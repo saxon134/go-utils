@@ -245,8 +245,8 @@ func BytesToStr(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-// AppendString 字符串拼接 通过strings.Builder，效率更高
-func AppendStr(org string, elems ...string) string {
+// JoinString 字符串拼接 通过strings.Builder，效率更高
+func JoinString(org string, elems ...string) string {
 	if len(elems) > 0 {
 		var b strings.Builder
 		b.WriteString(org)
