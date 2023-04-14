@@ -4,6 +4,7 @@ import (
 	"github.com/saxon134/go-utils/saData/saHit"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"time"
 )
 
 type DB struct {
@@ -39,7 +40,8 @@ func Open(dsn string, conf Conf) *DB {
 
 	sqlDB, _ := db.DB()
 	sqlDB.SetMaxIdleConns(saHit.Int(conf.MaxIdleConns > 0, conf.MaxIdleConns, 10))
-	sqlDB.SetMaxOpenConns(saHit.Int(conf.MaxOpenConns > 0, conf.MaxOpenConns, 5))
+	sqlDB.SetMaxOpenConns(saHit.Int(conf.MaxOpenConns > 0, conf.MaxOpenConns, 100))
+	sqlDB.SetConnMaxLifetime(time.Minute * 5)
 
 	_db = &DB{DB: db}
 	return _db

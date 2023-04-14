@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/garyburd/redigo/redis"
+	"github.com/saxon134/go-utils/saData"
 	"strconv"
 	"strings"
 	"time"
@@ -22,7 +23,8 @@ func Init(uri string, pass string, db int) (r *Redis, err error) {
 	r = &Redis{Pool: &redis.Pool{
 		MaxIdle:     3,
 		MaxActive:   20,
-		IdleTimeout: 300 * time.Second,
+		IdleTimeout: 180*time.Second,
+		MaxConnLifetime: 10*time.Minute,
 		Wait:        true,
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", uri)
@@ -135,11 +137,8 @@ func (r Redis) GetObj(k string, objPtr interface{}) error {
 		defer c.Close()
 
 		if bAry, err := redis.Bytes(c.Do("GET", k)); err == nil {
-			if err := json.Unmarshal(bAry, objPtr); err == nil {
-				return nil
-			} else {
-				return err
-			}
+			err = saData.BytesToModel(bAry, objPtr)
+			return err
 		} else {
 			return err
 		}

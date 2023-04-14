@@ -1,6 +1,6 @@
 module github.com/saxon134/go-utils
 
-go 1.18
+go 1.20
 
 require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.5+incompatible

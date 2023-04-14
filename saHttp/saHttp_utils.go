@@ -35,32 +35,33 @@ func PostRequest(uri string, obj interface{}, headers map[string]string) (res st
 	jsonData = bytes.Replace(jsonData, []byte("\\u003e"), []byte(">"), -1)
 	jsonData = bytes.Replace(jsonData, []byte("\\u0026"), []byte("&"), -1)
 
-	body := bytes.NewBuffer([]byte(jsonData))
+	body := bytes.NewBuffer(jsonData)
 
 	client := &http.Client{}
-	var req *http.Request
-	req, err = http.NewRequest("POST", uri, io.Reader(body))
+	var request *http.Request
+	request, err = http.NewRequest("POST", uri, io.Reader(body))
 	if err != nil {
 		return "", err
 	}
 
-	req.Header.Set("Content-Type", "application/json;charset=utf-8")
+	request.Header.Set("Content-Type", "application/json;charset=utf-8")
 	for k, v := range headers {
 		if k != "" && v != "" {
-			req.Header.Set(k, v)
+			request.Header.Set(k, v)
 		}
 	}
 
-	var httpRes *http.Response
-	httpRes, err = client.Do(req)
+	var response *http.Response
+	response, err = client.Do(request)
 	if err != nil {
 		return "", err
 	}
+	defer response.Body.Close()
 
-	status := httpRes.StatusCode
+	status := response.StatusCode
 	if status == 200 {
 		var resData []byte
-		resData, err = ioutil.ReadAll(httpRes.Body)
+		resData, err = ioutil.ReadAll(response.Body)
 		if err != nil {
 			return "", err
 		} else {
@@ -81,7 +82,7 @@ func PostJson(uri string, obj interface{}) (res string, contentType string, err 
 	jsonData = bytes.Replace(jsonData, []byte("\\u003e"), []byte(">"), -1)
 	jsonData = bytes.Replace(jsonData, []byte("\\u0026"), []byte("&"), -1)
 
-	body := bytes.NewBuffer([]byte(jsonData))
+	body := bytes.NewBuffer(jsonData)
 	response, err := http.Post(uri, "application/json;charset=utf-8", body)
 	if err != nil {
 		return "", "", err
@@ -112,10 +113,11 @@ func Download(url string) (localFilePath string, err error) {
 	client := new(http.Client)
 
 	//get方法获取资源
-	resp, err := client.Get(url)
+	response, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}
+	defer response.Body.Close()
 
 	//创建文件
 	file, err := os.Create(tmpFilePath)
@@ -124,15 +126,14 @@ func Download(url string) (localFilePath string, err error) {
 	}
 	defer file.Close()
 
-	if resp.Body == nil {
+	if response.Body == nil {
 		return "", errors.New("body is null")
 	}
-	defer resp.Body.Close()
 
 	//下面是 io.copyBuffer() 的简化版本
 	for {
 		//读取bytes
-		nr, er := resp.Body.Read(buf)
+		nr, er := response.Body.Read(buf)
 		if nr > 0 {
 			//写入bytes
 			nw, ew := file.Write(buf[0:nr])
@@ -159,15 +160,13 @@ func Download(url string) (localFilePath string, err error) {
 		}
 	}
 
-	_ = file.Close()
-
 	if err == nil {
 		return tmpFilePath, nil
 	}
 	return "", err
 }
 
-//file -> name:文件参数名  path:本地文件路径
+// Upload file -> name:文件参数名  path:本地文件路径
 func Upload(url string, fileParams map[string]string, params map[string]string, headers map[string]string) (res string, err error) {
 	if fileParams == nil || len(fileParams) == 0 || fileParams["name"] == "" || fileParams["path"] == "" {
 		err = errors.New("文件内容为空")
@@ -185,6 +184,7 @@ func Upload(url string, fileParams map[string]string, params map[string]string, 
 		if err != nil {
 			return "", err
 		}
+		defer file.Close()
 
 		var part io.Writer
 		part, err = writer.CreateFormFile(fileParams["name"], filepath.Base(fileParams["path"]))
@@ -192,7 +192,6 @@ func Upload(url string, fileParams map[string]string, params map[string]string, 
 			return "", err
 		}
 		_, err = io.Copy(part, file)
-		file.Close()
 
 		// 其他参数列表写入 body
 		for k, v := range params {
@@ -208,21 +207,24 @@ func Upload(url string, fileParams map[string]string, params map[string]string, 
 	}
 
 	// 创建请求
-	httpRequest, _ := http.NewRequest("POST", url, requestBody)
+	request, err := http.NewRequest("POST", url, requestBody)
+	if err != nil {
+		return "", err
+	}
 
 	// 添加请求头
 	if headers != nil {
 		for k, v := range headers {
-			httpRequest.Header.Add(k, v)
+			request.Header.Add(k, v)
 		}
 	}
-	httpRequest.Header.Del("Content-Type")
-	httpRequest.Header.Add("Content-Type", contentType)
+	request.Header.Del("Content-Type")
+	request.Header.Add("Content-Type", contentType)
 
 	// 发送请求
 	client := &http.Client{}
 	var doResp *http.Response
-	doResp, err = client.Do(httpRequest)
+	doResp, err = client.Do(request)
 	if err != nil {
 		return
 	}
@@ -244,7 +246,7 @@ func ToRequest(method string, url string, params map[string]string, header map[s
 	}
 	method = strings.ToUpper(method)
 
-	var req *http.Request
+	var request *http.Request
 	if method == "GET" {
 		if len(params) > 0 {
 			paramsStr := saUrl.QueryFromMap(params)
@@ -253,33 +255,34 @@ func ToRequest(method string, url string, params map[string]string, header map[s
 			}
 			url += paramsStr
 		}
-		req, err = http.NewRequest(method, url, nil)
+		request, err = http.NewRequest(method, url, nil)
 		if err != nil {
 			return "", err
 		}
 	} else if method == "POST" {
 		bodyStr := strings.TrimSpace(saUrl.QueryFromMap(params))
-		req, err = http.NewRequest("POST", url, strings.NewReader(bodyStr))
+		request, err = http.NewRequest("POST", url, strings.NewReader(bodyStr))
 		if err != nil {
 			return "", err
 		}
 
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	} else {
 		return "", errors.New("暂只支持GET/POST方法")
 	}
 
 	for k, v := range header {
 		if k != "" && v != "" {
-			req.Header.Set(k, v)
+			request.Header.Set(k, v)
 		}
 	}
 
 	var httpRes *http.Response
-	httpRes, err = client.Do(req)
+	httpRes, err = client.Do(request)
 	if err != nil {
 		return "", err
 	}
+	defer httpRes.Body.Close()
 
 	status := httpRes.StatusCode
 	if status == 200 {
