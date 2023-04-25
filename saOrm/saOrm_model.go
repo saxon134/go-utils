@@ -120,7 +120,7 @@ func (m *Ids) Scan(value interface{}) error {
 		ary := strings.Split(s, ",")
 		if len(ary) > 0 {
 			for _, v := range ary {
-				if i64, _ := saData.Stoi64(v); i64 > 0 {
+				if i64, e := saData.Stoi64(v); e == nil {
 					*m = append(*m, i64)
 				}
 			}
@@ -135,6 +135,45 @@ func (m Ids) Value() (driver.Value, error) {
 		tmp := ""
 		for _, v := range m {
 			tmp += saData.I64tos(v) + ","
+		}
+		tmp = strings.TrimSuffix(tmp, ",")
+		return tmp, nil
+	}
+
+	return "", nil
+}
+
+/*********** Ints **********/
+/* 存储格式： int1,int2,int3 */
+
+type Ints []int
+
+func (m *Ints) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	bAry, ok := value.([]byte)
+	if ok && len(bAry) > 0 {
+		s := string(bAry)
+		ary := strings.Split(s, ",")
+		if len(ary) > 0 {
+			for _, v := range ary {
+				if i, e := saData.Stoi(v); e == nil {
+					*m = append(*m, i)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m Ints) Value() (driver.Value, error) {
+	if len(m) > 0 {
+		tmp := ""
+		for _, v := range m {
+			tmp += saData.Itos(v) + ","
 		}
 		tmp = strings.TrimSuffix(tmp, ",")
 		return tmp, nil
