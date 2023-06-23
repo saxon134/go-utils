@@ -47,6 +47,21 @@ func QueryToMap(urlStr string) map[string]string {
 	return m
 }
 
+// AppendQuery uri后面拼接query参数
+func AppendQuery(urlStr string, query map[string]string) string {
+	if urlStr == "" {
+		return QueryFromMap(query)
+	}
+
+	var ary = strings.Split(urlStr, "#")
+	if strings.Contains(ary[len(ary)-1], "?") {
+		urlStr += "&" + QueryFromMap(query)
+	} else {
+		urlStr += "?" + QueryFromMap(query)
+	}
+	return urlStr
+}
+
 // ConnPath 返回结果是： /r/path
 func ConnPath(r string, paths ...string) (full string) {
 	full = strings.TrimSuffix(r, "/")
@@ -62,4 +77,13 @@ func ConnPath(r string, paths ...string) (full string) {
 		full = "/" + full
 	}
 	return full
+}
+
+// ConnectUri host如果不包含http开头，则直接返回
+// 返回格式：http://xxxx/xxx
+func ConnectUri(host string, paths ...string) string {
+	if strings.HasPrefix(host, "http") {
+		return strings.TrimPrefix(ConnPath(host, paths...), "/")
+	}
+	return host
 }

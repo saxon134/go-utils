@@ -9,28 +9,30 @@ import (
 	"strings"
 )
 
-//lowercase = true 小写格式
+// Md5 32位 lowercase = true 小写格式，否则大写
 func Md5(s string, lowercase bool) string {
 	h := md5.New()
 	if _, err := io.WriteString(h, s); err == nil {
+		s = strings.TrimSpace(fmt.Sprintf("%x", h.Sum(nil)))
 		if lowercase {
-			s = fmt.Sprintf("%x", h.Sum(nil))
+			s = strings.ToLower(s)
 		} else {
-			s = string(h.Sum(nil))
+			s = strings.ToUpper(s)
 		}
-		return strings.TrimSpace(s)
+		return s
 	}
 	return ""
 }
 
-//lowercase = true 小写格式
+// Sha256 lowercase = true 小写格式，否则大写
 func Sha256(s string, secret string, lowercase bool) string {
 	h := hmac.New(sha256.New, []byte(secret))
 	if _, err := io.WriteString(h, s); err == nil {
+		s = strings.TrimSpace(fmt.Sprintf("%x", h.Sum(nil)))
 		if lowercase {
-			return fmt.Sprintf("%x", h.Sum(nil))
+			return strings.ToLower(s)
 		} else {
-			return string(h.Sum(nil))
+			return strings.ToUpper(s)
 		}
 	}
 	return ""
