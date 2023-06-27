@@ -17,7 +17,7 @@ type aliOss struct {
 	UrlRoot string
 }
 
-//destination以"/"结尾，则认为是文件夹，会自动生成文件名；
+// Upload destination以"/"结尾，则认为是文件夹，会自动生成文件名；
 func (m *aliOss) Upload(destination string, reader io.Reader) error {
 	if strings.HasSuffix(destination, "/") {
 		t := time.Now().Unix()
@@ -40,7 +40,7 @@ func (m *aliOss) UploadFromLocalFile(destination string, localPath string) error
 	return err
 }
 
-//支持文件、文件夹删除
+// Delete 支持文件、文件夹删除
 func (m *aliOss) Delete(destination string) error {
 	if destination == "" {
 		return errors.New("path不能空")
@@ -111,8 +111,9 @@ func (m *aliOss) DeleteUrlRoot(uri string) string {
 	return uri
 }
 
-//src为目录，则将src下的内容全部拷贝到destination目录下
-//src为文件，如果dest后缀为/，则将src文件拷贝到destination目录下；如果destination后缀不是/，则将src拷贝成dest文件
+// CopyWithBucket
+// src为目录，则将src下的内容全部拷贝到destination目录下
+// src为文件，如果dest后缀为/，则将src文件拷贝到destination目录下；如果destination后缀不是/，则将src拷贝成dest文件
 func (m *aliOss) CopyWithBucket(src, destination string) error {
 	if m == nil {
 		return errors.New("bucket不存在")

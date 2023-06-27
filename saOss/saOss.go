@@ -6,7 +6,8 @@ type OssType int8
 
 const (
 	NullOssType OssType = iota
-	AliOssType
+	AliOssType          //阿里云
+	CtOssType           //天翼云
 )
 
 type SaOss interface {
