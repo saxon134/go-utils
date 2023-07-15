@@ -278,6 +278,53 @@ func ToStrAry(data interface{}) ([]string, error) {
 	return []string{}, errors.New("类型不匹配")
 }
 
+func ToInt64Ary(data interface{}) ([]int64, error) {
+	if data == nil {
+		return []int64{}, nil
+	}
+	if v, ok := (data).([]int64); ok {
+		return v, nil
+	}
+	if v, ok := (data).([]int); ok {
+		var ary = make([]int64, 0, len(v))
+		for _, i := range v {
+			ary = append(ary, Int64(i))
+		}
+		return ary, nil
+	}
+	if v, ok := (data).(*[]int64); ok {
+		return *v, nil
+	}
+
+	defer func() {
+		_ = recover()
+	}()
+
+	//json
+	if s, ok := data.(string); ok {
+		var ary = []int64{}
+		var err error
+		if s != "" {
+			err = json.Unmarshal(StrToBytes(s), &ary)
+		}
+		return ary, err
+	}
+
+	//反射
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Slice {
+		cnt := v.Len()
+		ary := make([]int64, cnt)
+		for i := 0; i < cnt; i++ {
+			d := v.Index(i).Interface()
+			s, _ := ToInt64(d)
+			ary[i] = s
+		}
+		return ary, nil
+	}
+	return []int64{}, errors.New("类型不匹配")
+}
+
 func ToInt(d interface{}) (int, error) {
 	if i, ok := d.(int); ok {
 		return i, nil

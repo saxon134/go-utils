@@ -118,6 +118,11 @@ func Do(in Params, resPtr interface{}) (err error) {
 		if err != nil {
 			return err
 		} else {
+			if bytes, ok := resPtr.(*[]byte); ok {
+				*bytes = bAry
+				return nil
+			}
+
 			return saData.BytesToModel(bAry, resPtr)
 		}
 	} else {

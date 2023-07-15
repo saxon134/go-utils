@@ -27,20 +27,28 @@ func GetIdByKeys(args map[string]interface{}, key1 string, key2 string) int64 {
 	return id
 }
 
-// AryToIds []{1,2,3} => ,1,2,3,
-func AryToIds(ary []int64) string {
+// AryToIds
+// fullComma为true时： []{1,2,3} => ,1,2,3,
+// fullComma为false时： []{1,2,3} => 1,2,3
+func AryToIds(ary []int64, fullComma bool) string {
 	if ary == nil || len(ary) == 0 {
 		return ""
 	}
 
 	var ids = ""
-	for _, v := range ary {
+	for i, v := range ary {
 		if v > 0 {
-			ids += I64tos(v) + ","
+			ids += I64tos(v)
+		}
+		if i + 1 < len(ary) {
+			 ids += ","
 		}
 	}
-	if ids != "" {
-		ids = "," + ids
+
+	if fullComma {
+		if ids != "" {
+			ids = "," + ids + ","
+		}
 	}
 
 	return ids
