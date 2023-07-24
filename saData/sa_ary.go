@@ -56,6 +56,7 @@ func AryToIds(ary []int64, fullComma bool) string {
 
 // IdsToAry
 // 1,2,3 => []{1,2,3}
+// 会去重
 func IdsToAry(str string) []int64 {
 	if str == "" {
 		return []int64{}
@@ -65,7 +66,7 @@ func IdsToAry(str string) []int64 {
 	idAry := make([]int64, 0, len(ary))
 	for _, v := range ary {
 		if id, _ := ToInt64(v); id > 0 {
-			idAry = append(idAry, id)
+			idAry = AppendId(idAry, id)
 		}
 	}
 

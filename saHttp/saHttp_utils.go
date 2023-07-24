@@ -101,13 +101,17 @@ func PostJson(uri string, obj interface{}) (res string, contentType string, err 
 	}
 }
 
-func Download(url string) (localFilePath string, err error) {
+func Download(url string, suffix string) (localFilePath string, err error) {
 	var (
 		buf     = make([]byte, 32*1024)
 		written int64
 	)
 
-	tmpFilePath := saData.RandomStr() + ".download"
+	suffix = strings.TrimPrefix(suffix, ".")
+	if suffix != "" {
+		suffix = "." + suffix
+	}
+	tmpFilePath := saData.RandomStr() + suffix
 
 	//创建一个http client
 	client := new(http.Client)

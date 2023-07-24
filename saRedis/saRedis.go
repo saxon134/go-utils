@@ -162,6 +162,23 @@ func (r Redis) GetString(k string) (string, error) {
 	return "", errors.New("缺少key")
 }
 
+
+func (r Redis) GetInt64(k string) (int64, error) {
+	if k != "" {
+		c := r.Pool.Get()
+		defer c.Close()
+
+		str, err := redis.String(c.Do("GET", k))
+		if err != nil {
+			return 0, err
+		}
+
+		return saData.ToInt64(str)
+	}
+
+	return 0, errors.New("缺少key")
+}
+
 func (r Redis) IsError(err error) bool {
 	if err == nil || strings.Index(err.Error(), "nil returned") >= 0 {
 		return false
