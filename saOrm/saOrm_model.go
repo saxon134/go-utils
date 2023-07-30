@@ -4,10 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"github.com/saxon134/go-utils/saData"
-	"github.com/saxon134/go-utils/saData/saTime"
 	"github.com/saxon134/go-utils/saData/saUrl"
 	"strings"
-	"time"
 )
 
 /******* StringAry *********/
@@ -329,56 +327,4 @@ func (m *Rate) Scan(value interface{}) error {
 func (m Rate) Value() (driver.Value, error) {
 	i := m * 100
 	return saData.Itos(int(i)), nil
-}
-
-/****************** Time ******************/
-/*存储格式： datetime */
-
-type Time struct {
-	time.Time
-}
-
-func (m *Time) Scan(value interface{}) error {
-	if value == nil {
-		return nil
-	}
-	var str string
-
-	if bAry, ok := value.([]byte); ok && len(bAry) > 0 {
-		str = saData.BytesToStr(bAry)
-		if str == "" {
-			return nil
-		}
-		m.Time = saTime.TimeFromStr(str, saTime.FormatDefault)
-	} else if str, ok = value.(string); ok && len(str) > 0 {
-		m.Time = saTime.TimeFromStr(str, saTime.FormatDefault)
-	} else if t, ok := value.(time.Time); ok && t.IsZero() == false {
-		m.Time = t
-	}
-	return nil
-}
-
-func (m Time) Value() (driver.Value, error) {
-	str := saTime.TimeToStr(m.Time, saTime.FormatDefault)
-	return str, nil
-}
-
-func (m *Time) SetNow() {
-	now := time.Now()
-	if m == nil {
-		m = &Time{now}
-	} else {
-		m.Time = now
-	}
-}
-
-func Now() *Time {
-	return &Time{time.Now()}
-}
-
-func (m *Time) IsZero() bool {
-	if m == nil || m.Time.IsZero() {
-		return true
-	}
-	return false
 }
