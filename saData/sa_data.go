@@ -34,8 +34,10 @@ func ToStr(data interface{}) (string, error) {
 	switch v := data.(type) {
 	case string:
 		return v, nil
-	case int, int8, int16, int64, float32, float64:
+	case int, int8, int16, int64:
 		return fmt.Sprint(v), nil
+	case float32, float64:
+		return fmt.Sprintf("%f", v),nil
 	case *string:
 		return *v, nil
 	case []uint8:
@@ -331,10 +333,6 @@ func ToInt(d interface{}) (int, error) {
 	}
 
 	if s, ok := d.(string); ok {
-		if s == "" {
-			return 0, nil
-		}
-
 		if i, err := strconv.Atoi(s); err == nil {
 			return i, nil
 		} else {
@@ -519,6 +517,11 @@ func ToFloat32(d interface{}) (float32, error) {
 		return float32(f), nil
 	}
 	return 0, errors.New("类型不匹配")
+}
+
+func Float64(d interface{}) float64 {
+	f,_:=ToFloat64(d)
+	return f
 }
 
 func ToFloat64(d interface{}) (float64, error) {

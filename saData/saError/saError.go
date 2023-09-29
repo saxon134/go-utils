@@ -1,4 +1,5 @@
-/*Package saError
+/*
+Package saError
 一般建议：
 各项目自行定义code值及对应的返回给前端的错误信息
 业务代码内不固定错误文案
@@ -33,6 +34,21 @@ func (e Error) String() string {
 		}
 	}
 	return s
+}
+
+func Msg(e error) string {
+	if e == nil {
+		return ""
+	}
+
+	if ee, ok := e.(Error); ok {
+		return ee.Msg
+	} else if ee, ok := e.(*Error); ok {
+		return ee.Msg
+	} else if ee, ok := e.(error); ok {
+		return ee.Error()
+	}
+	return ""
 }
 
 // err只接收字符串和error类型

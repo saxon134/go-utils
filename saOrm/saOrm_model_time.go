@@ -87,3 +87,41 @@ func (m *Time) T() time.Time {
 	}
 	return time.Time{}
 }
+
+func (m *Time) Str(format string) string {
+	if format == "" {
+		format = time.DateTime
+	}
+
+	var t = m.T()
+	if t.IsZero() ==false {
+		return t.Format(format)
+	}
+
+	return ""
+}
+
+func (m *Time) String() string {
+	if m == nil {
+		return ""
+	}
+	return string(*m)
+}
+
+func TimeFromStr(str string) *Time {
+	if str == "" || str == "-" || str == "--" {
+		return nil
+	}
+	var t = Time(str)
+	return &t
+}
+
+func AfterLongTiem() *Time {
+	var t = Time("9999-09-09 00:00:00")
+	return &t
+}
+
+func BeforeLongTiem() *Time {
+	var t = Time("1111-01-01 00:00:00")
+	return &t
+}

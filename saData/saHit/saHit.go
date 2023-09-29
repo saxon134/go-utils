@@ -1,5 +1,17 @@
 package saHit
 
+func OrStr(a, b string) string {
+	return Str(a != "", a, b)
+}
+
+func OrInt(a, b int) int {
+	return Int(a != 0, a, b)
+}
+
+func OrInt64(a, b int64) int64 {
+	return Int64(a != 0, a, b)
+}
+
 func If(ok bool, a interface{}, b interface{}) interface{} {
 	if ok {
 		return a

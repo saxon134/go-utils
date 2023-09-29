@@ -90,7 +90,7 @@ func IntToFloat(value interface{}, digit int, roundType ...RoundType) float32 {
 // 解决精度丢失问题 例如：19.9 * 100 = 1889
 // 提供四舍五入、上下取整方式
 // digit是小数点后位数
-func FloatToInt(value interface{}, digit int, roundType ...RoundType) int {
+func FloatToInt64(value interface{}, digit int, roundType ...RoundType) int64 {
 	if digit < 0 {
 		return 0
 	}
@@ -131,22 +131,22 @@ func FloatToInt(value interface{}, digit int, roundType ...RoundType) int {
 	//四舍五入
 	if round == RoundTypeDefault {
 		if f-float64(i) >= 0.5 {
-			return int(i + 1)
+			return i + 1
 		} else {
-			return int(i)
+			return i
 		}
 	} else
 	//向上取整
 	if round == RoundTypeUp {
 		if f-float64(i) > 0 {
-			return int(i + 1)
+			return i + 1
 		} else {
-			return int(i)
+			return i
 		}
 	} else
 	//向下取整
 	if round == RoundTypeDown {
-		return int(i)
+		return i
 	}
 	return 0
 }

@@ -18,7 +18,7 @@ const (
 // 格式化，解决小数点问题
 // 提供四舍五入、上下取整方式
 // 返回的元是2位小数
-func RoundYuan(yuan interface{}, roundType ...RoundType) float32 {
+func RoundYuan(yuan interface{}, roundType ...RoundType) float64 {
 	round := RoundTypeDefault
 	if roundType != nil && len(roundType) > 0 {
 		round = roundType[0]
@@ -52,26 +52,26 @@ func RoundYuan(yuan interface{}, roundType ...RoundType) float32 {
 	if round == RoundTypeDefault {
 		if f-float64(i) >= 0.5 {
 			f, _ = decimal.NewFromInt(i + 1).Div(decimal.NewFromInt(100)).Float64()
-			return float32(f)
+			return f
 		} else {
 			f, _ = decimal.NewFromInt(i).Div(decimal.NewFromInt(100)).Float64()
-			return float32(f)
+			return f
 		}
 	} else
 	//向上取整
 	if round == RoundTypeUp {
 		if f-float64(i) > 0 {
 			f, _ = decimal.NewFromInt(i + 1).Div(decimal.NewFromInt(100)).Float64()
-			return float32(f)
+			return f
 		} else {
 			f, _ = decimal.NewFromInt(i).Div(decimal.NewFromInt(100)).Float64()
-			return float32(f)
+			return f
 		}
 	} else
 	//向下取整
 	if round == RoundTypeDown {
 		f, _ = decimal.NewFromInt(i).Div(decimal.NewFromInt(100)).Float64()
-		return float32(f)
+		return f
 	}
 	return 0
 }
@@ -81,7 +81,7 @@ func RoundYuan(yuan interface{}, roundType ...RoundType) float32 {
 // 提供四舍五入、上下取整方式
 // 不可为负数，负数则返回0
 // 返回的元是2位小数
-func Fen2Yuan(fen interface{}, roundType ...RoundType) (yuan float32) {
+func Fen2Yuan(fen interface{}, roundType ...RoundType) (yuan float64) {
 	round := RoundTypeDefault
 	if roundType != nil && len(roundType) > 0 {
 		round = roundType[0]
@@ -115,26 +115,26 @@ func Fen2Yuan(fen interface{}, roundType ...RoundType) (yuan float32) {
 	if round == RoundTypeDefault {
 		if f-float64(i) >= 0.5 {
 			f, _ = decimal.NewFromInt(i + 1).Div(decimal.NewFromInt(100)).Float64()
-			return float32(f)
+			return f
 		} else {
 			f, _ = decimal.NewFromInt(i).Div(decimal.NewFromInt(100)).Float64()
-			return float32(f)
+			return f
 		}
 	} else
 	//向上取整
 	if round == RoundTypeUp {
 		if f-float64(i) > 0 {
 			f, _ = decimal.NewFromInt(i + 1).Div(decimal.NewFromInt(100)).Float64()
-			return float32(f)
+			return f
 		} else {
 			f, _ = decimal.NewFromInt(i).Div(decimal.NewFromInt(100)).Float64()
-			return float32(f)
+			return f
 		}
 	} else
 	//向下取整
 	if round == RoundTypeDown {
 		f, _ = decimal.NewFromInt(i).Div(decimal.NewFromInt(100)).Float64()
-		return float32(f)
+		return f
 	}
 	return
 }
@@ -208,7 +208,7 @@ func Yuan2Fen(yuan interface{}, roundType ...RoundType) (fen int) {
 // 提供四舍五入、上下取整方式
 // 不可为负数，负数则返回0
 // 返回的元是3位小数
-func Li2Yuan(li interface{}, roundType ...RoundType) (yuan float32) {
+func Li2Yuan(li interface{}, roundType ...RoundType) (yuan float64) {
 	round := RoundTypeDefault
 	if roundType != nil && len(roundType) > 0 {
 		round = roundType[0]
@@ -242,26 +242,26 @@ func Li2Yuan(li interface{}, roundType ...RoundType) (yuan float32) {
 	if round == RoundTypeDefault {
 		if f-float64(i) >= 0.5 {
 			f, _ = decimal.NewFromInt(i + 1).Div(decimal.NewFromInt(1000)).Float64()
-			return float32(f)
+			return f
 		} else {
 			f, _ = decimal.NewFromInt(i).Div(decimal.NewFromInt(1000)).Float64()
-			return float32(f)
+			return f
 		}
 	} else
 	//向上取整
 	if round == RoundTypeUp {
 		if f-float64(i) > 0 {
 			f, _ = decimal.NewFromInt(i + 1).Div(decimal.NewFromInt(1000)).Float64()
-			return float32(f)
+			return f
 		} else {
 			f, _ = decimal.NewFromInt(i).Div(decimal.NewFromInt(1000)).Float64()
-			return float32(f)
+			return f
 		}
 	} else
 	//向下取整
 	if round == RoundTypeDown {
 		f, _ = decimal.NewFromInt(i).Div(decimal.NewFromInt(1000)).Float64()
-		return float32(f)
+		return f
 	}
 	return
 }

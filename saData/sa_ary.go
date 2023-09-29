@@ -40,8 +40,8 @@ func AryToIds(ary []int64, fullComma bool) string {
 		if v > 0 {
 			ids += I64tos(v)
 		}
-		if i + 1 < len(ary) {
-			 ids += ","
+		if i+1 < len(ary) {
+			ids += ","
 		}
 	}
 

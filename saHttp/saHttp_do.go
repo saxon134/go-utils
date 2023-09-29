@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type Params struct {
@@ -15,6 +16,7 @@ type Params struct {
 	Query  map[string]interface{} //interface部分json序列化后进行UrlEncode
 	Header map[string]interface{} //interface部分会json序列化
 	Body   map[string]interface{} //会进行json序列化或者query序列化（form表单），取决于content-type；默认query序列化
+	Timeout time.Duration //默认10秒
 }
 
 // Do
@@ -35,7 +37,10 @@ func Do(in Params, resPtr interface{}) (err error) {
 		return errors.New("只支持GET/POST方法")
 	}
 
-	client := &http.Client{}
+	if in.Timeout == 0 {
+		in.Timeout = time.Second*10
+	}
+	client := &http.Client{Timeout:in.Timeout}
 	var request *http.Request
 
 	//绑定query参数
@@ -90,6 +95,9 @@ func Do(in Params, resPtr interface{}) (err error) {
 		request, err = http.NewRequest(in.Method, in.Url, strings.NewReader(bodyStr))
 	} else {
 		request, err = http.NewRequest(in.Method, in.Url, nil)
+	}
+	if err != nil {
+		return err
 	}
 
 	//绑定header参数

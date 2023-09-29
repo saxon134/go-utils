@@ -281,8 +281,8 @@ func (m *PriceDigit4) Scan(value interface{}) error {
 }
 
 func (m PriceDigit4) Value() (driver.Value, error) {
-	i := saData.FloatToInt(float32(m), 4, saData.RoundTypeDefault)
-	return saData.Itos(i), nil
+	i := saData.FloatToInt64(float32(m), 4, saData.RoundTypeDefault)
+	return saData.I64tos(i), nil
 }
 
 /********** Weight **********/

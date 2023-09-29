@@ -19,10 +19,10 @@ func MapToXml(m *map[string]string) string {
 	return string(buf)
 }
 
-func XmlToMap(s string) (*map[string]string, error) {
-	m := make(map[string]string)
-	err := xml.Unmarshal([]byte(s), (*StringMap)(&m))
-	return &m, err
+func XmlToMap(s string) (map[string]interface{}, error) {
+	m := make(map[string]interface{})
+	err := xml.Unmarshal([]byte(s), &m)
+	return m, err
 }
 
 /******** 重写解析接口 ********/
