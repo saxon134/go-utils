@@ -64,6 +64,22 @@ func TimeFromStr(s string, format string) time.Time {
 	return time.Time{}
 }
 
+func PtrFromStr(s string, format string) *time.Time {
+	var t = TimeFromStr(s, format)
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
+func PtrFromUnix(unix int64) *time.Time {
+	var t = time.Unix(unix, 0)
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
 func AdaptTime(s string) time.Time {
 	if s == "" {
 		return time.Time{}
@@ -107,4 +123,11 @@ func WeekIndex(t time.Time) int {
 		week = (yearDay-firstWeekDays)/7 + 2
 	}
 	return week
+}
+
+// LastDayOfMonth 当前月最后一天
+func LastDayOfMonth(t time.Time) time.Time {
+	var day = TimeFromStr(t.Format(time.DateOnly), time.DateOnly)
+	var z = time.Date(day.Year(), day.Month()+1, 0, 23, 59, 59, 0, time.Local)
+	return z
 }

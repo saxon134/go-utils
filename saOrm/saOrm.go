@@ -4,6 +4,7 @@ import (
 	"github.com/saxon134/go-utils/saData/saHit"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"time"
 )
 
@@ -16,6 +17,7 @@ var _db *DB
 type Conf struct {
 	MaxIdleConns int
 	MaxOpenConns int
+	LogMode      int //0-默认 1-Silent 2-Error 3-Warn 4-Info
 }
 
 func Open(dsn string, conf Conf) *DB {
@@ -30,9 +32,11 @@ func Open(dsn string, conf Conf) *DB {
 
 	var db *gorm.DB
 	var err error
+	var logMode = saHit.Int(conf.LogMode >= 1 && conf.LogMode <= 4, conf.LogMode, 2)
 	db, err = gorm.Open(mysql.New(mysqlConfig), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
+		Logger:                                   logger.Default.LogMode(logger.LogLevel(logMode)),
 	})
 	if err != nil {
 		panic("MySQL启动异常" + err.Error())
@@ -44,6 +48,7 @@ func Open(dsn string, conf Conf) *DB {
 	sqlDB.SetConnMaxLifetime(time.Minute * 5)
 
 	_db = &DB{DB: db}
+
 	return _db
 }
 

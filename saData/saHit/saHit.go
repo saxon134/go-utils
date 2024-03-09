@@ -51,3 +51,12 @@ func Float(ok bool, a float32, b float32) float32 {
 		return b
 	}
 }
+
+func Float64(ok bool, a float64, b float64) float64 {
+	if ok {
+		return a
+	} else {
+		return b
+	}
+}
+

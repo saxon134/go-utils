@@ -51,8 +51,8 @@ func Msg(e error) string {
 	return ""
 }
 
-// err只接收字符串和error类型
-func NewError(err interface{}) error {
+// New 只接收字符串和error类型
+func New(err interface{}) error {
 	if err == nil {
 		return nil
 	}
@@ -78,36 +78,34 @@ func NewBeDisplayedError(err string) error {
 	}
 }
 
-// err只接收字符串和error类型
+// NewSensitiveError err只接收字符串和error类型
 func NewSensitiveError(err interface{}) error {
 	if err == nil {
 		return nil
 	}
 
-	var e = Error{Code: SensitiveErrorCode, Msg: "", Caller: ""}
+	var e = Error{Code: 0, Msg: "", Caller: ""}
 	if s, ok := err.(string); ok {
 		e.Msg = s
 	} else if sae, ok := err.(Error); ok {
 		e = sae
-		e.Code = SensitiveErrorCode
 	} else if sae, ok := err.(*Error); ok {
 		e = *sae
-		e.Code = SensitiveErrorCode
 	} else if ev, ok := err.(error); ok {
 		e.Msg = ev.Error()
-		e.Code = SensitiveErrorCode
 	}
+
+	e.Code = SensitiveErrorCode
 	return e
 }
 
-/**
- * @params err 可接收string和error类型
- * @params params 可接收int,string,error类型
- * 注意：params参数会覆盖err中相同类型数据
- * 常见用法：err传字符串，params空 -> code则是NormalErrorCode，msg为传的字符串
- * 常见用法：err传字符串，params传code值 -> 则是Error{code, msg}类型
- * 常见用法：err传err，其他为空 -> code则是SensitiveErrorCode，msg为err.error()
- */
+// StackError
+// @params err 可接收string和error类型
+// @params params 可接收int,string,error类型
+// 注意：params参数会覆盖err中相同类型数据
+// 常见用法：err传字符串，params空 -> code则是NormalErrorCode，msg为传的字符串
+// 常见用法：err传字符串，params传code值 -> 则是Error{code, msg}类型
+// 常见用法：err传err，其他为空 -> code则是SensitiveErrorCode，msg为err.error()
 func StackError(err interface{}, params ...interface{}) error {
 	if err == nil {
 		return nil

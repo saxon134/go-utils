@@ -238,7 +238,7 @@ func (m *Price) Scan(value interface{}) error {
 
 func (m Price) Value() (driver.Value, error) {
 	i := saData.Yuan2Fen(float32(m), saData.RoundTypeDefault)
-	return saData.Itos(i), nil
+	return saData.I64tos(i), nil
 }
 
 /********** LiPrice **********/
@@ -260,7 +260,7 @@ func (m *LiPrice) Scan(value interface{}) error {
 
 func (m LiPrice) Value() (driver.Value, error) {
 	i := saData.Yuan2Li(float32(m), saData.RoundTypeDefault)
-	return saData.Itos(i), nil
+	return saData.I64tos(i), nil
 }
 
 /********** PriceDigit4 **********/

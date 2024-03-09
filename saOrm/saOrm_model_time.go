@@ -78,6 +78,10 @@ func (m *Time) IsZero() bool {
 }
 
 func (m *Time) T() time.Time {
+	if m == nil {
+		return time.UnixMicro(0)
+	}
+
 	var formatAry = []string{saTime.FormatDefault, saTime.FormatSystem, saTime.FormatYMD}
 	for _, f := range formatAry {
 		var t = saTime.TimeFromStr(string(*m), f)
@@ -88,17 +92,18 @@ func (m *Time) T() time.Time {
 	return time.Time{}
 }
 
-func (m *Time) Str(format string) string {
+func (m *Time) Format(format string) *Time {
 	if format == "" {
 		format = time.DateTime
 	}
 
 	var t = m.T()
-	if t.IsZero() ==false {
-		return t.Format(format)
+	if t.IsZero() == false {
+		var s = Time(t.Format(format))
+		return &s
 	}
 
-	return ""
+	return nil
 }
 
 func (m *Time) String() string {
@@ -112,8 +117,28 @@ func TimeFromStr(str string) *Time {
 	if str == "" || str == "-" || str == "--" {
 		return nil
 	}
+
+	if saTime.TimeFromStr(str, saTime.FormatDefault).IsZero() == false {
+
+	} else if saTime.TimeFromStr(str, saTime.FormatYMD).IsZero() == false {
+		str += " 00:00:00"
+	} else if saTime.TimeFromStr(str, saTime.FormatYMDHM).IsZero() == false {
+		str += ":00"
+	} else {
+		return nil
+	}
 	var t = Time(str)
 	return &t
+}
+
+func TimeFromUnix(t int64) *Time {
+	var v = time.Unix(t, 0)
+	if v.IsZero() {
+		return nil
+	}
+
+	var s = Time(v.Format(time.DateOnly))
+	return &s
 }
 
 func AfterLongTiem() *Time {

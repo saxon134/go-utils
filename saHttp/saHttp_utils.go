@@ -26,16 +26,8 @@ func Post(url string, params map[string]string) (res string, err error) {
 }
 
 func PostRequest(uri string, obj interface{}, headers map[string]string) (res string, err error) {
-	jsonData, err := json.Marshal(obj)
-	if err != nil {
-		return "", err
-	}
-
-	jsonData = bytes.Replace(jsonData, []byte("\\u003c"), []byte("<"), -1)
-	jsonData = bytes.Replace(jsonData, []byte("\\u003e"), []byte(">"), -1)
-	jsonData = bytes.Replace(jsonData, []byte("\\u0026"), []byte("&"), -1)
-
-	body := bytes.NewBuffer(jsonData)
+	var data = saData.String(obj)
+	var body = bytes.NewBuffer([]byte(data))
 
 	client := &http.Client{}
 	var request *http.Request
@@ -44,7 +36,6 @@ func PostRequest(uri string, obj interface{}, headers map[string]string) (res st
 		return "", err
 	}
 
-	request.Header.Set("Content-Type", "application/json;charset=utf-8")
 	for k, v := range headers {
 		if k != "" && v != "" {
 			request.Header.Set(k, v)
@@ -72,10 +63,10 @@ func PostRequest(uri string, obj interface{}, headers map[string]string) (res st
 	}
 }
 
-func PostJson(uri string, obj interface{}) (res string, contentType string, err error) {
+func PostJson(uri string, obj interface{}) (res string, err error) {
 	jsonData, err := json.Marshal(obj)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	jsonData = bytes.Replace(jsonData, []byte("\\u003c"), []byte("<"), -1)
@@ -83,21 +74,22 @@ func PostJson(uri string, obj interface{}) (res string, contentType string, err 
 	jsonData = bytes.Replace(jsonData, []byte("\\u0026"), []byte("&"), -1)
 
 	body := bytes.NewBuffer(jsonData)
-	response, err := http.Post(uri, "application/json;charset=utf-8", body)
+	response, err := http.Post(uri, "application/json; charset=UTF-8", body)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("http get error : uri=%v , statusCode=%v", uri, response.StatusCode)
+	var responseData []byte
+	responseData, err = ioutil.ReadAll(response.Body)
+	if err == nil {
+		res = string(responseData)
 	}
 
-	if responseData, err := ioutil.ReadAll(response.Body); err == nil {
-		contentType = response.Header.Get("Content-Type")
-		return string(responseData), contentType, err
+	if response.StatusCode != http.StatusOK {
+		return res, fmt.Errorf("http error : uri=%v , statusCode=%v , response=%v", uri, response.StatusCode, string(responseData))
 	} else {
-		return "", "", err
+		return res, nil
 	}
 }
 

@@ -39,15 +39,12 @@ func Init(l LogLevel, t LogType) {
 		panic("log初始化失败~")
 	}
 
-	logLevel = l
-	settedLogLevel = l
-	logsPerSecond = 5
-	logChan = make(chan string, 10)
+	logChan = make(chan string, 100)
 	go func() {
 		for {
 			now := time.Now().Second()
 			if now == lastLogTimestamp {
-				if loggedCnt >= logsPerSecond {
+				if loggedCnt >= 10 {
 					time.Sleep(time.Microsecond * 300)
 				}
 				loggedCnt++
@@ -70,16 +67,11 @@ func Init(l LogLevel, t LogType) {
 func SetLogLevel(l LogLevel) {
 	if l != NullLevel {
 		logLevel = l
-		settedLogLevel = l
 	}
 }
 
 func SetRemoteUrl(url string) {
 	remoteUrl = url
-}
-
-func SetLogsPerSecond(cnt int) {
-	logsPerSecond = cnt
 }
 
 func Log(a ...interface{}) {
@@ -92,7 +84,8 @@ func Log(a ...interface{}) {
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " L " + s
+	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " L " + s
+	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " L " + s)
 }
 
 func Err(a ...interface{}) {
@@ -100,27 +93,14 @@ func Err(a ...interface{}) {
 		return
 	}
 
-	//日志太多时，升等级
-	if len(logChan) >= 5 {
-		if logLevel == InfoLevel {
-			logLevel = WarnLevel
-		} else if logLevel == WarnLevel {
-			logLevel = ErrorLevel
-		}
-		return
-	}
-
-	//日志少了之后，恢复等级
-	if len(logChan) == 0 && logLevel > settedLogLevel {
-		logLevel = settedLogLevel
-	}
-
 	//输出日志
 	var s = ""
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " E " + s
+
+	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " E " + s
+	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " E " + s)
 }
 
 func Warn(a ...interface{}) {
@@ -142,24 +122,13 @@ func Warn(a ...interface{}) {
 		return
 	}
 
-	//日志少了之后，恢复等级
-	if len(logChan) == 0 && logLevel > settedLogLevel {
-		logLevel = settedLogLevel
-	}
-
 	//输出日志
 	var s = ""
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " W " + s
-	if len(logChan) >= 5 {
-		if logLevel == InfoLevel {
-			logLevel = WarnLevel
-		} else if logLevel == WarnLevel {
-			logLevel = ErrorLevel
-		}
-	}
+	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " W " + s
+	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " W " + s)
 }
 
 func Info(a ...interface{}) {
@@ -167,32 +136,11 @@ func Info(a ...interface{}) {
 		return
 	}
 
-	//日志太多时，升等级
-	if len(logChan) >= 5 {
-		if logLevel == InfoLevel {
-			logLevel = WarnLevel
-		} else if logLevel == WarnLevel {
-			logLevel = ErrorLevel
-		}
-		return
-	}
-
-	//日志少了之后，恢复等级
-	if len(logChan) == 0 && logLevel > settedLogLevel {
-		logLevel = settedLogLevel
-	}
-
 	//输出日志
 	var s = ""
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " I " + s
-	if len(logChan) >= 5 {
-		if logLevel == InfoLevel {
-			logLevel = WarnLevel
-		} else if logLevel == WarnLevel {
-			logLevel = ErrorLevel
-		}
-	}
+	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " I " + s
+	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " I " + s)
 }

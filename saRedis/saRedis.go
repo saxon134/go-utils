@@ -21,11 +21,11 @@ func Init(uri string, pass string, db int) (r *Redis, err error) {
 	}
 
 	r = &Redis{Pool: &redis.Pool{
-		MaxIdle:     3,
-		MaxActive:   20,
-		IdleTimeout: 180*time.Second,
-		MaxConnLifetime: 10*time.Minute,
-		Wait:        true,
+		MaxIdle:         3,
+		MaxActive:       20,
+		IdleTimeout:     180 * time.Second,
+		MaxConnLifetime: 10 * time.Minute,
+		Wait:            true,
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", uri)
 			if err != nil {
@@ -161,7 +161,6 @@ func (r Redis) GetString(k string) (string, error) {
 
 	return "", errors.New("缺少key")
 }
-
 
 func (r Redis) GetInt64(k string) (int64, error) {
 	if k != "" {

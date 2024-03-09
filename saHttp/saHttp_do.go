@@ -2,6 +2,7 @@ package saHttp
 
 import (
 	"errors"
+	"fmt"
 	"github.com/saxon134/go-utils/saData"
 	"io"
 	"net/http"
@@ -11,12 +12,26 @@ import (
 )
 
 type Params struct {
-	Method string                 //默认GET，仅支持GET/POST方法
-	Url    string                 //不能空
-	Query  map[string]interface{} //interface部分json序列化后进行UrlEncode
-	Header map[string]interface{} //interface部分会json序列化
-	Body   map[string]interface{} //会进行json序列化或者query序列化（form表单），取决于content-type；默认query序列化
-	Timeout time.Duration //默认10秒
+	Method          string                 //默认GET，仅支持GET/POST方法
+	Url             string                 //不能空
+	Query           map[string]interface{} //interface部分json序列化后进行UrlEncode
+	Header          map[string]interface{} //interface部分会json序列化
+	Body            map[string]interface{} //会进行json序列化或者query序列化（form表单），取决于content-type；默认query序列化
+	BodyString      string                 //string类型body，仅content-type为application-json，且Body为空时有效
+	Timeout         time.Duration          //默认10秒
+	CallbackWhenErr bool                   //是否在失败时回调，默认关闭
+}
+
+type CallbackFun func(request string)
+
+var _errCallbackFunc CallbackFun
+
+// SetErrCallback
+// @Description: 设置error时回调
+func SetErrCallback(handle CallbackFun) {
+	if handle != nil {
+		_errCallbackFunc = handle
+	}
 }
 
 // Do
@@ -25,6 +40,18 @@ type Params struct {
 // @param resPtr 返回结果接收对象的指针，必须是指针或者空
 // @return err
 func Do(in Params, resPtr interface{}) (err error) {
+	//接口调用失败时，回调
+	if _errCallbackFunc != nil && in.CallbackWhenErr == true {
+		defer func() {
+			if err != nil {
+				_errCallbackFunc(saData.String(map[string]string{
+					"url": in.Url,
+					"err": err.Error(),
+				}))
+			}
+		}()
+	}
+
 	if in.Url == "" {
 		return errors.New("缺少URL")
 	}
@@ -38,9 +65,9 @@ func Do(in Params, resPtr interface{}) (err error) {
 	}
 
 	if in.Timeout == 0 {
-		in.Timeout = time.Second*10
+		in.Timeout = time.Second * 10
 	}
-	client := &http.Client{Timeout:in.Timeout}
+	client := &http.Client{Timeout: in.Timeout}
 	var request *http.Request
 
 	//绑定query参数
@@ -66,7 +93,9 @@ func Do(in Params, resPtr interface{}) (err error) {
 	//绑定body参数
 	var bodyStr = ""
 	var contentType = "application/x-www-form-urlencoded"
-	{
+	if in.BodyString != "" {
+		bodyStr = in.BodyString
+	} else {
 		if in.Header != nil && len(in.Header) > 0 {
 			var ct = saData.String(in.Header["content-type"])
 			if ct == "" {
@@ -86,7 +115,9 @@ func Do(in Params, resPtr interface{}) (err error) {
 			}
 			bodyStr = urlV.Encode()
 		} else if strings.Contains(contentType, "application/json") {
-			bodyStr = saData.String(in.Body)
+			if in.Body != nil && len(in.Body) > 0 {
+				bodyStr = saData.String(in.Body)
+			}
 		}
 	}
 
@@ -134,6 +165,18 @@ func Do(in Params, resPtr interface{}) (err error) {
 			return saData.BytesToModel(bAry, resPtr)
 		}
 	} else {
-		return errors.New("saHttp response error:" + saData.Itos(status))
+		err = errors.New(fmt.Sprintf("saHttp response code:%d url:%s", status, in.Url))
+		if resPtr == nil {
+			return err
+		}
+
+		if bAry, e := io.ReadAll(resp.Body); e == nil {
+			if bytes, ok := resPtr.(*[]byte); ok {
+				*bytes = bAry
+			} else {
+				_ = saData.BytesToModel(bAry, resPtr)
+			}
+		}
+		return err
 	}
 }

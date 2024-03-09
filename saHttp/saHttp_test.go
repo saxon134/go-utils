@@ -10,3 +10,18 @@ func TestUpload(t *testing.T) {
 	fmt.Println(err)
 	fmt.Println(res)
 }
+
+func TestErrCallback(t *testing.T) {
+	SetErrCallback(func(request string) {
+		fmt.Println(request)
+	})
+
+	_ = Do(Params{
+		Url:             "vv",
+		Query:           nil,
+		Header:          nil,
+		Body:            nil,
+		Timeout:         0,
+		CallbackWhenErr: true,
+	}, nil)
+}

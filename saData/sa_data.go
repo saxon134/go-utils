@@ -36,8 +36,10 @@ func ToStr(data interface{}) (string, error) {
 		return v, nil
 	case int, int8, int16, int64:
 		return fmt.Sprint(v), nil
-	case float32, float64:
-		return fmt.Sprintf("%f", v),nil
+	case float32:
+		return strconv.FormatFloat(Float64(v), 'f', -1, 32),nil
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64),nil
 	case *string:
 		return *v, nil
 	case []uint8:

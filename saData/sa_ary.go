@@ -54,23 +54,112 @@ func AryToIds(ary []int64, fullComma bool) string {
 	return ids
 }
 
-// IdsToAry
-// 1,2,3 => []{1,2,3}
-// 会去重
+// ToIds
+// fullComma为true时： []{1,2,3} => ,1,2,3,
+// fullComma为false时： []{1,2,3} => 1,2,3
+// ary支持类型：[]string []int64 []int
+func ToIds(ary interface{}, fullComma bool) string {
+	var ids = ""
+	switch vv := ary.(type) {
+	case []int64:
+		for i, v := range vv {
+			if v > 0 {
+				ids += I64tos(v)
+			}
+			if i+1 < len(vv) {
+				ids += ","
+			}
+		}
+	case []int:
+		for i, v := range vv {
+			if v > 0 {
+				ids += Itos(v)
+			}
+			if i+1 < len(vv) {
+				ids += ","
+			}
+		}
+	case []string:
+		for i, v := range vv {
+			if v != "" {
+				ids += v
+			}
+			if i+1 < len(vv) {
+				ids += ","
+			}
+		}
+	}
+
+	if fullComma {
+		if ids != "" {
+			ids = "," + ids + ","
+		}
+	}
+	return ids
+}
+
+// ToSQLIds
+//
+//	[]{'1','2','3'} => '1','2','3'
+func ToSQLIds(ary []string) string {
+	if len(ary) == 0 {
+		return ""
+	}
+
+	var sql = ""
+	for _, v := range ary {
+		if v != "" {
+			sql += "'" + v + "',"
+		}
+	}
+	sql = strings.TrimSuffix(sql, ",")
+	return sql
+}
+
+// Split  去空、去重 1,2,3 => []{"1","2","3"}
+func Split(s, sep string) []string {
+	var ary = strings.Split(s, sep)
+	var resAry = make([]string, 0, len(ary))
+	for _, v := range ary {
+		if v != "" {
+			var exist = false
+			for _, e := range resAry {
+				if e == v {
+					exist = true
+					break
+				}
+			}
+			if exist == false {
+				resAry = append(resAry, v)
+			}
+		}
+	}
+	return resAry
+}
+
+// IdsToAry 去零、去重 1,2,3 => []{1,2,3}
 func IdsToAry(str string) []int64 {
 	if str == "" {
 		return []int64{}
 	}
 
 	var ary = strings.Split(str, ",")
-	idAry := make([]int64, 0, len(ary))
+	var resAry = make([]int64, 0, len(ary))
 	for _, v := range ary {
-		if id, _ := ToInt64(v); id > 0 {
-			idAry = AppendId(idAry, id)
+		if id, _ := ToInt64(v); id != 0 {
+			var exist = false
+			for _, e := range resAry {
+				if e == id {
+					exist = true
+					break
+				}
+			}
+			if exist == false {
+				resAry = append(resAry, id)
+			}
 		}
 	}
-
-	return idAry
+	return resAry
 }
 
 // FormatIds 前后加逗号是为了方便SQL查询过滤
@@ -147,6 +236,24 @@ func InArrayFun(ary interface{}, fun func(i int) bool) bool {
 			if fun(i) == true {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func InStrs(item string, ary []string) (exist bool) {
+	for _, v := range ary {
+		if item == v {
+			return true
+		}
+	}
+	return false
+}
+
+func ContainStrs(item string, ary []string) (exist bool) {
+	for _, v := range ary {
+		if strings.Contains(v, item) {
+			return true
 		}
 	}
 	return false
