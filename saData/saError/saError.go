@@ -14,10 +14,18 @@ import (
 	"strings"
 )
 
+var pkg = ""
+var ignores []string
+
 type Error struct {
 	Code   int    `json:"code"`
 	Msg    string `json:"msg"`
 	Caller string `json:"caller"`
+}
+
+func SetPkg(pkgPath string, ignore ...string) {
+	pkg = pkgPath
+	ignores = ignore
 }
 
 // implements the error
@@ -99,14 +107,14 @@ func NewSensitiveError(err interface{}) error {
 	return e
 }
 
-// StackError
+// Stack
 // @params err 可接收string和error类型
 // @params params 可接收int,string,error类型
 // 注意：params参数会覆盖err中相同类型数据
 // 常见用法：err传字符串，params空 -> code则是NormalErrorCode，msg为传的字符串
 // 常见用法：err传字符串，params传code值 -> 则是Error{code, msg}类型
 // 常见用法：err传err，其他为空 -> code则是SensitiveErrorCode，msg为err.error()
-func StackError(err interface{}, params ...interface{}) error {
+func Stack(err interface{}, params ...interface{}) error {
 	if err == nil {
 		return nil
 	}
@@ -135,7 +143,7 @@ func StackError(err interface{}, params ...interface{}) error {
 				if resErr.Caller == "" {
 					resErr.Caller = e.Caller
 				} else {
-					resErr.Caller = e.Caller + "\n" + resErr.Caller
+					resErr.Caller = resErr.Caller + " => " + e.Caller
 				}
 			}
 		} else if e, ok := err.(error); ok {
@@ -173,7 +181,7 @@ func StackError(err interface{}, params ...interface{}) error {
 						resErr.Code = e.Code
 					}
 					if e.Caller != "" {
-						resErr.Caller = e.Caller + "\n" + resErr.Caller
+						resErr.Caller = resErr.Caller + "=>" + e.Caller
 					}
 				} else if e, ok := err.(error); ok {
 					resErr.Msg += e.Error()
@@ -182,14 +190,47 @@ func StackError(err interface{}, params ...interface{}) error {
 		}
 	}
 
-	//获取调用栈
-	pc := make([]uintptr, 1)
-	n := runtime.Callers(2, pc)
-	if n >= 1 {
-		f := runtime.FuncForPC(pc[0])
-		file, line := f.FileLine(pc[0])
-		resErr.Caller = fmt.Sprintf("%s:%d\n", file, line) + resErr.Caller
+	//获取调用栈，已经存在caller，只获取一层；否则获取全部调用路径
+	var pc = make([]uintptr, 10)
+	var n = runtime.Callers(2, pc)
+	if resErr.Caller != "" {
+		if len(pc) > 0 {
+			var f = runtime.FuncForPC(pc[0])
+			var file, line = f.FileLine(pc[0])
+			resErr.Caller += fmt.Sprintf(" => %s:%d", file, line)
+		}
+	} else {
+		for i := n - 1; i >= 0; i-- {
+			var f = runtime.FuncForPC(pc[i])
+			var file, line = f.FileLine(pc[i])
+			if strings.Contains(file, "go/pkg/mod") || strings.Contains(file, "/go/src/") {
+				continue
+			}
+
+			var ignore = false
+			for _, s := range ignores {
+				if strings.Contains(file, s) {
+					ignore = true
+					break
+				}
+			}
+			if ignore {
+				continue
+			}
+
+			if pkg != "" {
+				var ary = strings.Split(file, pkg)
+				if len(ary) == 2 {
+					file = ary[1]
+				} else {
+					continue
+				}
+			}
+			resErr.Caller += fmt.Sprintf("%s:%d => ", file, line)
+		}
+		resErr.Caller = strings.TrimSuffix(resErr.Caller, " => ")
 	}
+
 	return &resErr
 }
 

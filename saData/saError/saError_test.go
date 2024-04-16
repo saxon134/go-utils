@@ -13,15 +13,15 @@ func TestNewError(t *testing.T) {
 
 func e1() error {
 	fmt.Println("111")
-	return StackError(e2())
+	return Stack(e2())
 }
 
 func e2() error {
 	fmt.Println("222")
-	return StackError(e3())
+	return Stack(e3())
 }
 
 func e3() error {
 	fmt.Println("333")
-	return StackError(errors.New("saError测试"))
+	return Stack(errors.New("saError测试"))
 }

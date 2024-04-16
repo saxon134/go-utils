@@ -2,8 +2,10 @@ package saLog
 
 import (
 	"fmt"
+	"github.com/saxon134/go-utils/saData/saError"
 	"github.com/saxon134/go-utils/saData/saTime"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -64,6 +66,11 @@ func Init(l LogLevel, t LogType) {
 	}()
 }
 
+func SetPkg(pkgPath string, ignore ...string) {
+	pkg = pkgPath
+	ignores = ignore
+}
+
 func SetLogLevel(l LogLevel) {
 	if l != NullLevel {
 		logLevel = l
@@ -79,13 +86,7 @@ func Log(a ...interface{}) {
 		return
 	}
 
-	//输出日志
-	var s = ""
-	for _, v := range a {
-		s += fmt.Sprint(v) + " "
-	}
-	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " L " + s
-	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " L " + s)
+	_log("L", a...)
 }
 
 func Err(a ...interface{}) {
@@ -93,14 +94,7 @@ func Err(a ...interface{}) {
 		return
 	}
 
-	//输出日志
-	var s = ""
-	for _, v := range a {
-		s += fmt.Sprint(v) + " "
-	}
-
-	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " E " + s
-	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " E " + s)
+	_log("E", a...)
 }
 
 func Warn(a ...interface{}) {
@@ -122,13 +116,7 @@ func Warn(a ...interface{}) {
 		return
 	}
 
-	//输出日志
-	var s = ""
-	for _, v := range a {
-		s += fmt.Sprint(v) + " "
-	}
-	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " W " + s
-	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " W " + s)
+	_log("W", a...)
 }
 
 func Info(a ...interface{}) {
@@ -136,11 +124,62 @@ func Info(a ...interface{}) {
 		return
 	}
 
+	_log("I", a...)
+}
+
+func _log(level string, a ...interface{}) {
 	//输出日志
 	var s = ""
+
+	//获取调用栈
+	var caller = ""
+	if len(a) > 0 {
+		if e, ok := a[0].(saError.Error); ok == true {
+			if e.Caller != "" {
+				caller = e.Caller
+			}
+
+			s = e.Msg
+		}
+	}
+	if caller == "" {
+		var pc = make([]uintptr, 10)
+		var n = runtime.Callers(3, pc)
+		for i := n - 1; i >= 0; i-- {
+			var f = runtime.FuncForPC(pc[i])
+			var file, line = f.FileLine(pc[i])
+			if strings.Contains(file, "go/pkg/mod") || strings.Contains(file, "/go/src/") {
+				continue
+			}
+
+			var ignore = false
+			for _, s := range ignores {
+				if strings.Contains(file, s) {
+					ignore = true
+					break
+				}
+			}
+			if ignore {
+				continue
+			}
+
+			if pkg != "" {
+				var ary = strings.Split(file, pkg)
+				if len(ary) == 2 {
+					file = ary[1]
+				} else {
+					continue
+				}
+			}
+			caller += fmt.Sprintf("%s:%d => ", file, line)
+		}
+		caller = strings.TrimSuffix(caller, "=> ")
+	}
+
 	for _, v := range a {
 		s += fmt.Sprint(v) + " "
 	}
-	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " I " + s
-	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " I " + s)
+
+	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " L " + s
+	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " " + level + " " + caller + "\n" + s)
 }

@@ -55,7 +55,7 @@ func Itos(i int) string {
 }
 
 func I64tos(i int64) string {
-	return strconv.FormatInt(int64(i), 10)
+	return strconv.FormatInt(i, 10)
 }
 
 func F32tos(f float32) string {

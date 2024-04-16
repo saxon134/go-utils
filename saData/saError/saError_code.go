@@ -15,15 +15,28 @@ const (
 	NotExistedErrorCode = 3108 //不存在
 )
 
-var (
-	ErrTooFrequent  = Error{Code: NormalErrorCode, Msg: "操作太频繁"}
-	ErrParams       = Error{Code: NormalErrorCode, Msg: "缺少必要参数"}
-	ErrExisted      = Error{Code: NormalErrorCode, Msg: "数据已存在"}
-	ErrNotExisted   = Error{Code: NormalErrorCode, Msg: "数据不存在"}
-	ErrData         = Error{Code: NormalErrorCode, Msg: "数据有误"}
-	ErrNotSupport   = Error{Code: NormalErrorCode, Msg: "暂不支持"}
-	ErrPassword     = Error{Code: NormalErrorCode, Msg: "账号、密码不匹配"}
-	ErrLoggedFail   = Error{Code: NormalErrorCode, Msg: "登录失效"}
-	ErrUnLogged     = Error{Code: NormalErrorCode, Msg: "未登录"}
-	ErrUnauthorized = Error{Code: NormalErrorCode, Msg: "未授权"}
+//var (
+//ErrTooFrequent  = Error{Code: NormalErrorCode, Msg: "操作太频繁"}
+//ErrParams       = Error{Code: NormalErrorCode, Msg: "缺少必要参数"}
+//ErrExisted      = Error{Code: NormalErrorCode, Msg: "数据已存在"}
+//ErrNotExisted   = Error{Code: NormalErrorCode, Msg: "数据不存在"}
+//ErrData         = Error{Code: NormalErrorCode, Msg: "数据有误"}
+//ErrNotSupport   = Error{Code: NormalErrorCode, Msg: "暂不支持"}
+//ErrPassword     = Error{Code: NormalErrorCode, Msg: "账号、密码不匹配"}
+//ErrLoggedFail   = Error{Code: NormalErrorCode, Msg: "登录失效"}
+//ErrUnLogged     = Error{Code: NormalErrorCode, Msg: "未登录"}
+//ErrUnauthorized = Error{Code: NormalErrorCode, Msg: "未授权"}
+//)
+
+const (
+	ErrTooFrequent  = "操作太频繁"
+	ErrParams       = "缺少必要参数"
+	ErrExisted      = "数据已存在"
+	ErrNotExisted   = "数据不存在"
+	ErrData         = "数据有误"
+	ErrNotSupport   = "暂不支持"
+	ErrPassword     = "账号、密码不匹配"
+	ErrLoggedFail   = "登录失效，请重新登录"
+	ErrUnLogged     = "未登录"
+	ErrUnauthorized = "未授权"
 )

@@ -85,7 +85,7 @@ func (m *RichTxt) Save(oss saOss.SaOss, t RichTxtType, txt string, path string) 
 	}
 	m.Content, err = oss.UploadTxt(path, txt)
 	if err != nil {
-		return saError.StackError(err)
+		return saError.Stack(err)
 	}
 	m.Md5 = md5
 	m.InOss = true

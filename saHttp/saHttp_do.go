@@ -18,7 +18,7 @@ type Params struct {
 	Header          map[string]interface{} //interface部分会json序列化
 	Body            map[string]interface{} //会进行json序列化或者query序列化（form表单），取决于content-type；默认query序列化
 	BodyString      string                 //string类型body，仅content-type为application-json，且Body为空时有效
-	Timeout         time.Duration          //默认10秒
+	Timeout         time.Duration          //默认30秒
 	CallbackWhenErr bool                   //是否在失败时回调，默认关闭
 }
 
@@ -45,7 +45,6 @@ func Do(in Params, resPtr interface{}) (err error) {
 		defer func() {
 			if err != nil {
 				_errCallbackFunc(saData.String(map[string]string{
-					"url": in.Url,
 					"err": err.Error(),
 				}))
 			}
@@ -65,7 +64,7 @@ func Do(in Params, resPtr interface{}) (err error) {
 	}
 
 	if in.Timeout == 0 {
-		in.Timeout = time.Second * 10
+		in.Timeout = time.Second * 30
 	}
 	client := &http.Client{Timeout: in.Timeout}
 	var request *http.Request
@@ -73,26 +72,26 @@ func Do(in Params, resPtr interface{}) (err error) {
 	//绑定query参数
 	var urlAry = strings.Split(in.Url, "#")
 	for k, v := range in.Query {
-		values := url.Values{}
-		values.Add(k, saData.String(v))
+		var queryValues = url.Values{}
+		queryValues.Add(k, saData.String(v))
 		if len(urlAry) == 2 {
 			if strings.Contains(urlAry[1], "?") {
-				in.Url += "&" + values.Encode()
+				in.Url += "&" + queryValues.Encode()
 			} else {
-				in.Url += "?" + values.Encode()
+				in.Url += "?" + queryValues.Encode()
 			}
 		} else {
 			if strings.Contains(in.Url, "?") {
-				in.Url += "&" + values.Encode()
+				in.Url += "&" + queryValues.Encode()
 			} else {
-				in.Url += "?" + values.Encode()
+				in.Url += "?" + queryValues.Encode()
 			}
 		}
 	}
 
 	//绑定body参数
 	var bodyStr = ""
-	var contentType = "application/x-www-form-urlencoded"
+	var contentType = "application/json"
 	if in.BodyString != "" {
 		bodyStr = in.BodyString
 	} else {
@@ -107,13 +106,13 @@ func Do(in Params, resPtr interface{}) (err error) {
 		}
 
 		if strings.Contains(contentType, "application/x-www-form-urlencoded") {
-			urlV := url.Values{}
+			var bodyValues = url.Values{}
 			for k, v := range in.Body {
 				if k != "" {
-					urlV.Add(k, saData.String(v))
+					bodyValues.Add(k, saData.String(v))
 				}
 			}
-			bodyStr = urlV.Encode()
+			bodyStr = bodyValues.Encode()
 		} else if strings.Contains(contentType, "application/json") {
 			if in.Body != nil && len(in.Body) > 0 {
 				bodyStr = saData.String(in.Body)

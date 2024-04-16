@@ -76,7 +76,7 @@ func (m *ImgTxt) Save(oss saOss.SaOss, path string) (err error) {
 	}
 	m.Path, err = oss.UploadTxt(path, valueStr)
 	if err != nil {
-		return saError.StackError(err)
+		return saError.Stack(err)
 	}
 	return nil
 }

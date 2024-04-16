@@ -59,7 +59,7 @@ func PostRequest(uri string, obj interface{}, headers map[string]string) (res st
 			return string(resData), nil
 		}
 	} else {
-		return "", saError.NewError("error:" + saData.Itos(status))
+		return "", saError.New("error:" + saData.Itos(status))
 	}
 }
 
@@ -290,6 +290,6 @@ func ToRequest(method string, url string, params map[string]string, header map[s
 			return string(resData), nil
 		}
 	} else {
-		return "", saError.NewError("error:" + saData.Itos(status))
+		return "", saError.New("error:" + saData.Itos(status))
 	}
 }

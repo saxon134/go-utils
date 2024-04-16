@@ -1,9 +1,13 @@
 package saTask
 
 import (
+	"errors"
+	"fmt"
+	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saError"
 	"github.com/saxon134/go-utils/saData/saTime"
 	"github.com/saxon134/go-utils/saTask/task"
+	"strings"
 )
 
 // ///////////////////////////////////////////////////////
@@ -54,12 +58,12 @@ func Init(cases ...Case) {
 // Event 事件请求
 func Event(in *EventRequest) (err error) {
 	if in == nil || in.Key == "" || in.Event == "" {
-		return saError.ErrParams
+		return saError.Stack(saError.ErrParams)
 	}
 
 	if in.Event == "start" {
 		if task.AdminTaskList[in.Key] == nil {
-			return saError.New("事件方法不存在")
+			return saError.New("任务不存在")
 		}
 
 		if in.Spec == "" {
@@ -74,25 +78,60 @@ func Event(in *EventRequest) (err error) {
 		}
 	} else if in.Event == "once" {
 		if task.AdminTaskList[in.Key] == nil {
-			return saError.ErrNotExisted
+			return saError.Stack(saError.ErrNotExisted)
 		}
 
 		err = task.AdminTaskList[in.Key].Run(in.Params)
 		return err
 	} else {
-		return saError.ErrNotSupport
+		return saError.Stack(saError.ErrNotSupport)
 	}
 	return nil
 }
 
+func AddCase(c *Case) (err error) {
+	if c == nil || c.Key == "" || c.Spec == "" || c.Handler == nil {
+		return saError.Stack(saError.ErrParams)
+	}
+
+	if task.AdminTaskList[c.Key] == nil {
+		task.AddTask(c.Key, task.NewTask(c.Key, c.Spec, c.Params, task.Handler(c.Handler)))
+	} else {
+		return errors.New(fmt.Sprintf("key is existed: %s", c.Key))
+	}
+	return nil
+}
+
+func DelCase(key string) (err error) {
+	if key == "" {
+		return saError.Stack(saError.ErrParams)
+	}
+
+	if task.AdminTaskList[key] == nil {
+		return nil
+	} else {
+		task.DeleteTask(key)
+	}
+	return nil
+}
+
+
+func IsCaseExist(key string) bool {
+	if key == "" {
+		return false
+	}
+
+	return task.AdminTaskList[key] !=nil
+}
+
 func Status(key string) (out map[string]string, err error) {
 	if key == "" {
-		return nil, saError.ErrParams
+		return nil, saError.Stack(saError.ErrParams)
 	}
 
 	var t = task.AdminTaskList[key]
 	if t == nil {
-		return nil, saError.ErrNotExisted
+		return nil, saError.Stack(saError.ErrNotExisted)
 	}
 
 	return map[string]string{
@@ -102,28 +141,14 @@ func Status(key string) (out map[string]string, err error) {
 	}, nil
 }
 
-func AddCase(c *Case) (err error) {
-	if c == nil || c.Key == "" || c.Spec == "" || c.Handler == nil {
-		return saError.ErrParams
+func CheckSpec(spec string) (ok bool) {
+	if saData.InStrs(spec, []string{"@yearly", "@annually", "@monthly", "@weekly", "@daily", "@midnight", "@hourly"}) {
+		return true
 	}
 
-	if task.AdminTaskList[c.Key] == nil {
-		task.AddTask(c.Key, task.NewTask(c.Key, c.Spec, c.Params, task.Handler(c.Handler)))
-	} else {
-		task.AdminTaskList[c.Key].SetEnable(true)
+	fields := strings.Fields(spec)
+	if len(fields) != 5 && len(fields) != 6 {
+		return false
 	}
-	return nil
-}
-
-func DelCase(c *Case) (err error) {
-	if c == nil || c.Key == "" || c.Spec == "" || c.Handler == nil {
-		return saError.ErrParams
-	}
-
-	if task.AdminTaskList[c.Key] == nil {
-		return nil
-	} else {
-		task.AdminTaskList[c.Key].SetEnable(false)
-	}
-	return nil
+	return true
 }
