@@ -250,6 +250,24 @@ func InStrs(item string, ary []string) (exist bool) {
 	return false
 }
 
+func InInt(item int, ary []int) (exist bool) {
+	for _, v := range ary {
+		if item == v {
+			return true
+		}
+	}
+	return false
+}
+
+func InInt64(item int64, ary []int64) (exist bool) {
+	for _, v := range ary {
+		if item == v {
+			return true
+		}
+	}
+	return false
+}
+
 func ContainStrs(item string, ary []string) (exist bool) {
 	for _, v := range ary {
 		if strings.Contains(v, item) {

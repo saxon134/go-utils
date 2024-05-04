@@ -2,7 +2,6 @@ package saHttp
 
 import (
 	"errors"
-	"fmt"
 	"github.com/saxon134/go-utils/saData"
 	"io"
 	"net/http"
@@ -164,7 +163,7 @@ func Do(in Params, resPtr interface{}) (err error) {
 			return saData.BytesToModel(bAry, resPtr)
 		}
 	} else {
-		err = errors.New(fmt.Sprintf("saHttp response code:%d url:%s", status, in.Url))
+		err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New("")}
 		if resPtr == nil {
 			return err
 		}

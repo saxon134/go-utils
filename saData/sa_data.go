@@ -54,7 +54,8 @@ func ToStr(data interface{}) (string, error) {
 		}
 		return s, nil
 	}
-	return "", err
+
+	return fmt.Sprint(data),nil
 }
 
 func String(data interface{}) string {

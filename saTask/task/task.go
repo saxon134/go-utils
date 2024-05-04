@@ -1,9 +1,11 @@
 package task
 
 import (
+	"fmt"
 	"github.com/saxon134/go-utils/saData/saHit"
 	"log"
 	"math"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
@@ -385,7 +387,15 @@ func run() {
 				if e.GetNext() != effective {
 					break
 				}
-				go e.Run("")
+				go func() {
+					defer func() {
+						if err := recover(); err != nil {
+							var stack = string(debug.Stack())
+							fmt.Println(stack)
+						}
+					}()
+					e.Run("")
+				}()
 				e.SetPrev(e.GetNext())
 				e.SetNext(effective)
 			}

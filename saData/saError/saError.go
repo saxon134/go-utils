@@ -9,7 +9,9 @@ package saError
 
 import (
 	"fmt"
+	"github.com/saxon134/go-utils/saData/saHit"
 	"gorm.io/gorm"
+	"net/url"
 	"runtime"
 	"strings"
 )
@@ -114,79 +116,65 @@ func NewSensitiveError(err interface{}) error {
 // 常见用法：err传字符串，params空 -> code则是NormalErrorCode，msg为传的字符串
 // 常见用法：err传字符串，params传code值 -> 则是Error{code, msg}类型
 // 常见用法：err传err，其他为空 -> code则是SensitiveErrorCode，msg为err.error()
-func Stack(err interface{}, params ...interface{}) error {
-	if err == nil {
+func Stack(errs ...interface{}) error {
+	if len(errs) == 0 {
 		return nil
 	}
 
 	var resErr = Error{Code: NormalErrorCode, Msg: "", Caller: ""}
-	if s, ok := err.(string); ok {
-		resErr.Msg = s
-		resErr.Code = NormalErrorCode
-	} else {
-		e, ok := err.(*Error)
-		if ok == false {
-			var e2 Error
-			if e2, ok = err.(Error); ok {
-				e = &e2
-			}
-		}
-
-		if e != nil {
-			if len(e.Msg) > 0 {
-				resErr.Msg = e.Msg
-			}
-			if e.Code > 0 {
-				resErr.Code = e.Code
-			}
-			if e.Caller != "" {
-				if resErr.Caller == "" {
-					resErr.Caller = e.Caller
-				} else {
-					resErr.Caller = resErr.Caller + " => " + e.Caller
-				}
-			}
-		} else if e, ok := err.(error); ok {
-			resErr.Msg = e.Error()
-			resErr.Code = SensitiveErrorCode
-		} else {
-			return nil
-		}
+	if len(errs) == 1 && errs[0] == gorm.ErrRecordNotFound {
+		return nil
 	}
 
-	if params != nil {
-		for _, v := range params {
-			if code, ok := v.(int); ok {
-				if code > 0 {
-					resErr.Code = code
-				}
-			} else if s, ok := v.(string); ok {
-				if s != "" {
-					resErr.Msg += s
-				}
-			} else {
-				e, ok := err.(*Error)
-				if ok == false {
-					var e2 Error
-					if e2, ok = err.(Error); ok {
-						e = &e2
-					}
-				}
+	for _, v := range errs {
+		//字符串
+		if s, ok := v.(string); ok {
+			if s != "" {
+				resErr.Msg += saHit.Str(resErr.Msg != "", " ", "") + s
+			}
+			continue
+		}
 
-				if e != nil {
-					if len(e.Msg) > 0 {
-						resErr.Msg += s
-					}
-					if e.Code > 0 {
-						resErr.Code = e.Code
-					}
-					if e.Caller != "" {
-						resErr.Caller = resErr.Caller + "=>" + e.Caller
-					}
-				} else if e, ok := err.(error); ok {
-					resErr.Msg += e.Error()
+		//saError
+		{
+			e, ok := v.(*Error)
+			if ok == false {
+				var e2 Error
+				if e2, ok = v.(Error); ok {
+					e = &e2
 				}
 			}
+			if e != nil {
+				if len(e.Msg) > 0 {
+					resErr.Msg += saHit.Str(resErr.Msg != "", " ", "") + e.Msg
+				}
+				if e.Code > 0 && resErr.Code == 0 {
+					resErr.Code = e.Code
+				}
+				if e.Caller != "" {
+					resErr.Caller = e.Caller + "\n" + resErr.Caller
+				}
+				continue
+			}
+		}
+
+		//url.Error
+		if e, ok := v.(*url.Error); ok {
+			resErr.Msg += saHit.Str(resErr.Msg != "", " ", "") + e.Err.Error()
+			resErr.Caller = e.URL + "\n" + resErr.Caller
+			continue
+		}
+
+		//error
+		if e, ok := v.(error); ok {
+			resErr.Msg += saHit.Str(resErr.Msg != "", " ", "") + e.Error()
+			continue
+		}
+
+		//其他
+		var str = fmt.Sprint(v)
+		if str != "" {
+			resErr.Msg += saHit.Str(resErr.Msg != "", "\n", "") + str
 		}
 	}
 
