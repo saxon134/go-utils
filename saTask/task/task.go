@@ -367,7 +367,7 @@ func StartTask() {
 }
 
 func run() {
-	now := time.Now().Local()
+	var now = time.Now().Local()
 	for _, t := range AdminTaskList {
 		t.SetNext(now)
 	}
@@ -387,15 +387,15 @@ func run() {
 				if e.GetNext() != effective {
 					break
 				}
-				go func() {
+				go func(task *Task) {
 					defer func() {
 						if err := recover(); err != nil {
 							var stack = string(debug.Stack())
 							fmt.Println(stack)
 						}
 					}()
-					e.Run("")
-				}()
+					_ = task.Run(task.Params)
+				}(e)
 				e.SetPrev(e.GetNext())
 				e.SetNext(effective)
 			}
