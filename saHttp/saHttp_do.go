@@ -160,7 +160,11 @@ func Do(in Params, resPtr interface{}) (err error) {
 				return nil
 			}
 
-			return saData.BytesToModel(bAry, resPtr)
+			err = saData.BytesToModel(bAry, resPtr)
+			if err != nil {
+				err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(string(bAry))}
+			}
+			return err
 		}
 	} else {
 		err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New("")}
@@ -172,7 +176,10 @@ func Do(in Params, resPtr interface{}) (err error) {
 			if bytes, ok := resPtr.(*[]byte); ok {
 				*bytes = bAry
 			} else {
-				_ = saData.BytesToModel(bAry, resPtr)
+				e = saData.BytesToModel(bAry, resPtr)
+				if e != nil {
+					return &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(string(bAry))}
+				}
 			}
 		}
 		return err
