@@ -11,8 +11,8 @@ type TaskInfo struct {
 }
 
 type EventRequest struct {
-	Key    string `json:"key"`
-	Event  string `json:"event"` //start, stop, once
-	Spec   string `json:"spec"`
-	Params string `json:"params"`
+	Key    string                 `json:"key"`
+	Event  string                 `json:"event"` //start, stop, once
+	Spec   string                 `json:"spec"`
+	Params map[string]interface{} `json:"params"`
 }

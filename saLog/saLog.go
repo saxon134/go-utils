@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/saxon134/go-utils/saData/saError"
 	"github.com/saxon134/go-utils/saData/saTime"
-	"net/http"
 	"runtime"
 	"strings"
 	"time"
@@ -40,30 +39,6 @@ func Init(l LogLevel, t LogType) {
 	if log == nil {
 		panic("log初始化失败~")
 	}
-
-	logChan = make(chan string, 100)
-	go func() {
-		for {
-			now := time.Now().Second()
-			if now == lastLogTimestamp {
-				if loggedCnt >= 10 {
-					time.Sleep(time.Microsecond * 300)
-				}
-				loggedCnt++
-			} else {
-				lastLogTimestamp = now
-				loggedCnt = 0
-			}
-
-			if s, ok := <-logChan; ok {
-				//向远端发送日志
-				if strings.HasPrefix(remoteUrl, "http") == true {
-					_, _ = http.Post(remoteUrl, "text/plain", strings.NewReader(s))
-				}
-				log.Log(s)
-			}
-		}
-	}()
 }
 
 func SetPkg(pkgPath string, ignore ...string) {
@@ -77,8 +52,31 @@ func SetLogLevel(l LogLevel) {
 	}
 }
 
-func SetRemoteUrl(url string) {
-	remoteUrl = url
+func SetRemoteFun(f func([][4]string)) {
+	if remoteFun != nil || f == nil {
+		return
+	}
+
+	remoteFun = f
+	go func() {
+		var msgAry = make([][4]string, 0, 10)
+		var lastCallAt int64
+		for {
+			var ary [4]string
+			var ok bool
+			ary, ok = <-remoteChan
+			if ok == false {
+				continue
+			}
+
+			msgAry = append(msgAry, ary)
+			var timestamps = time.Now().Unix()
+			if len(msgAry) >= 10 || timestamps-lastCallAt > 5 {
+				remoteFun(msgAry)
+				msgAry = make([][4]string, 0, 10)
+			}
+		}
+	}()
 }
 
 func Log(a ...interface{}) {
@@ -106,16 +104,6 @@ func Warn(a ...interface{}) {
 		return
 	}
 
-	//日志太多时，升等级
-	if len(logChan) >= 5 {
-		if logLevel == InfoLevel {
-			logLevel = WarnLevel
-		} else if logLevel == WarnLevel {
-			logLevel = ErrorLevel
-		}
-		return
-	}
-
 	_log("W", a...)
 }
 
@@ -128,6 +116,20 @@ func Info(a ...interface{}) {
 }
 
 func _log(level string, a ...interface{}) {
+	var now = time.Now()
+	var timestamp = now.Unix()
+	if timestamp <= lastLogTimestamp+1 {
+		if loggedCnt >= 10 {
+			if level != "E" {
+				return
+			}
+		}
+		loggedCnt++
+	} else {
+		lastLogTimestamp = timestamp
+		loggedCnt = 0
+	}
+
 	//输出日志
 	var s = ""
 
@@ -180,6 +182,11 @@ func _log(level string, a ...interface{}) {
 		s += fmt.Sprint(v) + " "
 	}
 
-	//logChan <- saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " L " + s
-	log.Log(saTime.TimeToStr(time.Now(), saTime.FormatDefault) + " " + level + " " + caller + "\n" + s)
+	var t = saTime.TimeToStr(now, saTime.FormatDefault)
+	log.Log(t + " " + level + " " + caller + "\n" + s)
+
+	//调用远端方法
+	if remoteFun != nil {
+		remoteChan <- [4]string{t, level, caller, s}
+	}
 }

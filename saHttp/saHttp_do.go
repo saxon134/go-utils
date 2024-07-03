@@ -19,6 +19,7 @@ type Params struct {
 	BodyString      string                 //string类型body，仅content-type为application-json，且Body为空时有效
 	Timeout         time.Duration          //默认30秒
 	CallbackWhenErr bool                   //是否在失败时回调，默认关闭
+	Retry           func(retry int, resPtr interface{}, err error) bool
 }
 
 type CallbackFun func(request string)
@@ -39,6 +40,18 @@ func SetErrCallback(handle CallbackFun) {
 // @param resPtr 返回结果接收对象的指针，必须是指针或者空
 // @return err
 func Do(in Params, resPtr interface{}) (err error) {
+	//最多重试10次
+	for i := 0; i <= 10; i++ {
+		err = _do(in, resPtr)
+		if in.Retry == nil || in.Retry(i+1, resPtr, err) == false {
+			break
+		}
+		time.Sleep(time.Millisecond * 1500)
+	}
+	return err
+}
+
+func _do(in Params, resPtr interface{}) (err error) {
 	//接口调用失败时，回调
 	if _errCallbackFunc != nil && in.CallbackWhenErr == true {
 		defer func() {

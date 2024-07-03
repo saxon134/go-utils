@@ -70,7 +70,7 @@ func AlterTbl(db *DB, tblName string, obj interface{}) {
 			 INFORMATION_SCHEMA.COLUMNS
 			where
 			table_name  = '` + tblName + "'").Rows()
-	if saError.DbErr(err) {
+	if saError.IsDbErr(err) {
 		return
 	}
 	db.ScanRows(rows, &tblColumns)

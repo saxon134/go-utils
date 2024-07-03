@@ -132,6 +132,13 @@ func TrimSpace(s string) string {
 	return string(s)
 }
 
+// 去除SQL特殊字符
+func TrimSQLSpec(s string) string {
+	s = strings.ReplaceAll(s, "'", "")
+	s = strings.ReplaceAll(s, "`", "")
+	return s
+}
+
 func GetSuffix(s string) string {
 	if s == "" {
 		return ""

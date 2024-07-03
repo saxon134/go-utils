@@ -11,6 +11,7 @@ const (
 	FormatYMDHMS = "2006-01-02 15:04:05"
 	FormatYMDHM  = "2006-01-02 15:04"
 	FormatYMD    = "2006-01-02"
+	FormatYM     = "2006-01"
 	FormatY      = "2006"
 	FormatHMS    = "15:04:05"
 	FormatHM     = "15:04"

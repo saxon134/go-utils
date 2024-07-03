@@ -51,14 +51,20 @@ func Msg(e error) string {
 		return ""
 	}
 
+	var msg = ""
 	if ee, ok := e.(Error); ok {
-		return ee.Msg
+		msg = ee.Msg
 	} else if ee, ok := e.(*Error); ok {
-		return ee.Msg
+		msg = ee.Msg
 	} else if ee, ok := e.(error); ok {
-		return ee.Error()
+		msg = ee.Error()
 	}
-	return ""
+
+	var ary = strings.Split(msg, "<html>")
+	if len(ary) >= 2 {
+		msg = saHit.OrStr(ary[0], "出错了")
+	}
+	return msg
 }
 
 // New 只接收字符串和error类型
@@ -222,7 +228,7 @@ func Stack(errs ...interface{}) error {
 	return &resErr
 }
 
-func DbErr(err error) bool {
+func IsDbErr(err error) bool {
 	if err != nil && err != gorm.ErrRecordNotFound && strings.Contains(err.Error(), "no row") == false {
 		return true
 	}

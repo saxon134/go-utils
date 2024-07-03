@@ -81,7 +81,7 @@ func Event(in *EventRequest) (err error) {
 			return saError.Stack(saError.ErrNotExisted)
 		}
 
-		err = task.AdminTaskList[in.Key].Run(in.Params)
+		err = task.AdminTaskList[in.Key].Run(saData.String(in.Params))
 		return err
 	} else {
 		return saError.Stack(saError.ErrNotSupport)
@@ -115,13 +115,12 @@ func DelCase(key string) (err error) {
 	return nil
 }
 
-
 func IsCaseExist(key string) bool {
 	if key == "" {
 		return false
 	}
 
-	return task.AdminTaskList[key] !=nil
+	return task.AdminTaskList[key] != nil
 }
 
 func Status(key string) (out map[string]string, err error) {
