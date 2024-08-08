@@ -98,9 +98,7 @@ func ToIds(ary interface{}, fullComma bool) string {
 	return ids
 }
 
-// ToSQLIds
-//
-//	[]{'1','2','3'} => '1','2','3'
+// []{'1','2','3'} => '1','2','3'
 func ToSQLIds(ary []string) string {
 	if len(ary) == 0 {
 		return ""
@@ -112,6 +110,34 @@ func ToSQLIds(ary []string) string {
 			sql += "'" + v + "',"
 		}
 	}
+	sql = strings.TrimSuffix(sql, ",")
+	return sql
+}
+
+// []{'1','2','3'} => '1','2','3'
+func AryToSQLIds(ary interface{}) string {
+	var sql = ""
+	switch vv := ary.(type) {
+	case []int64:
+		for _, v := range vv {
+			if v > 0 {
+				sql += "'" + String(v) + "',"
+			}
+		}
+	case []int:
+		for _, v := range vv {
+			if v > 0 {
+				sql += "'" + String(v) + "',"
+			}
+		}
+	case []string:
+		for _, v := range vv {
+			if v !="" {
+				sql += "'" + v + "',"
+			}
+		}
+	}
+
 	sql = strings.TrimSuffix(sql, ",")
 	return sql
 }
@@ -268,45 +294,40 @@ func InInt64(item int64, ary []int64) (exist bool) {
 	return false
 }
 
-func ContainStrs(item string, ary []string) (exist bool) {
-	for _, v := range ary {
-		if strings.Contains(v, item) {
-			return true
-		}
-	}
-	return false
-}
-
 // 注意：只支持基础类型数据，会排除已存在的
-func AppendId(ary []int64, id int64) []int64 {
-	if id > 0 {
-		exist := false
-		for _, v := range ary {
-			if v == id {
-				exist = true
-				break
+func AppendId(ary []int64, ids ...int64) []int64 {
+	for _, id := range ids {
+		if id > 0 {
+			exist := false
+			for _, v := range ary {
+				if v == id {
+					exist = true
+					break
+				}
 			}
-		}
 
-		if exist == false {
-			ary = append(ary, id)
+			if exist == false {
+				ary = append(ary, id)
+			}
 		}
 	}
 	return ary
 }
 
-func AppendStr(ary []string, str string) []string {
-	if str != "" {
-		exist := false
-		for _, v := range ary {
-			if v == str {
-				exist = true
-				break
+func AppendStr(ary []string, strs ...string) []string {
+	for _, s := range strs {
+		if s != "" {
+			exist := false
+			for _, v := range ary {
+				if v == s {
+					exist = true
+					break
+				}
 			}
-		}
 
-		if exist == false {
-			ary = append(ary, str)
+			if exist == false {
+				ary = append(ary, s)
+			}
 		}
 	}
 	return ary
