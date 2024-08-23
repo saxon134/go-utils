@@ -17,7 +17,8 @@ type Params struct {
 	Header          map[string]interface{} //interface部分会json序列化
 	Body            map[string]interface{} //会进行json序列化或者query序列化（form表单），取决于content-type；默认query序列化
 	BodyString      string                 //string类型body，仅content-type为application-json，且Body为空时有效
-	Timeout         time.Duration          //默认30秒
+	Values          url.Values             //仅content-type为application/x-www-form-urlencoded，且body为空时有效
+	Timeout         time.Duration          //默认60秒
 	CallbackWhenErr bool                   //是否在失败时回调，默认关闭
 	Retry           func(retry int, resPtr interface{}, err error) bool
 }
@@ -40,8 +41,8 @@ func SetErrCallback(handle CallbackFun) {
 // @param resPtr 返回结果接收对象的指针，必须是指针或者空
 // @return err
 func Do(in Params, resPtr interface{}) (err error) {
-	//最多重试10次
-	for i := 0; i <= 10; i++ {
+	//最多重试100次
+	for i := 0; i <= 100; i++ {
 		err = _do(in, resPtr)
 		if in.Retry == nil || in.Retry(i+1, resPtr, err) == false {
 			break
@@ -76,7 +77,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 	}
 
 	if in.Timeout == 0 {
-		in.Timeout = time.Second * 30
+		in.Timeout = time.Second * 60
 	}
 	client := &http.Client{Timeout: in.Timeout}
 	var request *http.Request
@@ -118,13 +119,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 		}
 
 		if strings.Contains(contentType, "application/x-www-form-urlencoded") {
-			var bodyValues = url.Values{}
-			for k, v := range in.Body {
-				if k != "" {
-					bodyValues.Add(k, saData.String(v))
-				}
-			}
-			bodyStr = bodyValues.Encode()
+			bodyStr = in.Values.Encode()
 		} else if strings.Contains(contentType, "application/json") {
 			if in.Body != nil && len(in.Body) > 0 {
 				bodyStr = saData.String(in.Body)
