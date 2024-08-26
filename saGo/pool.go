@@ -3,7 +3,7 @@ package saGo
 
 import (
 	"fmt"
-	"github.com/saxon134/go-utils/saLog"
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -70,6 +70,8 @@ func NewPool(total int, size int, qps int, qpm int, fn func(args interface{})) *
 		go func() {
 			defer func() {
 				if e := recover(); e != nil {
+					fmt.Println(e)
+					debug.PrintStack()
 					return
 				}
 			}()
@@ -100,6 +102,12 @@ func NewPool(total int, size int, qps int, qpm int, fn func(args interface{})) *
 
 // 执行
 func (p *Pool) Invoke(args interface{}) {
+	if e := recover(); e != nil {
+		fmt.Println(e)
+		debug.PrintStack()
+		return
+	}
+
 	if p.isDone {
 		return
 	}
@@ -112,12 +120,6 @@ func (p *Pool) Invoke(args interface{}) {
 
 	p.done++
 	p.ch <- args
-
-	//超过20%的任务执行都比预期的慢
-	//if (p.done == 1000 || p.done == 2000 || p.done == 10000) && 5*p.slow > p.done {
-	if p.done == 2000 && 20*p.slow > p.done {
-		saLog.Err(fmt.Sprintf("saGo: 任务执行较慢，请适当调整设置。总数：%d，已完成：%d，慢任务:%d，平均执行时间：%d，最大执行时间：%d", p.total, p.done, p.slow, p.totalTime/int64(p.done), p.maxTime))
-	}
 
 	if p.qps > 0 && p.done%p.qps == 0 {
 		var t = time.Now().UnixMilli()
@@ -149,4 +151,21 @@ func (p *Pool) Wait() {
 		return
 	}
 	p.wg.Wait()
+}
+
+func (p *Pool) Desc() string {
+	if p.done == 2000 && 20*p.slow > p.done {
+
+	}
+
+	var msg = ""
+	if p.done <= 0 {
+		msg = "待开始"
+	} else {
+		msg = fmt.Sprintf(
+			"saGo 总数：%d，已完成：%d，慢任务:%d，平均执行时间：%d，最大执行时间：%d",
+			p.total, p.done, p.slow, p.totalTime/int64(p.done), p.maxTime,
+		)
+	}
+	return msg
 }

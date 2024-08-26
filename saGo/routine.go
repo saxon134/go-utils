@@ -2,7 +2,9 @@ package saGo
 
 import (
 	"context"
+	"fmt"
 	"github.com/saxon134/go-utils/saLog"
+	"runtime/debug"
 	"time"
 )
 
@@ -11,6 +13,17 @@ type Routine struct {
 	routineMaxTime time.Duration    //所有任务执行最大时间
 	paramsChan     chan interface{} //传输参数
 	handle         func(params interface{})
+}
+
+func Go(fn func()) {
+	go func() {
+		if e := recover(); e != nil {
+			fmt.Println(e)
+			debug.PrintStack()
+			return
+		}
+		fn()
+	}()
 }
 
 // NewRoutine
@@ -34,11 +47,11 @@ func NewRoutine(routineMaxCnt int, routineMaxTime time.Duration, handle func(par
 	if m.routineMaxCnt > 1 {
 		for i := 0; i < m.routineMaxCnt; i++ {
 			go func() {
-				defer func() {
-					if e := recover(); e != nil {
-						saLog.Err(e)
-					}
-				}()
+				if e := recover(); e != nil {
+					fmt.Println(e)
+					debug.PrintStack()
+					return
+				}
 
 				if m.routineMaxTime > 1 {
 					ctx, cancelFunc := context.WithTimeout(context.Background(), m.routineMaxTime)

@@ -119,7 +119,17 @@ func _do(in Params, resPtr interface{}) (err error) {
 		}
 
 		if strings.Contains(contentType, "application/x-www-form-urlencoded") {
-			bodyStr = in.Values.Encode()
+			if len(in.Body) == 0 && in.BodyString == "" {
+				bodyStr = in.Values.Encode()
+			} else {
+				var bodyValues = url.Values{}
+				for k, v := range in.Body {
+					if k != "" {
+						bodyValues.Add(k, saData.String(v))
+					}
+				}
+				bodyStr = bodyValues.Encode()
+			}
 		} else if strings.Contains(contentType, "application/json") {
 			if in.Body != nil && len(in.Body) > 0 {
 				bodyStr = saData.String(in.Body)
