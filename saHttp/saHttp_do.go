@@ -180,7 +180,10 @@ func _do(in Params, resPtr interface{}) (err error) {
 
 			err = saData.BytesToModel(bAry, resPtr)
 			if err != nil {
-				err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(string(bAry))}
+				err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(saData.String(map[string]string{
+					"err": err.Error(),
+					"data":string(bAry),
+				}))}
 			}
 			return err
 		}
