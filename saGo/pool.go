@@ -86,9 +86,9 @@ func NewPool(total int, size int, qps int, qpm int, fn func(args interface{})) *
 					p.totalTime += diff
 					if diff > p.expectTime {
 						p.slow++
-						if diff > p.maxTime {
-							p.maxTime = diff
-						}
+					}
+					if diff > p.maxTime {
+						p.maxTime = diff
 					}
 				} else {
 					return
