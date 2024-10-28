@@ -8,6 +8,20 @@ func OrInt(a, b int) int {
 	return Int(a != 0, a, b)
 }
 
+func MaxInt(a...int) int {
+	if len(a)==0 {
+		return 0
+	}
+
+	var max = a[0]
+	for i:=1;i < len(a);i ++ {
+		if max < a[i] {
+			max = a[i]
+		}
+	}
+	return max
+}
+
 func OrInt64(a, b int64) int64 {
 	return Int64(a != 0, a, b)
 }

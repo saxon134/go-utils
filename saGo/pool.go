@@ -28,7 +28,7 @@ type Pool struct {
 	totalTime  int64 //总共耗时，计算平均耗时用
 }
 
-// total - 总的任务数量
+// total - 总的任务数量，0表示无总数限制，此时需要手动调用Done结束
 // size - 并发执行数量
 // qps - 秒限制，0表示无限制
 // qpm - 分钟限制，0表示无限制
@@ -37,18 +37,20 @@ type Pool struct {
 // 假如qps为20，执行耗时0.2秒，则size设置为4最节省资源
 // size如果设置较大，不影响qps，只是浪费了些资源，如果执行比较费时可以通过加大size值改善执行速度
 func NewPool(total int, size int, qps int, qpm int, fn func(args interface{})) *Pool {
-	if total <= 0 || size <= 0 {
-		return nil
-	}
-
 	var p = &Pool{
 		fn: fn,
 		wg: &sync.WaitGroup{},
 	}
-	p.wg.Add(total)
 
-	if size > total {
-		size = total
+	if size <= 0 {
+		return nil
+	}
+
+	if total > 0 {
+		p.wg.Add(total)
+		if size > total {
+			size = total
+		}
 	}
 
 	//仅有QPM限制，需设置一下QPS，尽量均匀点，否则会导致短期QPS很高
@@ -121,6 +123,10 @@ func (p *Pool) Invoke(args interface{}) {
 	p.done++
 	p.ch <- args
 
+	if p.total == 0 {
+		p.wg.Add(1)
+	}
+
 	if p.qps > 0 && p.done%p.qps == 0 {
 		var t = time.Now().UnixMilli()
 		var diff = t - p.qpsLastTime
@@ -139,15 +145,24 @@ func (p *Pool) Invoke(args interface{}) {
 		p.qpmLastTime = time.Now().UnixMilli()
 	}
 
-	if p.done >= p.total {
+	if p.total > 0 && p.done >= p.total {
 		close(p.ch)
 		p.isDone = true
 	}
 }
 
-// 等待所有执行完，也可以不调用
+// 手动结束
+func (p *Pool) Done() {
+	if p.isDone {
+		return
+	}
+	close(p.ch)
+	p.isDone = true
+}
+
+// 等待所有执行完，一定要调用
 func (p *Pool) Wait() {
-	if p == nil || p.total == 0 || p.wg == nil {
+	if p == nil || p.wg == nil {
 		return
 	}
 	p.wg.Wait()

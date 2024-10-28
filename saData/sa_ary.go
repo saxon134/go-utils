@@ -62,37 +62,30 @@ func ToIds(ary interface{}, fullComma bool) string {
 	var ids = ""
 	switch vv := ary.(type) {
 	case []int64:
-		for i, v := range vv {
+		for _, v := range vv {
 			if v > 0 {
-				ids += I64tos(v)
-			}
-			if i+1 < len(vv) {
-				ids += ","
+				ids += I64tos(v) + ","
 			}
 		}
 	case []int:
-		for i, v := range vv {
+		for _, v := range vv {
 			if v > 0 {
-				ids += Itos(v)
-			}
-			if i+1 < len(vv) {
-				ids += ","
+				ids += Itos(v)+ ","
 			}
 		}
 	case []string:
-		for i, v := range vv {
+		for _, v := range vv {
 			if v != "" {
-				ids += v
-			}
-			if i+1 < len(vv) {
-				ids += ","
+				ids += v+ ","
 			}
 		}
 	}
 
-	if fullComma {
-		if ids != "" {
-			ids = "," + ids + ","
+	if ids!= "" {
+		if fullComma {
+			ids = "," + ids
+		} else {
+			ids = strings.TrimSuffix(ids, ",")
 		}
 	}
 	return ids

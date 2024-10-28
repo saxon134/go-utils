@@ -81,7 +81,7 @@ func PostJson(uri string, obj interface{}) (res string, err error) {
 	defer response.Body.Close()
 
 	var responseData []byte
-	responseData, err = ioutil.ReadAll(response.Body)
+	responseData, err = io.ReadAll(response.Body)
 	if err == nil {
 		res = string(responseData)
 	}

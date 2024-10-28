@@ -20,7 +20,7 @@ type Params struct {
 	Values          url.Values             //仅content-type为application/x-www-form-urlencoded，且body为空时有效
 	Timeout         time.Duration          //默认60秒
 	CallbackWhenErr bool                   //是否在失败时回调，默认关闭
-	Retry           func(retry int, resPtr interface{}, err error) bool
+	Retry           func(retry int, v interface{}, err error) bool
 }
 
 type CallbackFun func(request string)
@@ -35,7 +35,6 @@ func SetErrCallback(handle CallbackFun) {
 	}
 }
 
-// Do
 // @Description: 发送请求
 // @param params 请求参数
 // @param resPtr 返回结果接收对象的指针，必须是指针或者空
@@ -50,6 +49,16 @@ func Do(in Params, resPtr interface{}) (err error) {
 		time.Sleep(time.Millisecond * 1500)
 	}
 	return err
+}
+
+// @Description: 发送请求
+// @param params 请求参数
+// @param resPtr 返回结果接收对象的指针，必须是指针或者空
+func DoWithTokenBucket(bucket *TokenBucket, in Params, resPtr interface{}) {
+	bucket.ch <- &BucketChannel{
+		Params: in,
+		ResPtr: resPtr,
+	}
 }
 
 func _do(in Params, resPtr interface{}) (err error) {
@@ -181,8 +190,8 @@ func _do(in Params, resPtr interface{}) (err error) {
 			err = saData.BytesToModel(bAry, resPtr)
 			if err != nil {
 				err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(saData.String(map[string]string{
-					"err": err.Error(),
-					"data":string(bAry),
+					"err":  err.Error(),
+					"data": string(bAry),
 				}))}
 			}
 			return err
