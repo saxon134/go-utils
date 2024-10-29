@@ -51,16 +51,6 @@ func Do(in Params, resPtr interface{}) (err error) {
 	return err
 }
 
-// @Description: 发送请求
-// @param params 请求参数
-// @param resPtr 返回结果接收对象的指针，必须是指针或者空
-func DoWithTokenBucket(bucket *TokenBucket, in Params, resPtr interface{}) {
-	bucket.ch <- &BucketChannel{
-		Params: in,
-		ResPtr: resPtr,
-	}
-}
-
 func _do(in Params, resPtr interface{}) (err error) {
 	//接口调用失败时，回调
 	if _errCallbackFunc != nil && in.CallbackWhenErr == true {
