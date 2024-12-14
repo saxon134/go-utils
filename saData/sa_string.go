@@ -132,7 +132,8 @@ func TrimSpace(s string) string {
 	return string(s)
 }
 
-func GetSuffix(s string) string {
+// 不包含点，如 abc.xml 返回 xml
+func GetSuffix(s string, defaultSuffix string) string {
 	if s == "" {
 		return ""
 	}
@@ -140,10 +141,14 @@ func GetSuffix(s string) string {
 	strLen := StrLen(s)
 	for i := strLen; i > 0; i-- {
 		if SubStr(s, i-1, 1) == "." {
-			return SubStr(s, i, strLen-i)
+			var suffix = SubStr(s, i, strLen-i)
+			if len(suffix) < 10 {
+				return suffix
+			}
+			return defaultSuffix
 		}
 	}
-	return ""
+	return defaultSuffix
 }
 
 func SubIndex(s string, sub string) int {

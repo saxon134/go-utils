@@ -2,6 +2,7 @@ package saOss
 
 import (
 	"errors"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/sts"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/saxon134/go-utils/saData"
 	"io"
@@ -12,13 +13,8 @@ import (
 	"time"
 )
 
-type aliOss struct {
-	*oss.Bucket
-	UrlRoot string
-}
-
 // Upload destination以"/"结尾，则认为是文件夹，会自动生成文件名；
-func (m *aliOss) Upload(destination string, reader io.Reader) error {
+func (m *SaOss) Upload(destination string, reader io.Reader) error {
 	if strings.HasSuffix(destination, "/") {
 		t := time.Now().Unix()
 		r := rand.Intn(10000)
@@ -29,7 +25,7 @@ func (m *aliOss) Upload(destination string, reader io.Reader) error {
 	return err
 }
 
-func (m *aliOss) UploadFromLocalFile(destination string, localPath string) error {
+func (m *SaOss) UploadFromLocalFile(destination string, localPath string) error {
 	if strings.HasSuffix(destination, "/") {
 		t := time.Now().Unix()
 		r := rand.Intn(10000)
@@ -41,7 +37,7 @@ func (m *aliOss) UploadFromLocalFile(destination string, localPath string) error
 }
 
 // Delete 支持文件、文件夹删除
-func (m *aliOss) Delete(destination string) error {
+func (m *SaOss) Delete(destination string) error {
 	if destination == "" {
 		return errors.New("path不能空")
 	}
@@ -68,7 +64,7 @@ func (m *aliOss) Delete(destination string) error {
 	return nil
 }
 
-func (m *aliOss) SetUrlRoot(root string) {
+func (m *SaOss) SetUrlRoot(root string) {
 	if len(root) == 0 {
 		return
 	}
@@ -84,7 +80,7 @@ func (m *aliOss) SetUrlRoot(root string) {
 	}
 }
 
-func (m *aliOss) AddUrlRoot(url string) string {
+func (m *SaOss) AddUrlRoot(url string) string {
 	if m == nil || len(m.UrlRoot) == 0 || len(url) == 0 {
 		return url
 	}
@@ -96,7 +92,7 @@ func (m *aliOss) AddUrlRoot(url string) string {
 	return strings.TrimSuffix(m.UrlRoot, "/") + "/" + strings.TrimPrefix(url, "/")
 }
 
-func (m *aliOss) DeleteUrlRoot(uri string) string {
+func (m *SaOss) DeleteUrlRoot(uri string) string {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return uri
@@ -114,7 +110,7 @@ func (m *aliOss) DeleteUrlRoot(uri string) string {
 // CopyWithBucket
 // src为目录，则将src下的内容全部拷贝到destination目录下
 // src为文件，如果dest后缀为/，则将src文件拷贝到destination目录下；如果destination后缀不是/，则将src拷贝成dest文件
-func (m *aliOss) CopyWithBucket(src, destination string) error {
+func (m *SaOss) CopyWithBucket(src, destination string) error {
 	if m == nil {
 		return errors.New("bucket不存在")
 	}
@@ -171,7 +167,7 @@ func (m *aliOss) CopyWithBucket(src, destination string) error {
 	return nil
 }
 
-func (m *aliOss) GetTxt(uri string) (res string, err error) {
+func (m *SaOss) GetTxt(uri string) (res string, err error) {
 	// 下载文件到流。
 	body, err := m.GetObject(uri)
 	if err != nil {
@@ -187,7 +183,7 @@ func (m *aliOss) GetTxt(uri string) (res string, err error) {
 	return string(v), nil
 }
 
-func (m *aliOss) UploadTxt(destination string, v string) (path string, err error) {
+func (m *SaOss) UploadTxt(destination string, v string) (path string, err error) {
 	if destination == "" || v == "" {
 		return "", errors.New("缺参数")
 	}
@@ -200,4 +196,29 @@ func (m *aliOss) UploadTxt(destination string, v string) (path string, err error
 
 	err = m.PutObject(destination, strings.NewReader(v))
 	return destination, err
+}
+
+func (m *SaOss) StsToken(roleArn, roleSessionName string) (keyId, keySecret, token string, err error) {
+	var client *sts.Client
+	client, err = sts.NewClientWithAccessKey(m.region, m.accessKeyId, m.accessKeySecret)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	//构建请求对象。
+	var request = sts.CreateAssumeRoleRequest()
+	request.Scheme = "https"
+
+	//设置参数。关于参数含义和设置方法，请参见《API参考》。
+	request.RoleArn = roleArn
+	request.RoleSessionName = roleSessionName
+
+	//发起请求，并得到响应。
+	var response *sts.AssumeRoleResponse
+	response, err = client.AssumeRole(request)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	return response.Credentials.AccessKeyId, response.Credentials.AccessKeySecret, response.Credentials.SecurityToken, nil
 }

@@ -59,7 +59,7 @@ func (m RichTxt) Value() (driver.Value, error) {
 	return str, nil
 }
 
-func (m *RichTxt) Save(oss saOss.SaOss, t RichTxtType, txt string, path string) (err error) {
+func (m *RichTxt) Save(oss *saOss.SaOss, t RichTxtType, txt string, path string) (err error) {
 	if m == nil || oss == nil {
 		return errors.New("RichTxt数据有误")
 	}

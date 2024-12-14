@@ -15,28 +15,6 @@ type Routine struct {
 	handle         func(params interface{})
 }
 
-func Go(fn func()) {
-	go func() {
-		if e := recover(); e != nil {
-			fmt.Println(e)
-			debug.PrintStack()
-			return
-		}
-		fn()
-	}()
-}
-
-func GoWithParams(args interface{}, fn func(params interface{})) {
-	go func() {
-		if e := recover(); e != nil {
-			fmt.Println(e)
-			debug.PrintStack()
-			return
-		}
-		fn(args)
-	}()
-}
-
 // NewRoutine
 // @Description: 通过channel，分发事务，控制事务并发数量
 // @param routineMaxCnt 协程数量

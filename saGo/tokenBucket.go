@@ -12,8 +12,12 @@ type Bucket struct {
 	fn func(*Bucket, interface{})
 	wg *sync.WaitGroup
 
-	qps int
+	Qps int
 	qpm int
+
+	lock                sync.Mutex
+	lastMillisecond     int64
+	intervalMillisecond int64
 
 	tokens int32        // 当前令牌数
 	ticker *time.Ticker // 定时器
@@ -43,6 +47,8 @@ func NewBucket(size int, qps int, fn func(bucket *Bucket, args interface{})) *Bu
 		isDone: false,
 		tokens: 0,
 		ticker: time.NewTicker(time.Second / time.Duration(qps)),
+
+		lock: sync.Mutex{},
 	}
 
 	if size <= 0 {
@@ -54,7 +60,8 @@ func NewBucket(size int, qps int, fn func(bucket *Bucket, args interface{})) *Bu
 		p.expectTime = int64(1000/qps + 1)
 	}
 
-	p.qps = qps
+	p.Qps = qps
+	p.intervalMillisecond = 1000 / int64(qps)
 	p.ch = make(chan interface{}, size)
 
 	//生产
@@ -84,16 +91,17 @@ func NewBucket(size int, qps int, fn func(bucket *Bucket, args interface{})) *Bu
 
 			for {
 				if args, ok := <-p.ch; ok {
-					p.Consume()
-					var begin = time.Now().UnixMilli()
-					p.fn(p, args)
-					var diff = time.Now().UnixMilli() - begin
-					p.totalTime += diff
-					if diff > p.expectTime {
-						p.slow++
-					}
-					if diff > p.maxTime {
-						p.maxTime = diff
+					if p.fn != nil {
+						var begin = time.Now().UnixMilli()
+						p.fn(p, args)
+						var diff = time.Now().UnixMilli() - begin
+						p.totalTime += diff
+						if diff > p.expectTime {
+							p.slow++
+						}
+						if diff > p.maxTime {
+							p.maxTime = diff
+						}
 					}
 					p.wg.Done()
 				} else {
@@ -124,14 +132,23 @@ func (p *Bucket) Invoke(args interface{}) {
 }
 
 // 消耗，阻塞，消耗成功才能执行
-func (p *Bucket) Consume() {
+func (b *Bucket) Consume() {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	var now = time.Now().UnixMilli()
+	var t = int64(now - b.lastMillisecond)
+	if t < b.intervalMillisecond {
+		time.Sleep(time.Duration(b.intervalMillisecond-t+5) * time.Millisecond)
+	}
+
 	for {
-		tokens := atomic.LoadInt32(&p.tokens)
-		if tokens <= 0 {
-			time.Sleep(time.Millisecond * 10)
+		if b.tokens <= 0 {
+			time.Sleep(time.Millisecond * 100)
 			continue
 		}
-		atomic.AddInt32(&p.tokens, -1)
+		b.tokens--
+		b.lastMillisecond = time.Now().UnixMilli()
 		return
 	}
 }
@@ -152,10 +169,6 @@ func (p *Bucket) Done() {
 }
 
 func (p *Bucket) Desc() string {
-	if p.done == 2000 && 20*p.slow > p.done {
-
-	}
-
 	var msg = ""
 	if p.done <= 0 {
 		msg = "待开始"

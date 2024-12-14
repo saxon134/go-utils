@@ -181,6 +181,30 @@ func IdsToAry(str string) []int64 {
 	return resAry
 }
 
+func IdsToIntAry(str string) []int {
+	if str == "" {
+		return []int{}
+	}
+
+	var ary = strings.Split(str, ",")
+	var resAry = make([]int, 0, len(ary))
+	for _, v := range ary {
+		if id, _ := ToInt(v); id != 0 {
+			var exist = false
+			for _, e := range resAry {
+				if e == id {
+					exist = true
+					break
+				}
+			}
+			if exist == false {
+				resAry = append(resAry, id)
+			}
+		}
+	}
+	return resAry
+}
+
 // FormatIds 前后加逗号是为了方便SQL查询过滤
 // 1,2,3 => ,1,2,3,
 func FormatIds(str string) string {
@@ -263,6 +287,15 @@ func InArrayFun(ary interface{}, fun func(i int) bool) bool {
 func InStrs(item string, ary []string) (exist bool) {
 	for _, v := range ary {
 		if item == v {
+			return true
+		}
+	}
+	return false
+}
+
+func ContainStrs(item string, ary []string) (exist bool) {
+	for _, v := range ary {
+		if strings.Contains(v, item) {
 			return true
 		}
 	}

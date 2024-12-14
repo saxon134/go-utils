@@ -95,7 +95,10 @@ func AddCase(c *Case) (err error) {
 	}
 
 	if task.AdminTaskList[c.Key] == nil {
-		task.AddTask(c.Key, task.NewTask(c.Key, c.Spec, c.Params, task.Handler(c.Handler)))
+		task.AddTask(c.Key, task.NewTask(c.Key, c.Spec, c.Params, func(key string, params string) error {
+			err = c.Handler(key, params)
+			return err
+		}))
 	} else {
 		return errors.New(fmt.Sprintf("key is existed: %s", c.Key))
 	}
@@ -150,4 +153,8 @@ func CheckSpec(spec string) (ok bool) {
 		return false
 	}
 	return true
+}
+
+func StopAll() {
+	task.StopTask()
 }

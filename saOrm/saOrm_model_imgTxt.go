@@ -52,7 +52,7 @@ func (m ImgTxt) Value() (driver.Value, error) {
 	return str, nil
 }
 
-func (m *ImgTxt) Save(oss saOss.SaOss, path string) (err error) {
+func (m *ImgTxt) Save(oss *saOss.SaOss, path string) (err error) {
 	if m == nil || oss == nil {
 		return errors.New("ImgTxt数据有误")
 	}

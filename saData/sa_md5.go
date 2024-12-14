@@ -3,7 +3,9 @@ package saData
 import (
 	"crypto/hmac"
 	"crypto/md5"
+	"crypto/sha1"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"strings"
@@ -36,4 +38,10 @@ func Sha256(s string, secret string, lowercase bool) string {
 		}
 	}
 	return ""
+}
+
+// Sha1
+func Sha1(str string, secret string) string {
+	hash := sha1.Sum([]byte(str))
+	return hex.EncodeToString(hash[:])
 }

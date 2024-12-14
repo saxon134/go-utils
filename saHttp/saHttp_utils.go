@@ -100,7 +100,7 @@ func Download(url string, suffix string) (localFilePath string, err error) {
 	)
 
 	suffix = strings.TrimPrefix(suffix, ".")
-	if suffix != "" {
+	if suffix != "" && len(suffix) < 10 {
 		suffix = "." + suffix
 	}
 	tmpFilePath := saData.RandomStr() + suffix

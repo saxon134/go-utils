@@ -22,7 +22,7 @@ func initZapLog() *zapLog {
 	m := new(zapLog)
 
 	fileWriter, err := zaprotatelogs.New(
-		path.Join("log", "%Y-%m-%d.log"),
+		path.Join("logs", "%Y-%m-%d.log"),
 		zaprotatelogs.WithLinkName("latest_log"),
 		zaprotatelogs.WithMaxAge(7*24*time.Hour),
 		zaprotatelogs.WithRotationTime(24*time.Hour),
