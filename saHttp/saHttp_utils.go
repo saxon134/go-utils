@@ -10,10 +10,8 @@ import (
 	"github.com/saxon134/go-utils/saData/saUrl"
 	"io"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -160,78 +158,6 @@ func Download(url string, suffix string) (localFilePath string, err error) {
 		return tmpFilePath, nil
 	}
 	return "", err
-}
-
-// Upload file -> name:文件参数名  path:本地文件路径
-func Upload(url string, fileParams map[string]string, params map[string]string, headers map[string]string) (res string, err error) {
-	if fileParams == nil || len(fileParams) == 0 || fileParams["name"] == "" || fileParams["path"] == "" {
-		err = errors.New("文件内容为空")
-		return
-	}
-
-	//新建请求body
-	var requestBody = &bytes.Buffer{}
-	var contentType = ""
-	writer := multipart.NewWriter(requestBody)
-	{
-		// 文件写入 body
-		var file *os.File
-		file, err = os.Open(fileParams["path"])
-		if err != nil {
-			return "", err
-		}
-		defer file.Close()
-
-		var part io.Writer
-		part, err = writer.CreateFormFile(fileParams["name"], filepath.Base(fileParams["path"]))
-		if err != nil {
-			return "", err
-		}
-		_, err = io.Copy(part, file)
-
-		// 其他参数列表写入 body
-		for k, v := range params {
-			if err = writer.WriteField(k, v); err != nil {
-				return "", err
-			}
-		}
-		if err = writer.Close(); err != nil {
-			return "", err
-		}
-
-		contentType = writer.FormDataContentType()
-	}
-
-	// 创建请求
-	request, err := http.NewRequest("POST", url, requestBody)
-	if err != nil {
-		return "", err
-	}
-
-	// 添加请求头
-	if headers != nil {
-		for k, v := range headers {
-			request.Header.Add(k, v)
-		}
-	}
-	request.Header.Del("Content-Type")
-	request.Header.Add("Content-Type", contentType)
-
-	// 发送请求
-	client := &http.Client{}
-	var doResp *http.Response
-	doResp, err = client.Do(request)
-	if err != nil {
-		return
-	}
-	defer doResp.Body.Close()
-
-	var response []byte
-	response, err = ioutil.ReadAll(doResp.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(response), nil
 }
 
 func ToRequest(method string, url string, params map[string]string, header map[string]string) (res string, err error) {

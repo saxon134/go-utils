@@ -137,7 +137,7 @@ func TimeFromUnix(t int64) *Time {
 		return nil
 	}
 
-	var s = Time(v.Format(time.DateOnly))
+	var s = Time(v.Format(time.DateTime))
 	return &s
 }
 

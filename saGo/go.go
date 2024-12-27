@@ -13,7 +13,6 @@ func Go(fn func()) {
 			if e := recover(); e != nil {
 				fmt.Println(e)
 				debug.PrintStack()
-				return
 			}
 		}()
 		fn()

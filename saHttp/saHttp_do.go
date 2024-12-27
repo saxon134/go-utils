@@ -1,11 +1,16 @@
 package saHttp
 
 import (
+	"bytes"
 	"errors"
 	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saData/saHit"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -21,6 +26,19 @@ type Params struct {
 	Timeout         time.Duration          //默认60秒
 	CallbackWhenErr bool                   //是否在失败时回调，默认关闭
 	Retry           func(retry int, v interface{}, err error) bool
+}
+
+type UploadParams struct {
+	Url             string //不能空
+	Key             string //默认file
+	LocalPath       string //本地文件路径，优先级高于File
+	FileName        string //文件名称，带后缀
+	Reader          io.Reader
+	Query           map[string]interface{} //interface部分json序列化后进行UrlEncode
+	Header          map[string]interface{} //interface部分会json序列化
+	Body            map[string]interface{}
+	Timeout         time.Duration //默认60秒
+	CallbackWhenErr bool          //是否在失败时回调，默认关闭
 }
 
 type CallbackFun func(request string)
@@ -199,6 +217,146 @@ func _do(in Params, resPtr interface{}) (err error) {
 				e = saData.BytesToModel(bAry, resPtr)
 				if e != nil {
 					return &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(string(bAry))}
+				}
+			}
+		}
+		return err
+	}
+}
+
+func Upload(in UploadParams, resPtr interface{}) (err error) {
+	//接口调用失败时，回调
+	if _errCallbackFunc != nil && in.CallbackWhenErr == true {
+		defer func() {
+			if err != nil {
+				_errCallbackFunc(saData.String(map[string]string{
+					"err": err.Error(),
+				}))
+			}
+		}()
+	}
+
+	if in.Url == "" {
+		return errors.New("缺少URL")
+	}
+	if in.LocalPath == "" && in.Reader == nil {
+		err = errors.New("文件为空")
+		return
+	}
+
+	if in.Timeout <= 0 {
+		in.Timeout = time.Second * 60
+	}
+	in.Key = saHit.OrStr(in.Key, "file")
+
+	//新建请求body
+	var requestBody = &bytes.Buffer{}
+	var contentType = ""
+	writer := multipart.NewWriter(requestBody)
+	{
+		if in.FileName == "" {
+			in.FileName = filepath.Base(in.LocalPath)
+			if in.FileName == "" {
+				in.FileName = saData.String(time.Now().UnixMilli())
+			}
+		}
+
+		if in.LocalPath != "" {
+			in.Reader, err = os.Open(in.LocalPath)
+			if err != nil {
+				return err
+			}
+
+			var part io.Writer
+			part, err = writer.CreateFormFile(in.Key, in.FileName)
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(part, in.Reader)
+		} else {
+			var part io.Writer
+			part, err = writer.CreateFormFile(in.Key, in.FileName)
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(part, in.Reader)
+		}
+
+		// 其他参数列表写入 body
+		for k, v := range in.Body {
+			if err = writer.WriteField(k, saData.String(v)); err != nil {
+				return err
+			}
+		}
+		if err = writer.Close(); err != nil {
+			return err
+		}
+
+		contentType = writer.FormDataContentType()
+	}
+
+	// 创建请求
+	request, err := http.NewRequest("POST", in.Url, requestBody)
+	if err != nil {
+		return err
+	}
+
+	// 添加请求头
+	if in.Header != nil {
+		for k, v := range in.Header {
+			request.Header.Add(k, saData.String(v))
+		}
+	}
+	request.Header.Del("Content-Type")
+	request.Header.Del("content-type")
+	request.Header.Add("Content-Type", contentType)
+
+	// 发送请求
+	client := &http.Client{}
+	var resp *http.Response
+	resp, err = client.Do(request)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 {
+		if resPtr == nil {
+			return nil
+		}
+
+		var bAry []byte
+		bAry, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		} else {
+			if b, ok := resPtr.(*[]byte); ok {
+				*b = bAry
+				return nil
+			}
+
+			err = saData.BytesToModel(bAry, resPtr)
+			if err != nil {
+				err = &url.Error{URL: in.Url, Err: errors.New(saData.String(map[string]string{
+					"err":  err.Error(),
+					"data": string(bAry),
+				}))}
+			}
+			return err
+		}
+	} else {
+		err = &url.Error{URL: in.Url, Err: errors.New("")}
+		if resPtr == nil {
+			return err
+		}
+
+		if bAry, e := io.ReadAll(resp.Body); e == nil {
+			if b, ok := resPtr.(*[]byte); ok {
+				*b = bAry
+			} else {
+				e = saData.BytesToModel(bAry, resPtr)
+				if e != nil {
+					return &url.Error{URL: in.Url, Err: errors.New(string(bAry))}
 				}
 			}
 		}

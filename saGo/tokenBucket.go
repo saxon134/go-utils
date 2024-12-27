@@ -164,8 +164,6 @@ func (p *Bucket) Done() {
 	if p.wg != nil {
 		p.wg.Wait()
 	}
-
-	p.ticker.Stop()
 }
 
 func (p *Bucket) Desc() string {
