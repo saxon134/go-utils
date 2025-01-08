@@ -1,20 +1,30 @@
 package saHit
 
-func OrStr(a, b string) string {
-	return Str(a != "", a, b)
+func OrStr(a ...string) string {
+	for _, v := range a {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
-func OrInt(a, b int) int {
-	return Int(a != 0, a, b)
+func OrInt(a ...int) int {
+	for _, v := range a {
+		if v != 0 {
+			return v
+		}
+	}
+	return 0
 }
 
-func MaxInt(a...int) int {
-	if len(a)==0 {
+func MaxInt(a ...int) int {
+	if len(a) == 0 {
 		return 0
 	}
 
 	var max = a[0]
-	for i:=1;i < len(a);i ++ {
+	for i := 1; i < len(a); i++ {
 		if max < a[i] {
 			max = a[i]
 		}
@@ -22,8 +32,13 @@ func MaxInt(a...int) int {
 	return max
 }
 
-func OrInt64(a, b int64) int64 {
-	return Int64(a != 0, a, b)
+func OrInt64(a ...int64) int64 {
+	for _, v := range a {
+		if v != 0 {
+			return v
+		}
+	}
+	return 0
 }
 
 func If(ok bool, a interface{}, b interface{}) interface{} {
@@ -73,4 +88,3 @@ func Float64(ok bool, a float64, b float64) float64 {
 		return b
 	}
 }
-

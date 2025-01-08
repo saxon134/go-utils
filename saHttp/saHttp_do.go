@@ -28,12 +28,12 @@ type Params struct {
 	Retry           func(retry int, v interface{}, err error) bool
 }
 
-type UploadParams struct {
+type FormParams struct {
 	Url             string //不能空
 	Key             string //默认file
 	LocalPath       string //本地文件路径，优先级高于File
 	FileName        string //文件名称，带后缀
-	Reader          io.Reader
+	FileReader      io.Reader
 	Query           map[string]interface{} //interface部分json序列化后进行UrlEncode
 	Header          map[string]interface{} //interface部分会json序列化
 	Body            map[string]interface{}
@@ -224,7 +224,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 	}
 }
 
-func Upload(in UploadParams, resPtr interface{}) (err error) {
+func MultiForm(in FormParams, resPtr interface{}) (err error) {
 	//接口调用失败时，回调
 	if _errCallbackFunc != nil && in.CallbackWhenErr == true {
 		defer func() {
@@ -239,19 +239,34 @@ func Upload(in UploadParams, resPtr interface{}) (err error) {
 	if in.Url == "" {
 		return errors.New("缺少URL")
 	}
-	if in.LocalPath == "" && in.Reader == nil {
-		err = errors.New("文件为空")
-		return
-	}
 
 	if in.Timeout <= 0 {
 		in.Timeout = time.Second * 60
 	}
 	in.Key = saHit.OrStr(in.Key, "file")
 
+	//绑定query参数
+	var urlAry = strings.Split(in.Url, "#")
+	for k, v := range in.Query {
+		var queryValues = url.Values{}
+		queryValues.Add(k, saData.String(v))
+		if len(urlAry) == 2 {
+			if strings.Contains(urlAry[1], "?") {
+				in.Url += "&" + queryValues.Encode()
+			} else {
+				in.Url += "?" + queryValues.Encode()
+			}
+		} else {
+			if strings.Contains(in.Url, "?") {
+				in.Url += "&" + queryValues.Encode()
+			} else {
+				in.Url += "?" + queryValues.Encode()
+			}
+		}
+	}
+
 	//新建请求body
 	var requestBody = &bytes.Buffer{}
-	var contentType = ""
 	writer := multipart.NewWriter(requestBody)
 	{
 		if in.FileName == "" {
@@ -262,7 +277,7 @@ func Upload(in UploadParams, resPtr interface{}) (err error) {
 		}
 
 		if in.LocalPath != "" {
-			in.Reader, err = os.Open(in.LocalPath)
+			in.FileReader, err = os.Open(in.LocalPath)
 			if err != nil {
 				return err
 			}
@@ -272,14 +287,14 @@ func Upload(in UploadParams, resPtr interface{}) (err error) {
 			if err != nil {
 				return err
 			}
-			_, err = io.Copy(part, in.Reader)
-		} else {
+			_, err = io.Copy(part, in.FileReader)
+		} else if in.FileReader != nil {
 			var part io.Writer
 			part, err = writer.CreateFormFile(in.Key, in.FileName)
 			if err != nil {
 				return err
 			}
-			_, err = io.Copy(part, in.Reader)
+			_, err = io.Copy(part, in.FileReader)
 		}
 
 		// 其他参数列表写入 body
@@ -288,33 +303,33 @@ func Upload(in UploadParams, resPtr interface{}) (err error) {
 				return err
 			}
 		}
-		if err = writer.Close(); err != nil {
+
+		err = writer.Close()
+		if err != nil {
 			return err
 		}
-
-		contentType = writer.FormDataContentType()
 	}
 
 	// 创建请求
-	request, err := http.NewRequest("POST", in.Url, requestBody)
+	var req *http.Request
+	req, err = http.NewRequest("POST", in.Url, requestBody)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
-	// 添加请求头
-	if in.Header != nil {
-		for k, v := range in.Header {
-			request.Header.Add(k, saData.String(v))
+	// 设置 header
+	for k, v := range in.Header {
+		if saData.InStrs(k, []string{"Content-Type", "content-type"}) {
+			continue
 		}
+		req.Header.Set(k, saData.String(v))
 	}
-	request.Header.Del("Content-Type")
-	request.Header.Del("content-type")
-	request.Header.Add("Content-Type", contentType)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	// 发送请求
 	client := &http.Client{}
 	var resp *http.Response
-	resp, err = client.Do(request)
+	resp, err = client.Do(req)
 	if err != nil {
 		return
 	}
