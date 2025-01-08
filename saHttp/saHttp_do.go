@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saHit"
+	"github.com/saxon134/go-utils/saLog"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -19,10 +20,11 @@ type Params struct {
 	Method          string                 //默认GET，仅支持GET/POST方法
 	Url             string                 //不能空
 	Query           map[string]interface{} //interface部分json序列化后进行UrlEncode
+	QueryValues     url.Values
 	Header          map[string]interface{} //interface部分会json序列化
 	Body            map[string]interface{} //会进行json序列化或者query序列化（form表单），取决于content-type；默认query序列化
 	BodyString      string                 //string类型body，仅content-type为application-json，且Body为空时有效
-	Values          url.Values             //仅content-type为application/x-www-form-urlencoded，且body为空时有效
+	BodyValues      url.Values             //仅content-type为application/x-www-form-urlencoded，且body为空时有效
 	Timeout         time.Duration          //默认60秒
 	CallbackWhenErr bool                   //是否在失败时回调，默认关闭
 	Retry           func(retry int, v interface{}, err error) bool
@@ -101,9 +103,16 @@ func _do(in Params, resPtr interface{}) (err error) {
 
 	//绑定query参数
 	var urlAry = strings.Split(in.Url, "#")
-	for k, v := range in.Query {
-		var queryValues = url.Values{}
-		queryValues.Add(k, saData.String(v))
+	var queryValues = url.Values{}
+	{
+		if len(in.Query) > 0 {
+			for k, v := range in.Query {
+				queryValues.Add(k, saData.String(v))
+			}
+		} else if len(in.QueryValues) > 0 {
+			queryValues = in.QueryValues
+		}
+
 		if len(urlAry) == 2 {
 			if strings.Contains(urlAry[1], "?") {
 				in.Url += "&" + queryValues.Encode()
@@ -137,7 +146,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 
 		if strings.Contains(contentType, "application/x-www-form-urlencoded") {
 			if len(in.Body) == 0 && in.BodyString == "" {
-				bodyStr = in.Values.Encode()
+				bodyStr = in.BodyValues.Encode()
 			} else {
 				var bodyValues = url.Values{}
 				for k, v := range in.Body {
@@ -197,26 +206,25 @@ func _do(in Params, resPtr interface{}) (err error) {
 
 			err = saData.BytesToModel(bAry, resPtr)
 			if err != nil {
-				err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(saData.String(map[string]string{
-					"err":  err.Error(),
-					"data": string(bAry),
-				}))}
+				saLog.Err(err)
+				saLog.Err(string(bAry))
 			}
-			return err
+			return nil
 		}
 	} else {
-		err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New("")}
+		err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(resp.Status)}
 		if resPtr == nil {
 			return err
 		}
 
 		if bAry, e := io.ReadAll(resp.Body); e == nil {
-			if bytes, ok := resPtr.(*[]byte); ok {
-				*bytes = bAry
+			if b, ok := resPtr.(*[]byte); ok {
+				*b = bAry
 			} else {
 				e = saData.BytesToModel(bAry, resPtr)
 				if e != nil {
-					return &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(string(bAry))}
+					saLog.Err(e)
+					saLog.Err(string(bAry))
 				}
 			}
 		}
@@ -352,15 +360,13 @@ func MultiForm(in FormParams, resPtr interface{}) (err error) {
 
 			err = saData.BytesToModel(bAry, resPtr)
 			if err != nil {
-				err = &url.Error{URL: in.Url, Err: errors.New(saData.String(map[string]string{
-					"err":  err.Error(),
-					"data": string(bAry),
-				}))}
+				saLog.Err(err)
+				saLog.Err(string(bAry))
 			}
-			return err
+			return nil
 		}
 	} else {
-		err = &url.Error{URL: in.Url, Err: errors.New("")}
+		err = &url.Error{URL: in.Url, Err: errors.New(resp.Status)}
 		if resPtr == nil {
 			return err
 		}
@@ -371,7 +377,8 @@ func MultiForm(in FormParams, resPtr interface{}) (err error) {
 			} else {
 				e = saData.BytesToModel(bAry, resPtr)
 				if e != nil {
-					return &url.Error{URL: in.Url, Err: errors.New(string(bAry))}
+					saLog.Err(e)
+					saLog.Err(string(bAry))
 				}
 			}
 		}
