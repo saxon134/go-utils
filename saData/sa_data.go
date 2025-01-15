@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 func ToBytes(data interface{}) ([]byte, error) {
@@ -37,9 +38,9 @@ func ToStr(data interface{}) (string, error) {
 	case int, int8, int16, int64:
 		return fmt.Sprint(v), nil
 	case float32:
-		return strconv.FormatFloat(Float64(v), 'f', -1, 32),nil
+		return strconv.FormatFloat(Float64(v), 'f', -1, 32), nil
 	case float64:
-		return strconv.FormatFloat(v, 'f', -1, 64),nil
+		return strconv.FormatFloat(v, 'f', -1, 64), nil
 	case *string:
 		return *v, nil
 	case []uint8:
@@ -55,7 +56,7 @@ func ToStr(data interface{}) (string, error) {
 		return s, nil
 	}
 
-	return fmt.Sprint(data),nil
+	return fmt.Sprint(data), nil
 }
 
 func String(data interface{}) string {
@@ -336,6 +337,8 @@ func ToInt(d interface{}) (int, error) {
 	}
 
 	if s, ok := d.(string); ok {
+		s = strings.TrimSuffix(s, ".0")
+		s = strings.TrimSuffix(s, ".00")
 		if i, err := strconv.Atoi(s); err == nil {
 			return i, nil
 		} else {
@@ -439,6 +442,8 @@ func ToInt64(d interface{}) (int64, error) {
 		if s == "" {
 			return 0, nil
 		}
+		s = strings.TrimSuffix(s, ".0")
+		s = strings.TrimSuffix(s, ".00")
 		return strconv.ParseInt(s, 10, 64)
 	}
 
@@ -523,7 +528,7 @@ func ToFloat32(d interface{}) (float32, error) {
 }
 
 func Float64(d interface{}) float64 {
-	f,_:=ToFloat64(d)
+	f, _ := ToFloat64(d)
 	return f
 }
 

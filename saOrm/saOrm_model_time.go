@@ -78,8 +78,8 @@ func (m *Time) IsZero() bool {
 }
 
 func (m *Time) T() time.Time {
-	if m == nil {
-		return time.UnixMicro(0)
+	if m == nil || string(*m) == "" {
+		return time.Time{}
 	}
 
 	var formatAry = []string{saTime.FormatDefault, saTime.FormatSystem, saTime.FormatYMD}
