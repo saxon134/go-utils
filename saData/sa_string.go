@@ -232,12 +232,9 @@ func TrimH5Tags(src string) (str string) {
 	return s
 }
 
-/** 返回13位字符串 */
+/** 返回16位字符串 */
 func RandomStr() string {
-	t := time.Now().Unix()
-	r := rand.Intn(1000)
-	t = t*1000 + int64(r)
-	return I64tos(t)
+	return IdToCode(rand.Int63n(1000), 3) + I64tos(time.Now().UnixMilli())
 }
 
 // 通过内存操作，效率极高，但是有风险。只在数据量很大、效率要求高的场景使用

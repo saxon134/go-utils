@@ -161,9 +161,7 @@ func (p *Bucket) Done() {
 
 	close(p.ch)
 	p.isDone = true
-	if p.wg != nil {
-		p.wg.Wait()
-	}
+	p.wg.Wait()
 }
 
 func (p *Bucket) Desc() string {
