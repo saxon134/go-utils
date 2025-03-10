@@ -2,6 +2,7 @@ package saData
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"regexp"
 	"strconv"
@@ -306,4 +307,78 @@ func IsVideo(url string) bool {
 		return true
 	}
 	return false
+}
+
+// 去出输入空字符串
+func TrimEmpty(str string) string {
+	str = strings.ReplaceAll(str, " ", "")
+	str = strings.ReplaceAll(str, "\t", "")
+	str = strings.ReplaceAll(str, "\r", "")
+	str = strings.ReplaceAll(str, "#N/A", "")
+	str = strings.ReplaceAll(str, "\u200B", "")
+	str = strings.ReplaceAll(str, "\ufeff", "")
+	str = strings.ReplaceAll(str, "(null)", "")
+	if str == "-" || str == "--" {
+		return ""
+	}
+	return str
+}
+
+// 格式化逗号
+func FormatComma(str string) string {
+	str = strings.ReplaceAll(str, " ", ",")
+	str = strings.ReplaceAll(str, "\t", ",")
+	str = strings.ReplaceAll(str, "，", ",")
+	str = strings.ReplaceAll(str, "\n", ",")
+	str = strings.Join(Split(str, ","), ",")
+	return str
+}
+
+func FormatPrice(price string) string {
+	//检查这个字符串是否带有正/负号。如果带有符号，就把符号先单独提取出来
+	symbolString := ""
+	if price[0] == '-' || price[0] == '+' {
+		symbolString = string(price[0])
+		price = price[1:]
+	}
+
+	//小数点前没有写0，就补一个0进去补齐，让数字字符串看起来更好看
+	if price[0] == '.' {
+		return "0" + price
+	}
+
+	//判断这个数字是不是浮点数值
+	dotIndex, decimalString := strings.Index(price, "."), ""
+	if dotIndex != -1 {
+		decimalString = price[dotIndex:]
+		price = price[:dotIndex]
+	} else if dotIndex == -1 {
+		dotIndex = len(price)
+	}
+
+	return fmt.Sprintf("%s%s%s", symbolString, _comma(price[:dotIndex]), decimalString)
+}
+
+func MatchEmail(text string) string {
+	// 定义邮箱地址的正则表达式
+	emailRegex := `\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b`
+
+	// 编译正则表达式
+	re := regexp.MustCompile(emailRegex)
+
+	// 查找匹配的邮箱地址
+	matches := re.FindAllString(text, -1)
+
+	if matches != nil && len(matches) >= 0 {
+		return matches[0]
+	}
+	return ""
+}
+
+func _comma(s string) string {
+	if len(s) <= 3 {
+		return s
+	}
+
+	return _comma(s[:len(s)-3]) + "," + _comma(s[len(s)-3:])
 }

@@ -2,9 +2,9 @@ package saGo
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"runtime/debug"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -19,13 +19,9 @@ type Bucket struct {
 	lastMillisecond     int64
 	intervalMillisecond int64
 
-	tokens int32        // 当前令牌数
-	ticker *time.Ticker // 定时器
-	second int32
-
-	done   int
-	isDone bool
-	ch     chan interface{}
+	doneCnt int
+	isDone  bool
+	ch      chan interface{}
 
 	slow       int
 	expectTime int64 //预期耗时
@@ -40,14 +36,9 @@ type Bucket struct {
 // 假如qps为20，执行耗时0.2秒，则size设置为4最节省资源
 // size如果设置较大，不影响qps，只是浪费了些资源，如果执行比较费时可以通过加大size值改善执行速度
 func NewBucket(size int, qps int, fn func(bucket *Bucket, args interface{})) *Bucket {
-	var p = &Bucket{
-		fn: fn,
-		wg: &sync.WaitGroup{},
-
-		isDone: false,
-		tokens: 0,
-		ticker: time.NewTicker(time.Second / time.Duration(qps)),
-
+	var b = &Bucket{
+		fn:   fn,
+		wg:   &sync.WaitGroup{},
 		lock: sync.Mutex{},
 	}
 
@@ -57,26 +48,12 @@ func NewBucket(size int, qps int, fn func(bucket *Bucket, args interface{})) *Bu
 
 	//计算任务执行目标时间，实际低于目标时间，则表明任务执行较慢
 	if qps > 0 {
-		p.expectTime = int64(1000/qps + 1)
+		b.expectTime = int64(1000/qps + 1)
 	}
 
-	p.Qps = qps
-	p.intervalMillisecond = 1000 / int64(qps)
-	p.ch = make(chan interface{}, size)
-
-	//生产
-	go func() {
-		for range p.ticker.C {
-			//1秒后复位
-			var second = int32(time.Now().Second())
-			if second != p.second {
-				atomic.StoreInt32(&p.second, second)
-				atomic.StoreInt32(&p.tokens, 1)
-			} else {
-				atomic.AddInt32(&p.tokens, 1)
-			}
-		}
-	}()
+	b.Qps = qps
+	b.intervalMillisecond = 1000 / int64(qps)
+	b.ch = make(chan interface{}, size)
 
 	//消耗
 	for i := 0; i < size; i++ {
@@ -90,28 +67,28 @@ func NewBucket(size int, qps int, fn func(bucket *Bucket, args interface{})) *Bu
 			}()
 
 			for {
-				if args, ok := <-p.ch; ok {
-					if p.fn != nil {
+				if args, ok := <-b.ch; ok {
+					if b.fn != nil {
 						var begin = time.Now().UnixMilli()
-						p.fn(p, args)
+						b.Consume()
+						b.fn(b, args)
 						var diff = time.Now().UnixMilli() - begin
-						p.totalTime += diff
-						if diff > p.expectTime {
-							p.slow++
+						b.totalTime += diff
+						if diff > b.expectTime {
+							b.slow++
 						}
-						if diff > p.maxTime {
-							p.maxTime = diff
+						if diff > b.maxTime {
+							b.maxTime = diff
 						}
 					}
-					p.wg.Done()
+					b.wg.Done()
 				} else {
 					break
 				}
 			}
 		}()
 	}
-
-	return p
+	return b
 }
 
 // 执行
@@ -122,56 +99,59 @@ func (p *Bucket) Invoke(args interface{}) {
 		return
 	}
 
-	if p.isDone {
-		return
-	}
-
-	p.done++
+	p.doneCnt++
 	p.ch <- args
 	p.wg.Add(1)
 }
 
 // 消耗，阻塞，消耗成功才能执行
 func (b *Bucket) Consume() {
-	b.lock.Lock()
-	defer b.lock.Unlock()
-
-	var now = time.Now().UnixMilli()
-	var t = int64(now - b.lastMillisecond)
-	if t < b.intervalMillisecond {
-		time.Sleep(time.Duration(b.intervalMillisecond-t+5) * time.Millisecond)
-	}
-
 	for {
-		if b.tokens <= 0 {
-			time.Sleep(time.Millisecond * 100)
-			continue
+		if b.isDone {
+			return
 		}
-		b.tokens--
-		b.lastMillisecond = time.Now().UnixMilli()
-		return
+
+		b.lock.Lock()
+		var now = time.Now().UnixMilli()
+		var t = now - b.lastMillisecond
+		if t < b.intervalMillisecond {
+			t = b.intervalMillisecond - t
+
+			//稍微错开点时间，减少lock竞争
+			if b.intervalMillisecond > 100 {
+				var r = int64(float64(b.intervalMillisecond) * 0.1)
+				t += rand.Int64N(r)
+			}
+			time.Sleep(time.Duration(t+5) * time.Millisecond)
+			b.lock.Unlock()
+			continue
+		} else {
+			b.lastMillisecond = time.Now().UnixMilli()
+			b.lock.Unlock()
+			return
+		}
 	}
 }
 
 // 需要手动结束，会等待所有执行完再返回
-func (p *Bucket) Done() {
-	if p == nil || p.isDone {
+func (b *Bucket) Done() {
+	if b == nil {
 		return
 	}
 
-	close(p.ch)
-	p.isDone = true
-	p.wg.Wait()
+	b.wg.Wait()
+	close(b.ch)
+	b.isDone = true
 }
 
-func (p *Bucket) Desc() string {
+func (b *Bucket) Desc() string {
 	var msg = ""
-	if p.done <= 0 {
+	if b.doneCnt <= 0 {
 		msg = "待开始"
 	} else {
 		msg = fmt.Sprintf(
 			"saGo 已完成：%d，慢任务:%d，平均执行时间：%d，最大执行时间：%d",
-			p.done, p.slow, p.totalTime/int64(p.done), p.maxTime,
+			b.doneCnt, b.slow, b.totalTime/int64(b.doneCnt), b.maxTime,
 		)
 	}
 	return msg

@@ -93,7 +93,7 @@ func NewPool(total int, size int, qps int, qpm int, fn func(args interface{})) *
 						p.maxTime = diff
 					}
 				} else {
-					return
+					break
 				}
 			}
 		}()
@@ -166,6 +166,7 @@ func (p *Pool) Wait() {
 		return
 	}
 	p.wg.Wait()
+	p.Done()
 }
 
 func (p *Pool) Desc() string {

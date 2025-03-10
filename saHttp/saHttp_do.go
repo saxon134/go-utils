@@ -16,6 +16,11 @@ import (
 	"time"
 )
 
+type Limiter struct {
+	Key         string
+	MilliSecond int
+}
+
 type Params struct {
 	Method          string                 //默认GET，仅支持GET/POST方法
 	Url             string                 //不能空
@@ -41,6 +46,7 @@ type FormParams struct {
 	Body            map[string]interface{}
 	Timeout         time.Duration //默认60秒
 	CallbackWhenErr bool          //是否在失败时回调，默认关闭
+	Limiter         Limiter
 }
 
 type CallbackFun func(request string)

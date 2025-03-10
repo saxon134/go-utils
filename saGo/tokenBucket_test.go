@@ -11,13 +11,13 @@ func TestBucket(t *testing.T) {
 	var bucket = NewBucket(30, 2, func(bucket *Bucket, args interface{}) {
 		time.Sleep(time.Millisecond * 1000)
 
-		for i := 0; i < 10; i++ {
-			fmt.Println(fmt.Sprintf("重试：%d %d %d", args, i, time.Now().Unix()))
+		for i := 0; i < 3; i++ {
+			fmt.Println(fmt.Sprintf("重试：%d %d", args, i))
 			bucket.Consume()
 		}
 	})
 
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 5; i++ {
 		bucket.Invoke(i + 1)
 	}
 	bucket.Done()
