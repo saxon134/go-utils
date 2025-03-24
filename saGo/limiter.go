@@ -38,7 +38,6 @@ func LimiterLock(key string, milliSecond int) {
 	if diff > 0 {
 		time.Sleep(time.Millisecond * time.Duration(diff))
 	}
-	lm.LastTime = now
 }
 
 // 不阻塞
@@ -76,6 +75,7 @@ func LimiterUnLock(key string) {
 	limiterLock.Lock()
 	var lm = limiterDIC[key]
 	if lm != nil {
+		lm.LastTime = time.Now().UnixMilli()
 		lm.Lock.Unlock()
 	}
 	limiterLock.Unlock()

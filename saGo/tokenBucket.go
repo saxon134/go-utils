@@ -15,9 +15,11 @@ type Bucket struct {
 	Qps int
 	qpm int
 
-	lock                sync.Mutex
-	lastMillisecond     int64
-	intervalMillisecond int64
+	lock                   sync.Mutex
+	lastMicrosecond        int64
+	minIntervalMicrosecond int64
+	second                 int64
+	count                  int
 
 	doneCnt int
 	isDone  bool
@@ -48,29 +50,20 @@ func NewBucket(size int, qps int, fn func(bucket *Bucket, args interface{})) *Bu
 
 	//计算任务执行目标时间，实际低于目标时间，则表明任务执行较慢
 	if qps > 0 {
-		b.expectTime = int64(1000/qps + 1)
+		b.expectTime = int64(size*1000/qps + 1)
 	}
 
 	b.Qps = qps
-	b.intervalMillisecond = 1000 / int64(qps)
-	b.ch = make(chan interface{}, size)
+	b.minIntervalMicrosecond = 500000 / int64(qps) // 1000000÷QPS×0.5
+	b.ch = make(chan interface{}, size+1)
 
 	//消耗
 	for i := 0; i < size; i++ {
-		go func() {
-			defer func() {
-				if e := recover(); e != nil {
-					fmt.Println(e)
-					debug.PrintStack()
-					return
-				}
-			}()
-
+		Go(func() {
 			for {
 				if args, ok := <-b.ch; ok {
 					if b.fn != nil {
 						var begin = time.Now().UnixMilli()
-						b.Consume()
 						b.fn(b, args)
 						var diff = time.Now().UnixMilli() - begin
 						b.totalTime += diff
@@ -86,22 +79,23 @@ func NewBucket(size int, qps int, fn func(bucket *Bucket, args interface{})) *Bu
 					break
 				}
 			}
-		}()
+		})
 	}
 	return b
 }
 
 // 执行
-func (p *Bucket) Invoke(args interface{}) {
+func (b *Bucket) Invoke(args interface{}) {
 	if e := recover(); e != nil {
 		fmt.Println(e)
 		debug.PrintStack()
 		return
 	}
 
-	p.doneCnt++
-	p.ch <- args
-	p.wg.Add(1)
+	b.Consume()
+	b.ch <- args
+	b.doneCnt++
+	b.wg.Add(1)
 }
 
 // 消耗，阻塞，消耗成功才能执行
@@ -112,23 +106,37 @@ func (b *Bucket) Consume() {
 		}
 
 		b.lock.Lock()
-		var now = time.Now().UnixMilli()
-		var t = now - b.lastMillisecond
-		if t < b.intervalMillisecond {
-			t = b.intervalMillisecond - t
+		var now = time.Now().UnixMicro()
+		var second = now / 1000000
+		if second != b.second {
+			b.second = second
+			b.count = 0
+		}
+
+		//限制最小执行间隔，为QPS间隔的60%
+		var t = now - b.lastMicrosecond
+		if t < b.minIntervalMicrosecond {
+			b.lock.Unlock()
 
 			//稍微错开点时间，减少lock竞争
-			if b.intervalMillisecond > 100 {
-				var r = int64(float64(b.intervalMillisecond) * 0.1)
+			t = b.minIntervalMicrosecond - t
+			if b.minIntervalMicrosecond > 1000 {
+				var r = int64(float64(b.minIntervalMicrosecond) * 0.01)
 				t += rand.Int64N(r)
 			}
-			time.Sleep(time.Duration(t+5) * time.Millisecond)
-			b.lock.Unlock()
+			time.Sleep(time.Duration(t+10) * time.Microsecond)
 			continue
 		} else {
-			b.lastMillisecond = time.Now().UnixMilli()
-			b.lock.Unlock()
-			return
+			if b.count >= b.Qps {
+				b.lock.Unlock()
+				time.Sleep(time.Duration(b.minIntervalMicrosecond+10) * time.Microsecond)
+				continue
+			} else {
+				b.lastMicrosecond = now
+				b.count++
+				b.lock.Unlock()
+				return
+			}
 		}
 	}
 }
