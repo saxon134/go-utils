@@ -123,3 +123,13 @@ func SetCache(key string, value interface{}, duration time.Duration) {
 
 	caches[key] = item
 }
+
+func ClearCache(key string)  {
+	if key == "" {
+		return
+	}
+
+	cacheLock.Lock()
+	delete(caches, key)
+	cacheLock.Unlock()
+}
