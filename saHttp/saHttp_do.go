@@ -16,6 +16,9 @@ import (
 	"time"
 )
 
+const MethodPost = "POST"
+const MethodGet = "GET"
+
 type Limiter struct {
 	Key         string
 	MilliSecond int

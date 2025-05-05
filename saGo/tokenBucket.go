@@ -12,7 +12,7 @@ type Bucket struct {
 	fn func(*Bucket, interface{})
 	wg *sync.WaitGroup
 
-	Qps int
+	Qps float32
 	qpm int
 
 	lock                   sync.Mutex
@@ -32,29 +32,38 @@ type Bucket struct {
 }
 
 // size - 并发执行数量
-// qps - 秒限制，0表示无限制
+// qps - 秒限制，必须大于0；0-1，如0.2，表示4秒允许执行一次
 // fc - 执行接口
 // 注意：size最节省资源的计算公式： size = qps * 每次执行的耗时
 // 假如qps为20，执行耗时0.2秒，则size设置为4最节省资源
 // size如果设置较大，不影响qps，只是浪费了些资源，如果执行比较费时可以通过加大size值改善执行速度
-func NewBucket(size int, qps int, fn func(bucket *Bucket, args interface{})) *Bucket {
+func NewBucket(size int, qps float32, fn func(bucket *Bucket, args interface{})) *Bucket {
+	if size <= 0 || qps <= 0 {
+		return nil
+	}
+
 	var b = &Bucket{
 		fn:   fn,
 		wg:   &sync.WaitGroup{},
 		lock: sync.Mutex{},
 	}
 
-	if size <= 0 {
-		return nil
+	if qps > 0 && qps < 1 {
+		size = 1
 	}
 
 	//计算任务执行目标时间，实际低于目标时间，则表明任务执行较慢
 	if qps > 0 {
-		b.expectTime = int64(size*1000/qps + 1)
+		b.expectTime = int64(float32(size*1000)/qps + 1)
 	}
 
 	b.Qps = qps
-	b.minIntervalMicrosecond = 500000 / int64(qps) // 1000000÷QPS×0.5
+	if qps >= 1 {
+		b.minIntervalMicrosecond = int64(500000 / qps) // 1000000÷QPS×0.5
+	} else {
+		b.minIntervalMicrosecond = int64(1000000 / qps) // 1000000÷QPS
+	}
+
 	b.ch = make(chan interface{}, size+1)
 
 	//消耗
@@ -127,7 +136,7 @@ func (b *Bucket) Consume() {
 			time.Sleep(time.Duration(t+10) * time.Microsecond)
 			continue
 		} else {
-			if b.count >= b.Qps {
+			if b.Qps >= 1 && b.count >= int(b.Qps) {
 				b.lock.Unlock()
 				time.Sleep(time.Duration(b.minIntervalMicrosecond+10) * time.Microsecond)
 				continue

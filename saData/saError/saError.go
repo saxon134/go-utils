@@ -133,6 +133,10 @@ func Stack(errs ...interface{}) error {
 	}
 
 	for _, v := range errs {
+		if v == nil {
+			continue
+		}
+
 		//字符串
 		if s, ok := v.(string); ok {
 			if s != "" {
