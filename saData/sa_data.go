@@ -56,6 +56,14 @@ func ToStr(data interface{}) (string, error) {
 		return s, nil
 	}
 
+	////转成json
+	//bf := bytes.NewBuffer([]byte{})
+	//encoder := json.NewEncoder(bf)
+	////encoder.SetEscapeHTML(false)
+	//if err := encoder.Encode(data); err == nil {
+	//	return bf.String(), nil
+	//}
+	
 	return fmt.Sprint(data), nil
 }
 
@@ -84,7 +92,7 @@ func ToMap(data interface{}) (map[string]interface{}, error) {
 		var dic map[string]interface{}
 		var err error
 		if s != "" {
-			err = json.Unmarshal(StrToBytes(s), &dic)
+			err = unmarshal(StrToBytes(s), &dic)
 		}
 		return dic, err
 	}
@@ -107,7 +115,8 @@ func ToMap(data interface{}) (map[string]interface{}, error) {
 		if err != nil {
 			return map[string]interface{}{}, err
 		}
-		err = json.Unmarshal(bAry, &dic)
+
+		err = unmarshal(bAry, &dic)
 		return dic, err
 	}
 	return map[string]interface{}{}, errors.New("类型不匹配")
@@ -133,7 +142,7 @@ func ToStrMap(data interface{}) (map[string]string, error) {
 		var dic map[string]string
 		var err error
 		if s != "" {
-			err = json.Unmarshal(StrToBytes(s), &dic)
+			err = unmarshal(StrToBytes(s), &dic)
 		}
 		return dic, err
 	}
@@ -160,7 +169,8 @@ func ToStrMap(data interface{}) (map[string]string, error) {
 		if err != nil {
 			return map[string]string{}, err
 		}
-		err = json.Unmarshal(bAry, &dic)
+
+		err = unmarshal(bAry, &dic)
 		return dic, err
 	}
 	return map[string]string{}, errors.New("类型不匹配")
@@ -186,7 +196,7 @@ func ToAry(data interface{}) ([]interface{}, error) {
 		var ary []interface{}
 		var err error
 		if s != "" {
-			err = json.Unmarshal(StrToBytes(s), &ary)
+			err = unmarshal(StrToBytes(s), &ary)
 		}
 		return ary, err
 	}
@@ -224,7 +234,7 @@ func ToMapAry(data interface{}) ([]map[string]interface{}, error) {
 		var ary []map[string]interface{}
 		var err error
 		if s != "" {
-			err = json.Unmarshal(StrToBytes(s), &ary)
+			err = unmarshal(StrToBytes(s), &ary)
 		}
 		return ary, err
 	}
@@ -264,7 +274,7 @@ func ToStrAry(data interface{}) ([]string, error) {
 		var ary = []string{}
 		var err error
 		if s != "" {
-			err = json.Unmarshal(StrToBytes(s), &ary)
+			err = unmarshal(StrToBytes(s), &ary)
 		}
 		return ary, err
 	}
@@ -308,10 +318,10 @@ func ToInt64Ary(data interface{}) ([]int64, error) {
 
 	//json
 	if s, ok := data.(string); ok {
-		var ary = []int64{}
+		var ary []int64
 		var err error
 		if s != "" {
-			err = json.Unmarshal(StrToBytes(s), &ary)
+			err = unmarshal(StrToBytes(s), &ary)
 		}
 		return ary, err
 	}
@@ -539,6 +549,9 @@ func ToFloat64(d interface{}) (float64, error) {
 	if f, ok := d.(float32); ok {
 		return float64(f), nil
 	}
+	if f, ok := d.(json.Number); ok {
+		return f.Float64()
+	}
 	if s, ok := d.(string); ok {
 		if f, err := strconv.ParseFloat(s, 64); err == nil {
 			return f, nil
@@ -622,33 +635,38 @@ func StrToData(str string) (interface{}, error) {
 	bAry := StrToBytes(str)
 
 	dic := map[string]interface{}{}
-	err = json.Unmarshal(bAry, &dic)
+	err = unmarshal(bAry, &dic)
 	if err == nil {
 		return dic, nil
 	}
 
 	ary := make([]interface{}, 0, 10)
-	err = json.Unmarshal(bAry, &ary)
+	err = unmarshal(bAry, &ary)
 	if err == nil {
 		return ary, nil
 	}
 	return str, nil
 }
 
-func StrToModel(str string, m interface{}) error {
+func StrToModel(str string, v interface{}) error {
 	defer func() {
 		_ = recover()
 	}()
 
-	err := json.Unmarshal(StrToBytes(str), m)
-	return err
+	return unmarshal(StrToBytes(str), v)
 }
 
-func BytesToModel(b []byte, m interface{}) error {
+func BytesToModel(data []byte, v interface{}) error {
 	defer func() {
 		_ = recover()
 	}()
 
-	err := json.Unmarshal(b, m)
+	return unmarshal(data, v)
+}
+
+func unmarshal(data []byte, v any) error {
+	var decoder = json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	var err = decoder.Decode(v)
 	return err
 }

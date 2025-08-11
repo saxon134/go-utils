@@ -293,9 +293,20 @@ func InStrs(item string, ary []string) (exist bool) {
 	return false
 }
 
-func ContainStrs(item string, ary []string) (exist bool) {
+//sub是否是ary子项的一部分
+func ContainSub(ary []string,sub string) (exist bool) {
 	for _, v := range ary {
-		if strings.Contains(v, item) {
+		if strings.Contains(v, sub) {
+			return true
+		}
+	}
+	return false
+}
+
+//subs子项是不是item的一部分
+func SubsInStr(subs []string, s string) (exist bool) {
+	for _, v := range subs {
+		if strings.Contains(s, v) {
 			return true
 		}
 	}
@@ -322,6 +333,25 @@ func InInt64(item int64, ary []int64) (exist bool) {
 
 // 注意：只支持基础类型数据，会排除已存在的
 func AppendId(ary []int64, ids ...int64) []int64 {
+	for _, id := range ids {
+		if id > 0 {
+			exist := false
+			for _, v := range ary {
+				if v == id {
+					exist = true
+					break
+				}
+			}
+
+			if exist == false {
+				ary = append(ary, id)
+			}
+		}
+	}
+	return ary
+}
+
+func AppendInt(ary []int, ids ...int) []int {
 	for _, id := range ids {
 		if id > 0 {
 			exist := false

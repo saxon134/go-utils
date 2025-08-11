@@ -309,16 +309,22 @@ func IsVideo(url string) bool {
 	return false
 }
 
-// 去出输入空字符串
+// 去除输入空字符串
 func TrimEmpty(str string) string {
 	str = strings.ReplaceAll(str, " ", "")
-	str = strings.ReplaceAll(str, "\ufeff", "")
 	str = strings.ReplaceAll(str, "\t", "")
 	str = strings.ReplaceAll(str, "\r", "")
 	str = strings.ReplaceAll(str, "#N/A", "")
-	str = strings.ReplaceAll(str, "\u200B", "")
+	str = strings.ReplaceAll(str, "\u0020", "")
+	str = strings.ReplaceAll(str, "\u00A0", "")
+	str = strings.ReplaceAll(str, "\u3000", "")
+	str = strings.ReplaceAll(str, "\u200b", "")
+	str = strings.ReplaceAll(str, "\u200d", "")
+	str = strings.ReplaceAll(str, "\u202f", "")
+	str = strings.ReplaceAll(str, "\u2007", "")
 	str = strings.ReplaceAll(str, "\ufeff", "")
 	str = strings.ReplaceAll(str, "(null)", "")
+	str = strings.ReplaceAll(str, " ", "")
 	if str == "-" || str == "--" {
 		return ""
 	}

@@ -18,7 +18,7 @@ type CacheItem struct {
 	Value    interface{}
 }
 
-type CacheHandler func(duration time.Duration) interface{}
+type CacheHandler func(key string, duration time.Duration) interface{}
 
 // 只能在GetCache内调用，处理未加锁，依赖GetCache内的锁
 func clean() {
@@ -65,7 +65,11 @@ func clean() {
 	}
 }
 
-func GetCache(key string, duration time.Duration, fn CacheHandler) interface{} {
+func Cache(key string) interface{} {
+	return GetCache(key, 0, nil)
+}
+
+func GetCache(key string, expireTime time.Duration, fn CacheHandler) interface{} {
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
 
@@ -80,11 +84,11 @@ func GetCache(key string, duration time.Duration, fn CacheHandler) interface{} {
 
 	if value == nil {
 		if fn != nil {
-			var v = fn(duration)
+			var v = fn(key,expireTime)
 			if v != nil {
 				value = &CacheItem{
 					Value:    v,
-					ExpireAt: now.Add(duration),
+					ExpireAt: now.Add(expireTime),
 					GetAt:    now,
 					Count:    1,
 				}

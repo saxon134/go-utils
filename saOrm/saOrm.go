@@ -43,7 +43,7 @@ func Open(dsn string, conf Conf) *DB {
 	}
 
 	sqlDB, _ := db.DB()
-	sqlDB.SetMaxIdleConns(saHit.Int(conf.MaxIdleConns > 0, conf.MaxIdleConns, 10))
+	sqlDB.SetMaxIdleConns(saHit.Int(conf.MaxIdleConns > 0, conf.MaxIdleConns, 100))
 	sqlDB.SetMaxOpenConns(saHit.Int(conf.MaxOpenConns > 0, conf.MaxOpenConns, 100))
 	sqlDB.SetConnMaxLifetime(time.Minute * 5)
 

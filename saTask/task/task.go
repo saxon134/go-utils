@@ -595,7 +595,7 @@ func all(r bounds) uint64 {
 	return getBits(r.min, r.max, 1) | starBit
 }
 
-func init() {
+func Init() {
 	AdminTaskList = make(map[string]*Task)
 	stop = make(chan bool)
 	changed = make(chan bool)

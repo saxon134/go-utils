@@ -139,7 +139,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 
 	//绑定body参数
 	var bodyStr = ""
-	var contentType = "application/json"
+	var contentType = "application/json; utf-8"
 	if in.BodyString != "" {
 		bodyStr = in.BodyString
 	} else {
@@ -199,15 +199,15 @@ func _do(in Params, resPtr interface{}) (err error) {
 
 	status := resp.StatusCode
 	if status == 200 {
-		if resPtr == nil {
-			return nil
-		}
-
 		var bAry []byte
 		bAry, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		} else {
+			if resPtr == nil {
+				return nil
+			}
+
 			if bytes, ok := resPtr.(*[]byte); ok {
 				*bytes = bAry
 				return nil
@@ -216,17 +216,20 @@ func _do(in Params, resPtr interface{}) (err error) {
 			err = saData.BytesToModel(bAry, resPtr)
 			if err != nil {
 				saLog.Err(err)
-				saLog.Err(string(bAry))
+				var str = string(bAry)
+				if strings.HasPrefix(str, "<!DOCTYPE html>") ==false {
+					saLog.Err(string(bAry))
+				}
 			}
 			return nil
 		}
 	} else {
 		err = &url.Error{Op: in.Method, URL: in.Url, Err: errors.New(resp.Status)}
-		if resPtr == nil {
-			return err
-		}
-
 		if bAry, e := io.ReadAll(resp.Body); e == nil {
+			if resPtr == nil {
+				return err
+			}
+
 			if b, ok := resPtr.(*[]byte); ok {
 				*b = bAry
 			} else {

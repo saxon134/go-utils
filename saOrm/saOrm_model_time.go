@@ -82,7 +82,7 @@ func (m *Time) T() time.Time {
 		return time.Time{}
 	}
 
-	var formatAry = []string{saTime.FormatDefault, saTime.FormatSystem, saTime.FormatYMD}
+	var formatAry = []string{saTime.FormatDefault, saTime.FormatSystem, saTime.FormatYMD, "2006-01-02T15:04:05+08:00"}
 	for _, f := range formatAry {
 		var t = saTime.TimeFromStr(string(*m), f)
 		if t.IsZero() == false {

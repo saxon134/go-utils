@@ -38,9 +38,9 @@ func (e Error) Error() string {
 func (e Error) String() string {
 	s := ""
 	if e.Code > 0 {
-		s = fmt.Sprintf("%d %s", e.Code, e.Msg)
+		s = fmt.Sprintf("%s", e.Msg)
 		if e.Caller != "" {
-			s += "\n " + e.Caller
+			s += "\n" + e.Caller
 		}
 	}
 	return s

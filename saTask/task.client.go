@@ -44,6 +44,7 @@ type Handler task.Handler
 
 // Init 初始化
 func Init(cases ...Case) {
+	task.Init()
 	for _, c := range cases {
 		if c.Spec == "" {
 			panic("spec can not be empty for task")

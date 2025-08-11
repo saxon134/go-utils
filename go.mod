@@ -3,7 +3,7 @@ module github.com/saxon134/go-utils
 go 1.20
 
 require (
-	github.com/aliyun/alibaba-cloud-sdk-go v1.63.47
+	github.com/aliyun/alibaba-cloud-sdk-go v1.63.107
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.5+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/garyburd/redigo v1.6.4
