@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func ToBytes(data interface{}) ([]byte, error) {
@@ -63,7 +65,7 @@ func ToStr(data interface{}) (string, error) {
 	//if err := encoder.Encode(data); err == nil {
 	//	return bf.String(), nil
 	//}
-	
+
 	return fmt.Sprint(data), nil
 }
 
@@ -669,4 +671,9 @@ func unmarshal(data []byte, v any) error {
 	decoder.UseNumber()
 	var err = decoder.Decode(v)
 	return err
+}
+
+func RandomInt64() int64 {
+	//2025-08-20 00:00:00
+	return (time.Now().UnixMilli()-1755619200000)*10000 + rand.Int63n(10000)
 }
