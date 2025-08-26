@@ -37,7 +37,7 @@ type Bucket struct {
 // 注意：size最节省资源的计算公式： size = qps * 每次执行的耗时
 // 假如qps为20，执行耗时0.2秒，则size设置为4最节省资源
 // size如果设置较大，不影响qps，只是浪费了些资源，如果执行比较费时可以通过加大size值改善执行速度
-func NewBucket(size int, qps float32, fn func(bucket *Bucket, args interface{})) *Bucket {
+func NewBucket(size int, qps float32, fn func(b *Bucket, args interface{})) *Bucket {
 	if size <= 0 || qps <= 0 {
 		return nil
 	}

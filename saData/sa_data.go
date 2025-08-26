@@ -673,7 +673,8 @@ func unmarshal(data []byte, v any) error {
 	return err
 }
 
+// 短期多次调用可能会有重复
 func RandomInt64() int64 {
-	//2025-08-20 00:00:00
-	return (time.Now().UnixMilli()-1755619200000)*10000 + rand.Int63n(10000)
+	var t = time.Now().UnixMilli()
+	return ((t/1000)%86400)*10000 + (t%10)*1000 + rand.Int63n(1000)
 }

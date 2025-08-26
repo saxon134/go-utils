@@ -9,8 +9,8 @@ import "strings"
 // emw都表示0，避免出现连续e的情况
 ////////////////////////////////////////////////////////////////
 
-var CodeSource = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ" //方便给人识别的编码
-// var MaxSource = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^*()_=+<>.?/[]{}|`~" //最大范围的编码
+var CodeSource = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"                              //方便给人识别的编码
+var MaxSource = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" //最大范围的编码
 
 var defaultSource = "e8trxizqkp9bs2ng4uv5cjh3d6y7af"
 var zeroAry = []string{"e", "m", "w"}
