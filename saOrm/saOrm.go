@@ -15,9 +15,10 @@ type DB struct {
 var _db *DB
 
 type Conf struct {
-	MaxIdleConns int
-	MaxOpenConns int
-	LogMode      int //0-默认 1-Silent 2-Error 3-Warn 4-Info
+	MaxIdleConns    int
+	MaxOpenConns    int
+	ConnMaxLifetime time.Duration
+	LogMode         int //0-默认 1-Silent 2-Error 3-Warn 4-Info
 }
 
 func Open(dsn string, conf Conf) *DB {
@@ -45,7 +46,11 @@ func Open(dsn string, conf Conf) *DB {
 	sqlDB, _ := db.DB()
 	sqlDB.SetMaxIdleConns(saHit.Int(conf.MaxIdleConns > 0, conf.MaxIdleConns, 100))
 	sqlDB.SetMaxOpenConns(saHit.Int(conf.MaxOpenConns > 0, conf.MaxOpenConns, 100))
-	sqlDB.SetConnMaxLifetime(time.Minute * 5)
+	if conf.ConnMaxLifetime > 0 {
+		sqlDB.SetConnMaxLifetime(conf.ConnMaxLifetime)
+	} else {
+		sqlDB.SetConnMaxLifetime(time.Minute * 5)
+	}
 
 	_db = &DB{DB: db}
 

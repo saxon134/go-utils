@@ -6,7 +6,7 @@ import (
 
 // SQL转义
 func SQLEspace(s string) string {
-	s = strings.ReplaceAll(s, `'`, `\'`)
+	s = strings.ReplaceAll(s, `'`, ``)
 
 	//尾部有多个转义字符，就得加多少个转义字符
 	if s != "" {
