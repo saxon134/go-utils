@@ -3,7 +3,7 @@ package saData
 import (
 	"errors"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"regexp"
 	"strconv"
 	"strings"
@@ -235,7 +235,10 @@ func TrimH5Tags(src string) (str string) {
 
 /** 返回16位字符串 */
 func RandomStr() string {
-	return IdToCode(rand.Int63n(1000), 3) + I64tos(time.Now().UnixMilli())
+	var t = time.Now().UnixMilli()
+	var r1 = rand.Int64N(100000)
+	var r2 = rand.Int64N(1000)
+	return IdToCharWithSource(r1, 3, MaxSource) + IdToCharWithSource(r2, 2, MaxSource) + I64tos(t%100000000000)
 }
 
 // 通过内存操作，效率极高，但是有风险。只在数据量很大、效率要求高的场景使用

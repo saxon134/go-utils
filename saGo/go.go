@@ -2,6 +2,7 @@ package saGo
 
 import (
 	"fmt"
+	"log"
 	"runtime/debug"
 	"time"
 )
@@ -12,8 +13,8 @@ func Go(fn func()) {
 	go func() {
 		defer func() {
 			if e := recover(); e != nil {
-				fmt.Println(e)
-				debug.PrintStack()
+				log.Println(e)
+				log.Println(string(debug.Stack()))
 				time.Sleep(time.Second)
 			}
 		}()
