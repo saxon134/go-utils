@@ -217,7 +217,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 			if err != nil {
 				saLog.Err(err)
 				var str = string(bAry)
-				if strings.HasPrefix(str, "<!DOCTYPE html>") ==false {
+				if strings.HasPrefix(str, "<!DOCTYPE html>") == false && strings.HasPrefix(str, `invalid character '<' looking for beginning of value`) == false {
 					saLog.Err(string(bAry))
 				}
 			}

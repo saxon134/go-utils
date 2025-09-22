@@ -13,26 +13,48 @@ import (
 	"time"
 )
 
+type TageKey map[string]string
+
 // Upload destination以"/"结尾，则认为是文件夹，会自动生成文件名；
-func (m *SaOss) Upload(destination string, reader io.Reader) error {
+func (m *SaOss) Upload(destination string, reader io.Reader, options ...interface{}) error {
 	if strings.HasSuffix(destination, "/") {
 		t := time.Now().Unix()
 		r := rand.Intn(10000)
 		destination += saData.I64tos(t) + saData.Itos(r)
 	}
 
-	err := m.PutObject(destination, reader)
+	var optionAry = make([]oss.Option, 0, 5)
+	for _, v := range options {
+		if value, ok := v.(TageKey); ok && len(value) > 0 {
+			var tags = make([]oss.Tag, 0, len(value))
+			for tagK, tagV := range value {
+				tags = append(tags, oss.Tag{Key: tagK, Value: tagV})
+			}
+			optionAry = append(optionAry, oss.SetTagging(oss.Tagging{Tags: tags}))
+		}
+	}
+	err := m.PutObject(destination, reader, optionAry...)
 	return err
 }
 
-func (m *SaOss) UploadFromLocalFile(destination string, localPath string) error {
+func (m *SaOss) UploadFromLocalFile(destination string, localPath string, options ...interface{}) error {
 	if strings.HasSuffix(destination, "/") {
 		t := time.Now().Unix()
 		r := rand.Intn(10000)
 		destination += saData.I64tos(t) + saData.Itos(r)
 	}
 
-	err := m.PutObjectFromFile(destination, localPath)
+	var optionAry = make([]oss.Option, 0, 5)
+	for _, v := range options {
+		if value, ok := v.(TageKey); ok && len(value) > 0 {
+			var tags = make([]oss.Tag, 0, len(value))
+			for tagK, tagV := range value {
+				tags = append(tags, oss.Tag{Key: tagK, Value: tagV})
+			}
+			optionAry = append(optionAry, oss.SetTagging(oss.Tagging{Tags: tags}))
+		}
+	}
+	err := m.PutObjectFromFile(destination, localPath, optionAry...)
 	return err
 }
 
