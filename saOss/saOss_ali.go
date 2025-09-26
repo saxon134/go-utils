@@ -15,6 +15,12 @@ import (
 
 type TageKey map[string]string
 
+var TageDeleteDay = TageKey{"delete-day": "1"}
+var TageDeleteWeek = TageKey{"delete-week": "7"}
+var TageDeleteMonth = TageKey{"delete-month": "30"}
+var TageDeleteQuarter = TageKey{"delete-quarter": "90"}
+var TageDeleteYear = TageKey{"delete-year": "365"}
+
 // Upload destination以"/"结尾，则认为是文件夹，会自动生成文件名；
 func (m *SaOss) Upload(destination string, reader io.Reader, options ...interface{}) error {
 	if strings.HasSuffix(destination, "/") {
