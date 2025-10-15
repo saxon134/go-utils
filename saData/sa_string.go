@@ -344,7 +344,8 @@ func FormatComma(str string) string {
 	return str
 }
 
-func FormatPrice(price string) string {
+// decimal - 小数点后位数，不传则不固定
+func FormatPrice(price string, decimals ...int) string {
 	//检查这个字符串是否带有正/负号。如果带有符号，就把符号先单独提取出来
 	symbolString := ""
 	if price[0] == '-' || price[0] == '+' {
@@ -364,6 +365,25 @@ func FormatPrice(price string) string {
 		price = price[:dotIndex]
 	} else if dotIndex == -1 {
 		dotIndex = len(price)
+	}
+
+	if len(decimals) > 0 {
+		if decimalString == "" {
+			decimalString = "."
+		}
+
+		var decimal = decimals[0]
+		if decimal == 0 {
+			decimalString = ""
+		} else {
+			if decimal <= len(decimalString) -1{
+				decimalString = decimalString[:decimal+1]
+			} else {
+				for idx := len(decimalString) - 1; idx < decimal; idx++ {
+					decimalString += "0"
+				}
+			}
+		}
 	}
 
 	return fmt.Sprintf("%s%s%s", symbolString, _comma(price[:dotIndex]), decimalString)

@@ -197,8 +197,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 	}
 	defer resp.Body.Close()
 
-	status := resp.StatusCode
-	if status == 200 {
+	if resp.StatusCode == 200 {
 		var bAry []byte
 		bAry, err = io.ReadAll(resp.Body)
 		if err != nil {
@@ -236,7 +235,11 @@ func _do(in Params, resPtr interface{}) (err error) {
 				e = saData.BytesToModel(bAry, resPtr)
 				if e != nil {
 					saLog.Err(e)
-					saLog.Err(string(bAry))
+
+					var str = string(bAry)
+					if strings.HasPrefix(str, "<!DOCTYPE html>") == false && strings.HasPrefix(str, `invalid character '<' looking for beginning of value`) == false {
+						saLog.Err(string(bAry))
+					}
 				}
 			}
 		}
