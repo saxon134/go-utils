@@ -341,13 +341,16 @@ func MultiForm(in FormParams, resPtr interface{}) (err error) {
 	}
 
 	// 设置 header
+	var hasCt = false
 	for k, v := range in.Header {
 		if saData.InStrs(k, []string{"Content-Type", "content-type"}) {
-			continue
+			hasCt = true
 		}
 		req.Header.Set(k, saData.String(v))
 	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if hasCt == false {
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+	}
 
 	// 发送请求
 	client := &http.Client{}

@@ -161,6 +161,11 @@ func (b *Bucket) Done() {
 	b.isDone = true
 }
 
+//Wait 和 Done功能一样，只是为了减少理解
+func (b *Bucket) Wait() {
+	b.Done()
+}
+
 func (b *Bucket) Desc() string {
 	var msg = ""
 	if b.doneCnt <= 0 {
