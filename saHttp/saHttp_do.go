@@ -343,7 +343,7 @@ func MultiForm(in FormParams, resPtr interface{}) (err error) {
 	// 设置 header
 	var hasCt = false
 	for k, v := range in.Header {
-		if saData.InStrs(k, []string{"Content-Type", "content-type"}) {
+		if strings.ToLower(k) == "content-type" {
 			hasCt = true
 		}
 		req.Header.Set(k, saData.String(v))

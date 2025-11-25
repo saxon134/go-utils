@@ -1,8 +1,8 @@
 package task
 
 import (
-	"fmt"
 	"github.com/saxon134/go-utils/saData/saHit"
+	"github.com/saxon134/go-utils/saLog"
 	"log"
 	"math"
 	"runtime/debug"
@@ -389,9 +389,9 @@ func run() {
 				}
 				go func(task *Task) {
 					defer func() {
-						if err := recover(); err != nil {
-							var stack = string(debug.Stack())
-							fmt.Println(stack)
+						if e := recover(); e != nil {
+							saLog.Err(e)
+							saLog.Err(string(debug.Stack()))
 						}
 					}()
 					_ = task.Run(task.Params)

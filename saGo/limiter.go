@@ -77,6 +77,7 @@ func LimiterUnLock(key string) {
 	if lm != nil {
 		lm.LastTime = time.Now().UnixMilli()
 		lm.Lock.Unlock()
+		delete(limiterDIC, key)
 	}
 	limiterLock.Unlock()
 }
