@@ -150,30 +150,10 @@ func _log(level string, a ...interface{}) {
 		for i := n - 1; i >= 0; i-- {
 			var f = runtime.FuncForPC(pc[i])
 			var file, line = f.FileLine(pc[i])
-			if strings.Contains(file, "go/pkg/mod") || strings.Contains(file, "/go/src/") {
-				continue
+			file = formatCaller(file)
+			if file != "" {
+				caller += fmt.Sprintf("%s:%d => ", file, line)
 			}
-
-			var ignore = false
-			for _, s := range ignores {
-				if strings.Contains(file, s) {
-					ignore = true
-					break
-				}
-			}
-			if ignore {
-				continue
-			}
-
-			if pkg != "" {
-				var ary = strings.Split(file, pkg)
-				if len(ary) == 2 {
-					file = ary[1]
-				} else {
-					continue
-				}
-			}
-			caller += fmt.Sprintf("%s:%d => ", file, line)
 		}
 		caller = strings.TrimSuffix(caller, "=> ")
 	}
@@ -189,4 +169,32 @@ func _log(level string, a ...interface{}) {
 	if remoteFun != nil {
 		remoteChan <- [4]string{t, level, caller, s}
 	}
+}
+
+func formatCaller(file string) string {
+	if strings.Contains(file, "go/pkg/mod") || strings.Contains(file, "/go/src/") {
+		return ""
+	}
+
+	var ignore = false
+	for _, s := range ignores {
+		if strings.Contains(file, s) {
+			ignore = true
+			break
+		}
+	}
+	if ignore {
+		return ""
+	}
+
+	if pkg != "" {
+		var ary = strings.Split(file, pkg)
+		if len(ary) == 2 {
+			return ary[1]
+		} else {
+			return ""
+		}
+	}
+
+	return file
 }

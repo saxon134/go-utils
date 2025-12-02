@@ -233,12 +233,12 @@ func TrimH5Tags(src string) (str string) {
 	return s
 }
 
-/** 返回16位字符串 */
+/** 返回20位字符串 */
 func RandomStr() string {
 	var t = time.Now().UnixMilli()
 	var r1 = rand.Int64N(100000)
-	var r2 = rand.Int64N(1000)
-	return IdToCharWithSource(r1, 3, MaxSource) + IdToCharWithSource(r2, 2, MaxSource) + I64tos(t%100000000000)
+	var r2 = rand.Int64N(10000)
+	return IdToCharWithSource(r1, 3, MaxSource) + IdToCharWithSource(r2, 4, MaxSource) + I64tos(t)
 }
 
 // 通过内存操作，效率极高，但是有风险。只在数据量很大、效率要求高的场景使用
@@ -376,7 +376,7 @@ func FormatPrice(price string, decimals ...int) string {
 		if decimal == 0 {
 			decimalString = ""
 		} else {
-			if decimal <= len(decimalString) -1{
+			if decimal <= len(decimalString)-1 {
 				decimalString = decimalString[:decimal+1]
 			} else {
 				for idx := len(decimalString) - 1; idx < decimal; idx++ {

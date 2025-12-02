@@ -195,36 +195,19 @@ func Stack(errs ...interface{}) error {
 		if len(pc) > 0 {
 			var f = runtime.FuncForPC(pc[0])
 			var file, line = f.FileLine(pc[0])
-			resErr.Caller += fmt.Sprintf(" => %s:%d", file, line)
+			file = formatCaller(file)
+			if file != "" {
+				resErr.Caller += fmt.Sprintf(" => %s:%d", file, line)
+			}
 		}
 	} else {
 		for i := n - 1; i >= 0; i-- {
 			var f = runtime.FuncForPC(pc[i])
 			var file, line = f.FileLine(pc[i])
-			if strings.Contains(file, "go/pkg/mod") || strings.Contains(file, "/go/src/") {
-				continue
+			file = formatCaller(file)
+			if file != "" {
+				resErr.Caller += fmt.Sprintf("%s:%d => ", file, line)
 			}
-
-			var ignore = false
-			for _, s := range ignores {
-				if strings.Contains(file, s) {
-					ignore = true
-					break
-				}
-			}
-			if ignore {
-				continue
-			}
-
-			if pkg != "" {
-				var ary = strings.Split(file, pkg)
-				if len(ary) == 2 {
-					file = ary[1]
-				} else {
-					continue
-				}
-			}
-			resErr.Caller += fmt.Sprintf("%s:%d => ", file, line)
 		}
 		resErr.Caller = strings.TrimSuffix(resErr.Caller, " => ")
 	}
@@ -237,4 +220,32 @@ func IsDbErr(err error) bool {
 		return true
 	}
 	return false
+}
+
+func formatCaller(file string) string {
+	if strings.Contains(file, "go/pkg/mod") || strings.Contains(file, "/go/src/") {
+		return ""
+	}
+
+	var ignore = false
+	for _, s := range ignores {
+		if strings.Contains(file, s) {
+			ignore = true
+			break
+		}
+	}
+	if ignore {
+		return ""
+	}
+
+	if pkg != "" {
+		var ary = strings.Split(file, pkg)
+		if len(ary) == 2 {
+			return ary[1]
+		} else {
+			return ""
+		}
+	}
+
+	return file
 }
