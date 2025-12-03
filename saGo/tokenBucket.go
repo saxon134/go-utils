@@ -74,9 +74,9 @@ func (b *Bucket) Consume() {
 		var now int64
 		var limit = saHit.OrInt(b.qps, b.qpm)
 		if b.qps > 0 {
-			now = saData.Stoi64(time.Now().Format("0102150405"))
+			now = saData.Stoi64(time.Now().Format("20060102030405"))
 		} else {
-			now = saData.Stoi64(time.Now().Format("0102150405"))
+			now = saData.Stoi64(time.Now().Format("200601020304"))
 		}
 
 		if now == b.lastTime {
@@ -95,7 +95,8 @@ func (b *Bucket) Consume() {
 
 		//本地拿到了令牌，再去读Redis令牌
 		if b.redis != nil {
-			var count, err = b.redis.GetInt64(b.key + ":" + saData.String(now))
+			var key = b.key + ":" + saData.String(now)
+			var count, err = b.redis.GetInt64(key)
 			if err == nil {
 				if count >= int64(limit) {
 					b.locker.Unlock()
@@ -105,7 +106,7 @@ func (b *Bucket) Consume() {
 				}
 			}
 
-			_, _ = b.redis.Do("INCR", b.key, 1, "EX", saHit.Int(b.qps > 0, 1, 60), "NX")
+			_, _ = b.redis.Do("INCR", key, 1, "EX", saHit.Int(b.qps > 0, 1, 60), "NX")
 			b.locker.Unlock()
 			break
 		}
