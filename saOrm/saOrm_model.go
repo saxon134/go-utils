@@ -118,7 +118,7 @@ func (m *Ids) Scan(value interface{}) error {
 		ary := strings.Split(s, ",")
 		if len(ary) > 0 {
 			for _, v := range ary {
-				if i64, e := saData.Stoi64(v); e == nil {
+				if i64, e := saData.ToInt64(v); e == nil {
 					*m = append(*m, i64)
 				}
 			}
@@ -157,7 +157,7 @@ func (m *Ints) Scan(value interface{}) error {
 		ary := strings.Split(s, ",")
 		if len(ary) > 0 {
 			for _, v := range ary {
-				if i, e := saData.Stoi(v); e == nil {
+				if i, e := saData.ToInt(v); e == nil {
 					*m = append(*m, i)
 				}
 			}

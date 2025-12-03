@@ -1,26 +1,30 @@
-// QPS & 并发数量控制
+// QPS & 并发数量控制，本地使用，不考虑多服务部署时并发控制（应该用tokenBucket）
 package saGo
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"runtime/debug"
 	"sync"
 	"time"
 )
 
 type Pool struct {
-	fn func(interface{})
+	fn func(*Pool, interface{})
 	wg *sync.WaitGroup
 
-	total       int
-	qps         int
-	qpsLastTime int64
-	qpm         int
-	qpmLastTime int64
+	Qps float32
+	qpm int
 
-	done   int
-	isDone bool
-	ch     chan interface{}
+	lock                   sync.Mutex
+	lastMicrosecond        int64
+	minIntervalMicrosecond int64
+	second                 int64
+	count                  int
+
+	doneCnt int
+	isDone  bool
+	ch      chan interface{}
 
 	slow       int
 	expectTime int64 //预期耗时
@@ -28,160 +32,145 @@ type Pool struct {
 	totalTime  int64 //总共耗时，计算平均耗时用
 }
 
-// total - 总的任务数量，0表示无总数限制，此时需要手动调用Done结束
 // size - 并发执行数量
-// qps - 秒限制，0表示无限制
-// qpm - 分钟限制，0表示无限制
+// qps - 秒限制，必须大于0；0-1，如0.2，表示4秒允许执行一次
 // fc - 执行接口
 // 注意：size最节省资源的计算公式： size = qps * 每次执行的耗时
 // 假如qps为20，执行耗时0.2秒，则size设置为4最节省资源
 // size如果设置较大，不影响qps，只是浪费了些资源，如果执行比较费时可以通过加大size值改善执行速度
-func NewPool(total int, size int, qps int, qpm int, fn func(args interface{})) *Pool {
-	var p = &Pool{
-		fn: fn,
-		wg: &sync.WaitGroup{},
-	}
-
-	if size <= 0 {
+func NewPool(size int, qps float32, fn func(p *Pool, args interface{})) *Pool {
+	if size <= 0 || qps <= 0 {
 		return nil
 	}
 
-	if total > 0 {
-		p.wg.Add(total)
-		if size > total {
-			size = total
-		}
+	var b = &Pool{
+		fn:   fn,
+		wg:   &sync.WaitGroup{},
+		lock: sync.Mutex{},
 	}
 
-	//仅有QPM限制，需设置一下QPS，尽量均匀点，否则会导致短期QPS很高
-	if qps == 0 && qpm > 0 {
-		qps = qpm/60 + 1
+	if qps > 0 && qps < 1 {
+		size = 1
 	}
 
 	//计算任务执行目标时间，实际低于目标时间，则表明任务执行较慢
 	if qps > 0 {
-		p.expectTime = int64(1000/qps + 1)
+		b.expectTime = int64(float32(size*1000)/qps + 1)
 	}
 
-	p.total = total
-	p.qps = qps
-	p.qpm = qpm
-	p.ch = make(chan interface{}, size)
+	b.Qps = qps
+	if qps >= 1 {
+		b.minIntervalMicrosecond = int64(500000 / qps) // 1000000÷QPS×0.5
+	} else {
+		b.minIntervalMicrosecond = int64(1000000 / qps) // 1000000÷QPS
+	}
 
+	b.ch = make(chan interface{}, size+1)
+
+	//消耗
 	for i := 0; i < size; i++ {
-		go func() {
-			defer func() {
-				if e := recover(); e != nil {
-					fmt.Println(e)
-					debug.PrintStack()
-					return
-				}
-			}()
-
+		Go(func() {
 			for {
-				if args, ok := <-p.ch; ok {
-					defer p.wg.Done()
-
-					var begin = time.Now().UnixMilli()
-					p.fn(args)
-					var diff = time.Now().UnixMilli() - begin
-					p.totalTime += diff
-					if diff > p.expectTime {
-						p.slow++
+				if args, ok := <-b.ch; ok {
+					if b.fn != nil {
+						var begin = time.Now().UnixMilli()
+						b.fn(b, args)
+						var diff = time.Now().UnixMilli() - begin
+						b.totalTime += diff
+						if diff > b.expectTime {
+							b.slow++
+						}
+						if diff > b.maxTime {
+							b.maxTime = diff
+						}
 					}
-					if diff > p.maxTime {
-						p.maxTime = diff
-					}
+					b.wg.Done()
 				} else {
 					break
 				}
 			}
-		}()
+		})
 	}
-
-	return p
+	return b
 }
 
 // 执行
-func (p *Pool) Invoke(args interface{}) {
+func (b *Pool) Invoke(args interface{}) {
 	if e := recover(); e != nil {
 		fmt.Println(e)
 		debug.PrintStack()
 		return
 	}
 
-	if p.isDone {
+	b.consume()
+	b.ch <- args
+	b.doneCnt++
+	b.wg.Add(1)
+}
+
+// 需要手动结束，会等待所有执行完再返回
+func (b *Pool) Wait() {
+	if b == nil {
 		return
 	}
 
-	if p.done == 0 {
-		var t = time.Now().UnixMilli()
-		p.qpsLastTime = t
-		p.qpmLastTime = t
-	}
-
-	p.done++
-	p.ch <- args
-
-	if p.total == 0 {
-		p.wg.Add(1)
-	}
-
-	if p.qps > 0 && p.done%p.qps == 0 {
-		var t = time.Now().UnixMilli()
-		var diff = t - p.qpsLastTime
-		if diff < 1000 {
-			time.Sleep(time.Millisecond * time.Duration(1005-diff))
-		}
-		p.qpsLastTime = time.Now().UnixMilli()
-	}
-
-	if p.qpm > 0 && p.done%p.qpm == 0 {
-		var t = time.Now().UnixMilli()
-		var diff = t - p.qpmLastTime
-		if diff < 60000 {
-			time.Sleep(time.Millisecond * time.Duration(60100-diff))
-		}
-		p.qpmLastTime = time.Now().UnixMilli()
-	}
-
-	if p.total > 0 && p.done >= p.total {
-		close(p.ch)
-		p.isDone = true
-	}
+	b.wg.Wait()
+	close(b.ch)
+	b.isDone = true
 }
 
-// 手动结束
-func (p *Pool) Done() {
-	if p.isDone {
-		return
-	}
-	close(p.ch)
-	p.isDone = true
-}
-
-// 等待所有执行完，一定要调用
-func (p *Pool) Wait() {
-	if p == nil || p.wg == nil {
-		return
-	}
-	p.wg.Wait()
-	p.Done()
-}
-
-func (p *Pool) Desc() string {
-	if p.done == 2000 && 20*p.slow > p.done {
-
-	}
-
+func (b *Pool) Desc() string {
 	var msg = ""
-	if p.done <= 0 {
+	if b.doneCnt <= 0 {
 		msg = "待开始"
 	} else {
 		msg = fmt.Sprintf(
-			"saGo 总数：%d，已完成：%d，慢任务:%d，平均执行时间：%d，最大执行时间：%d",
-			p.total, p.done, p.slow, p.totalTime/int64(p.done), p.maxTime,
+			"saGo 已完成：%d，慢任务:%d，平均执行时间：%d，最大执行时间：%d",
+			b.doneCnt, b.slow, b.totalTime/int64(b.doneCnt), b.maxTime,
 		)
 	}
 	return msg
+}
+
+// 消耗，阻塞，消耗成功才能执行
+func (b *Pool) consume() {
+	for {
+		if b.isDone {
+			return
+		}
+
+		b.lock.Lock()
+		var now = time.Now().UnixMicro()
+		var second = now / 1000000
+		if second != b.second {
+			b.second = second
+			b.count = 0
+		}
+
+		//限制最小执行间隔，为QPS间隔的60%
+		var t = now - b.lastMicrosecond
+		if t < b.minIntervalMicrosecond {
+			b.lock.Unlock()
+
+			//稍微错开点时间，减少lock竞争
+			t = b.minIntervalMicrosecond - t
+			if b.minIntervalMicrosecond > 1000 {
+				var r = int64(float64(b.minIntervalMicrosecond) * 0.01)
+				t += rand.Int64N(r)
+			}
+			time.Sleep(time.Duration(t+10) * time.Microsecond)
+			continue
+		} else {
+			if b.Qps >= 1 && b.count >= int(b.Qps) {
+				b.lock.Unlock()
+				time.Sleep(time.Duration(b.minIntervalMicrosecond+10) * time.Microsecond)
+				continue
+			} else {
+				b.lastMicrosecond = now
+				b.count++
+				b.lock.Unlock()
+				return
+			}
+		}
+	}
 }

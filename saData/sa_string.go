@@ -11,43 +11,35 @@ import (
 	"unsafe"
 )
 
-func Stoi64(s string) (int64, error) {
+func Stoi64(s string) int64 {
 	if i64, err := strconv.ParseInt(s, 10, 64); err == nil {
-		return int64(i64), nil
+		return i64
 	} else {
-		return 0, err
+		return 0
 	}
 }
 
-func Stoui32(s string) (uint32, error) {
-	if i32, err := strconv.ParseInt(s, 10, 64); err == nil {
-		return uint32(i32), nil
-	} else {
-		return 0, err
-	}
-}
-
-func Stoi32(s string) (int32, error) {
+func Stoi32(s string) int32 {
 	if i32, err := strconv.ParseInt(s, 10, 32); err == nil {
-		return int32(i32), nil
+		return int32(i32)
 	} else {
-		return 0, err
+		return 0
 	}
 }
 
-func Stoi16(s string) (int16, error) {
+func Stoi16(s string) int16 {
 	if i16, err := strconv.ParseInt(string(s), 10, 16); err == nil {
-		return int16(i16), nil
+		return int16(i16)
 	} else {
-		return 0, err
+		return 0
 	}
 }
 
-func Stoi(s string) (int, error) {
+func Stoi(s string) int {
 	if i, err := strconv.Atoi(string(s)); err == nil {
-		return i, nil
+		return i
 	} else {
-		return 0, err
+		return 0
 	}
 }
 

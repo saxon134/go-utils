@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-//验证参数
+// 验证参数
 func ValidCheck(ptr interface{}) (err error) {
 	objT := reflect.TypeOf(ptr)
 	if objT.Kind() == reflect.Map {
@@ -83,7 +83,7 @@ func ValidCheck(ptr interface{}) (err error) {
 					s = strings.TrimPrefix(s, "<>")
 					s = strings.TrimPrefix(s, ">")
 					s = strings.TrimPrefix(s, "<")
-					l2, _ := Stoi(s)
+					l2 := Stoi(s)
 					l1 := len(fieldV.String())
 					if l2 > 0 {
 						switch t {
@@ -120,7 +120,7 @@ func ValidCheck(ptr interface{}) (err error) {
 					s = strings.TrimPrefix(s, "<>")
 					s = strings.TrimPrefix(s, ">")
 					s = strings.TrimPrefix(s, "<")
-					i2, _ := Stoi64(s)
+					i2 := Stoi64(s)
 					i1 := fieldV.Int()
 					switch t {
 					case ">":
@@ -160,7 +160,7 @@ func ValidCheck(ptr interface{}) (err error) {
 			} else if strings.HasPrefix(t, "varchar(") {
 				s := strings.TrimPrefix(t, "varchar(")
 				s = strings.TrimSuffix(s, ")")
-				i, _ := Stoi(s)
+				i := Stoi(s)
 				if i > 0 {
 					s := fieldV.String()
 					if len(s) > i {
