@@ -4,7 +4,6 @@ import (
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saHit"
 	"github.com/saxon134/go-utils/saRedis"
-	"math/rand/v2"
 	"sync"
 	"time"
 )
@@ -82,8 +81,8 @@ func (b *Bucket) Consume() {
 		if now == b.lastTime {
 			if b.count >= limit {
 				b.locker.Unlock()
-				var r = int64(float64(b.minIntervalMillisecond)*0.01) + 2
-				time.Sleep(time.Duration(b.minIntervalMillisecond+(5+rand.Int64N(r))) * time.Millisecond)
+				var r = int64(float64(b.minIntervalMillisecond)*0.01) + int64(b.count%5)
+				time.Sleep(time.Duration(b.minIntervalMillisecond+r) * time.Millisecond)
 				continue
 			} else {
 				b.count++
@@ -100,8 +99,8 @@ func (b *Bucket) Consume() {
 			if err == nil {
 				if count >= int64(limit) {
 					b.locker.Unlock()
-					var r = int64(float64(b.minIntervalMillisecond)*0.01) + 2
-					time.Sleep(time.Duration(b.minIntervalMillisecond+(3+rand.Int64N(r))) * time.Millisecond)
+					var r = int64(float64(b.minIntervalMillisecond)*0.01) + int64(b.count%5)
+					time.Sleep(time.Duration(b.minIntervalMillisecond+r) * time.Millisecond)
 					continue
 				}
 			}

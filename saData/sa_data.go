@@ -544,6 +544,11 @@ func Float64(d interface{}) float64 {
 	return f
 }
 
+func Float32(d interface{}) float32 {
+	f, _ := ToFloat32(d)
+	return f
+}
+
 func ToFloat64(d interface{}) (float64, error) {
 	if f, ok := d.(float64); ok {
 		return f, nil

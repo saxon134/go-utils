@@ -3,6 +3,7 @@ package saGo
 
 import (
 	"fmt"
+	"github.com/saxon134/go-utils/saLog"
 	"math/rand/v2"
 	"runtime/debug"
 	"sync"
@@ -97,15 +98,15 @@ func NewPool(size int, qps float32, fn func(p *Pool, args interface{})) *Pool {
 // 执行
 func (b *Pool) Invoke(args interface{}) {
 	if e := recover(); e != nil {
-		fmt.Println(e)
-		debug.PrintStack()
+		saLog.Err(e)
+		saLog.Err(string(debug.Stack()))
 		return
 	}
 
 	b.consume()
 	b.ch <- args
-	b.doneCnt++
 	b.wg.Add(1)
+	b.doneCnt++
 }
 
 // 需要手动结束，会等待所有执行完再返回
