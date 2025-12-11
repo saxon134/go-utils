@@ -2,7 +2,6 @@
 package saGo
 
 import (
-	"fmt"
 	"github.com/saxon134/go-utils/saLog"
 	"math/rand/v2"
 	"runtime/debug"
@@ -103,38 +102,14 @@ func (b *Pool) Invoke(args interface{}) {
 		return
 	}
 
-	b.consume()
-	b.ch <- args
+	b.Consume()
 	b.wg.Add(1)
+	b.ch <- args
 	b.doneCnt++
 }
 
-// 需要手动结束，会等待所有执行完再返回
-func (b *Pool) Wait() {
-	if b == nil {
-		return
-	}
-
-	b.wg.Wait()
-	close(b.ch)
-	b.isDone = true
-}
-
-func (b *Pool) Desc() string {
-	var msg = ""
-	if b.doneCnt <= 0 {
-		msg = "待开始"
-	} else {
-		msg = fmt.Sprintf(
-			"saGo 已完成：%d，慢任务:%d，平均执行时间：%d，最大执行时间：%d",
-			b.doneCnt, b.slow, b.totalTime/int64(b.doneCnt), b.maxTime,
-		)
-	}
-	return msg
-}
-
 // 消耗，阻塞，消耗成功才能执行
-func (b *Pool) consume() {
+func (b *Pool) Consume() {
 	for {
 		if b.isDone {
 			return
@@ -174,4 +149,15 @@ func (b *Pool) consume() {
 			}
 		}
 	}
+}
+
+// 需要手动结束，会等待所有执行完再返回
+func (b *Pool) Wait() {
+	if b == nil {
+		return
+	}
+
+	b.wg.Wait()
+	close(b.ch)
+	b.isDone = true
 }
