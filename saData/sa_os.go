@@ -10,8 +10,14 @@ import (
 func AbsPath(path string) string {
 	if runtime.GOOS == "windows" {
 		path = strings.ReplaceAll(path, "/", "\\")
+		path = strings.ReplaceAll(path, `\\`, `\`)
+		path = strings.ReplaceAll(path, `\\`, `\`)
+		path = strings.ReplaceAll(path, `\\`, `\`)
 	} else {
 		path = strings.ReplaceAll(path, "\\", "/")
+		path = strings.ReplaceAll(path, `//`, `/`)
+		path = strings.ReplaceAll(path, `//`, `/`)
+		path = strings.ReplaceAll(path, `//`, `/`)
 	}
 	var s, _ = filepath.Abs(path)
 	return s
