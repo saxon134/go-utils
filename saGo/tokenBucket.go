@@ -21,6 +21,8 @@ type Bucket struct {
 	redis *saRedis.Redis
 }
 
+var _tokenBuckets = map[string]*Bucket{}
+
 func NewBucket(qps int, qpm int, args ...any) *Bucket {
 	if qps <= 0 && qpm <= 0 {
 		return nil
@@ -112,5 +114,24 @@ func (b *Bucket) Consume() {
 
 		b.locker.Unlock()
 		break
+	}
+}
+
+// 无需实例化
+func BucketConsume(name string, qps int, qpm int) {
+	if name == "" {
+		time.Sleep(time.Second)
+		return
+	}
+
+	var key = "SaTokenBucket"
+	LimiterLock(key, 0, 120)
+	defer LimiterUnLock(key)
+
+	if bucket, ok := _tokenBuckets[name]; ok {
+		bucket.Consume()
+	} else {
+		qps = saHit.Int(qps > 0, qps, 10)
+		_tokenBuckets[name] = NewBucket(qps, qpm)
 	}
 }

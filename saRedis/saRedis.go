@@ -3,7 +3,7 @@ package saRedis
 import (
 	"encoding/json"
 	"errors"
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/saxon134/go-utils/saData"
 	"strconv"
 	"strings"

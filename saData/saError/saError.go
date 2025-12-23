@@ -9,6 +9,7 @@ package saError
 
 import (
 	"fmt"
+	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saHit"
 	"gorm.io/gorm"
 	"net/url"
@@ -46,72 +47,30 @@ func (e Error) String() string {
 	return s
 }
 
-func Msg(e error) string {
-	if e == nil {
-		return ""
-	}
-
-	var msg = ""
-	if ee, ok := e.(Error); ok {
-		msg = ee.Msg
-	} else if ee, ok := e.(*Error); ok {
-		msg = ee.Msg
-	} else if ee, ok := e.(error); ok {
-		msg = ee.Error()
-	}
-
-	var ary = strings.Split(msg, "<html>")
-	if len(ary) >= 2 {
-		msg = saHit.OrStr(ary[0], "出错了")
-	}
-	return msg
-}
-
-// New 只接收字符串和error类型
-func New(err interface{}) error {
-	if err == nil {
-		return nil
-	}
-
+func New(errs ...any) error {
 	var e = Error{Code: NormalErrorCode, Msg: "", Caller: ""}
-	if s, ok := err.(string); ok {
-		e.Msg = s
-	} else if sae, ok := err.(Error); ok {
-		return sae
-	} else if sae, ok := err.(*Error); ok {
-		return *sae
-	} else if ev, ok := err.(error); ok {
-		e.Msg = ev.Error()
-		e.Code = SensitiveErrorCode
-	}
-	return e
-}
 
-func NewBeDisplayedError(err string) error {
-	return Error{
-		Code: BeDisplayedErrorCode,
-		Msg:  err,
-	}
-}
-
-// NewSensitiveError err只接收字符串和error类型
-func NewSensitiveError(err interface{}) error {
-	if err == nil {
-		return nil
+	var err any
+	if len(errs) > 0 {
+		err = errs[0]
+		if sae, ok := err.(Error); ok {
+			e = sae
+		} else if sae, ok := err.(*Error); ok {
+			e = *sae
+		} else if ev, ok := err.(error); ok {
+			e.Msg = ev.Error()
+		}
 	}
 
-	var e = Error{Code: 0, Msg: "", Caller: ""}
-	if s, ok := err.(string); ok {
-		e.Msg = s
-	} else if sae, ok := err.(Error); ok {
-		e = sae
-	} else if sae, ok := err.(*Error); ok {
-		e = *sae
-	} else if ev, ok := err.(error); ok {
-		e.Msg = ev.Error()
-	}
+	for idx, msg := range errs {
+		if e.Msg != "" && idx == 0 {
+			continue
+		}
 
-	e.Code = SensitiveErrorCode
+		if msg != nil {
+			e.Msg += saData.String(msg) + " "
+		}
+	}
 	return e
 }
 
@@ -213,6 +172,55 @@ func Stack(errs ...interface{}) error {
 	}
 
 	return &resErr
+}
+
+func Msg(errs ...any) string {
+	var msg = ""
+	for _, e := range errs {
+		var str = ""
+		if ee, ok := e.(Error); ok {
+			str = ee.Msg
+		} else if ee, ok := e.(*Error); ok {
+			str = ee.Msg
+		} else if ee, ok := e.(error); ok {
+			str = ee.Error()
+		} else {
+			str = saData.String(e)
+		}
+
+		var ary = strings.Split(str, "<html>")
+		if len(ary) >= 2 {
+			str = saHit.OrStr(ary[0], "出错了")
+		}
+		if str != "" {
+			msg += str + " "
+		}
+	}
+	return msg
+}
+
+func OrMsg(errs ...any) string {
+	for _, e := range errs {
+		var str = ""
+		if ee, ok := e.(Error); ok {
+			str = ee.Msg
+		} else if ee, ok := e.(*Error); ok {
+			str = ee.Msg
+		} else if ee, ok := e.(error); ok {
+			str = ee.Error()
+		} else {
+			str = saData.String(e)
+		}
+
+		var ary = strings.Split(str, "<html>")
+		if len(ary) >= 2 {
+			str = saHit.OrStr(ary[0], "出错了")
+		}
+		if str != "" {
+			return str
+		}
+	}
+	return ""
 }
 
 func IsDbErr(err error) bool {

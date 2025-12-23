@@ -2,6 +2,7 @@ package saGo
 
 import (
 	"github.com/garyburd/redigo/redis"
+	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saHit"
 	"strings"
 	"sync"
@@ -16,10 +17,15 @@ type limiter struct {
 var limiterDIC = map[string]*limiter{}
 var limiterLocker = sync.Mutex{}
 
+type LimiterOption string
+
+const LimiterGlobalOption = LimiterOption("global")
+
 // 会阻塞
 // milliSecond 2次执行最小间隔（秒，可以是小数）
 // maxMilliSecond  锁最大时间（秒），防止死锁
-func LimiterLock(key string, minSecond float32, maxSecond float32) {
+// 默认只本地锁
+func LimiterLock(key string, minSecond float32, maxSecond float32, options ...any) {
 	if key == "" {
 		return
 	}
@@ -56,7 +62,16 @@ func LimiterLock(key string, minSecond float32, maxSecond float32) {
 		time.Sleep(time.Millisecond * time.Duration(diff))
 	}
 
-	if _redis != nil {
+	//默认仅本地锁
+	var isGlobal = false
+	for _, v := range options {
+		if opt, ok := v.(LimiterOption); ok && opt == LimiterGlobalOption {
+			isGlobal = true
+			break
+		}
+	}
+
+	if _redis != nil && isGlobal {
 		var redisKey = "saGo:limiter:" + key
 		for {
 			//最大10小时
@@ -73,14 +88,13 @@ func LimiterLock(key string, minSecond float32, maxSecond float32) {
 }
 
 // 不阻塞
-func LimiterTryLock(key string, minSecond float32, maxSecond float32) bool {
+func LimiterTryLock(key string, minSecond float32, options ...any) bool {
 	if key == "" {
 		return false
 	}
 
 	//防止负数
 	var minMilliSecond = int64(saHit.Float(minSecond >= 0, minSecond, 0) * 1000)
-	var maxMilliSecond = int64(saHit.Float(maxSecond >= 0, maxSecond, 0) * 1000)
 
 	limiterLocker.Lock()
 	var lm = limiterDIC[key]
@@ -96,9 +110,23 @@ func LimiterTryLock(key string, minSecond float32, maxSecond float32) bool {
 		return false
 	}
 
+	//默认仅本地锁
+	var isGlobal = false
+	var maxMilliSecond int64
+	for _, v := range options {
+		if opt, ok := v.(LimiterOption); ok && opt == LimiterGlobalOption {
+			isGlobal = true
+		} else {
+			var maxSecond = saData.Float32(opt)
+			if maxSecond > 0 {
+				maxMilliSecond = int64(saHit.Float(maxSecond >= 0, maxSecond, 0) * 1000)
+			}
+		}
+	}
+
 	var redisKey = "saGo:limiter:" + key
 	var lastTime = lm.lastTime
-	if _redis != nil {
+	if _redis != nil && isGlobal {
 		var t, _ = redis.Int64(_redis.Do("GET", redisKey))
 		if t > 0 && lm.lastTime < t {
 			lastTime = t
@@ -110,10 +138,10 @@ func LimiterTryLock(key string, minSecond float32, maxSecond float32) bool {
 	}
 	lm.lastTime = lastTime
 
-	//最大10小时
-	if _redis != nil {
+	//最大10分钟
+	if _redis != nil && isGlobal {
 		now = time.Now().UnixMilli()
-		var expireSecond = saHit.Int64(maxMilliSecond > 0, maxMilliSecond/1000+1, 36000)
+		var expireSecond = saHit.Int64(maxMilliSecond > 0, maxMilliSecond/1000+1, 600)
 		var res, _ = redis.String(_redis.Do("SET", redisKey, now, "EX", expireSecond, "NX"))
 		if strings.ToUpper(res) == "OK" {
 			lm.lastTime = now

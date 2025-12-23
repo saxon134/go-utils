@@ -3,7 +3,7 @@ package saRedis
 import (
 	"errors"
 	"fmt"
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	uuid "github.com/satori/go.uuid"
 	"strings"
 	"time"
@@ -86,7 +86,7 @@ func (lock *Lock) tryLock() (err error) {
 	return errors.New("加锁失败")
 }
 
-//每2/3过期时间，刷新一下锁时间，避免处理过程超过了超时时间，导致锁被释放
+// 每2/3过期时间，刷新一下锁时间，避免处理过程超过了超时时间，导致锁被释放
 func (lock *Lock) refreshTimeout() {
 	for {
 		second := 1
