@@ -70,18 +70,18 @@ func ToIds(ary interface{}, fullComma bool) string {
 	case []int:
 		for _, v := range vv {
 			if v > 0 {
-				ids += Itos(v)+ ","
+				ids += Itos(v) + ","
 			}
 		}
 	case []string:
 		for _, v := range vv {
 			if v != "" {
-				ids += v+ ","
+				ids += v + ","
 			}
 		}
 	}
 
-	if ids!= "" {
+	if ids != "" {
 		if fullComma {
 			ids = "," + ids
 		} else {
@@ -125,7 +125,7 @@ func AryToSQLIds(ary interface{}) string {
 		}
 	case []string:
 		for _, v := range vv {
-			if v !="" {
+			if v != "" {
 				sql += "'" + v + "',"
 			}
 		}
@@ -293,9 +293,9 @@ func InStrs(item string, ary []string) (exist bool) {
 	return false
 }
 
-//sub是否是ary子项的一部分
-func ContainSub(ary []string,sub string) (exist bool) {
-	for _, v := range ary {
+// strAry是否有任何一项，会包含sub
+func ContainSub(strAry []string, sub string) (exist bool) {
+	for _, v := range strAry {
 		if strings.Contains(v, sub) {
 			return true
 		}
@@ -303,10 +303,30 @@ func ContainSub(ary []string,sub string) (exist bool) {
 	return false
 }
 
-//subs子项是不是item的一部分
-func SubsInStr(subs []string, s string) (exist bool) {
+// str是否包含subs中任何一项
+func Contains(str string, subs []string) bool {
 	for _, v := range subs {
-		if strings.Contains(s, v) {
+		if strings.Contains(str, v) {
+			return true
+		}
+	}
+	return false
+}
+
+// str是否有prefixes中任何一项的前缀
+func HasPrefix(str string, prefixes []string) bool {
+	for _, v := range prefixes {
+		if strings.HasPrefix(str, v) {
+			return true
+		}
+	}
+	return false
+}
+
+// str是否有prefixes中任何一项的后缀
+func HasSuffix(str string, suffixes []string) bool {
+	for _, v := range suffixes {
+		if strings.HasSuffix(str, v) {
 			return true
 		}
 	}
