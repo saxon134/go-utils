@@ -223,6 +223,10 @@ func OrMsg(errs ...any) string {
 	return ""
 }
 
+func OrErr(errs ...any) error {
+	return Error{Code: NormalErrorCode, Msg: OrMsg(errs...), Caller: ""}
+}
+
 func IsDbErr(err error) bool {
 	if err != nil && err != gorm.ErrRecordNotFound && strings.Contains(err.Error(), "no row") == false {
 		return true

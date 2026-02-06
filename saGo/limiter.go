@@ -1,7 +1,7 @@
 package saGo
 
 import (
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saHit"
 	"strings"

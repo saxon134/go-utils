@@ -1,12 +1,10 @@
 module github.com/saxon134/go-utils
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.63.107
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.5+incompatible
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/garyburd/redigo v1.6.4
 	github.com/gomodule/redigo v1.9.3
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
@@ -17,7 +15,7 @@ require (
 	github.com/u2takey/ffmpeg-go v0.4.1
 	go.uber.org/zap v1.27.0
 	gorm.io/driver/mysql v1.6.0
-	gorm.io/gorm v1.30.2
+	gorm.io/gorm v1.31.1
 )
 
 require (

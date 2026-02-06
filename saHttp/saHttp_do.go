@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saData/saError"
 	"github.com/saxon134/go-utils/saData/saHit"
-	"github.com/saxon134/go-utils/saLog"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -214,11 +214,11 @@ func _do(in Params, resPtr interface{}) (err error) {
 
 			err = saData.BytesToModel(bAry, resPtr)
 			if err != nil {
-				saLog.Err(err)
 				var str = string(bAry)
 				if strings.HasPrefix(str, "<!DOCTYPE html>") == false && strings.HasPrefix(str, `invalid character '<' looking for beginning of value`) == false {
-					saLog.Err(string(bAry))
+					return saError.New(err, str)
 				}
+				return err
 			}
 			return nil
 		}
@@ -234,12 +234,11 @@ func _do(in Params, resPtr interface{}) (err error) {
 			} else {
 				e = saData.BytesToModel(bAry, resPtr)
 				if e != nil {
-					saLog.Err(e)
-
 					var str = string(bAry)
 					if strings.HasPrefix(str, "<!DOCTYPE html>") == false && strings.HasPrefix(str, `invalid character '<' looking for beginning of value`) == false {
-						saLog.Err(string(bAry))
+						e = saError.New(e, str)
 					}
+					return e
 				}
 			}
 		}
@@ -247,7 +246,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 	}
 }
 
-func MultiForm(in FormParams, resPtr interface{}) (err error) {
+func DoForm(in FormParams, resPtr interface{}) (err error) {
 	//接口调用失败时，回调
 	if _errCallbackFunc != nil && in.CallbackWhenErr == true {
 		defer func() {
@@ -259,7 +258,7 @@ func MultiForm(in FormParams, resPtr interface{}) (err error) {
 		}()
 	}
 
-	if in.Url == "" {
+	if in.Url == "s" {
 		return errors.New("缺少URL")
 	}
 
@@ -378,26 +377,30 @@ func MultiForm(in FormParams, resPtr interface{}) (err error) {
 
 			err = saData.BytesToModel(bAry, resPtr)
 			if err != nil {
-				saLog.Err(err)
-				saLog.Err(string(bAry))
+				var str = string(bAry)
+				if strings.HasPrefix(str, "<!DOCTYPE html>") == false && strings.HasPrefix(str, `invalid character '<' looking for beginning of value`) == false {
+					return saError.New(err, str)
+				}
+				return err
 			}
 			return nil
 		}
 	} else {
-		err = &url.Error{URL: in.Url, Err: errors.New(resp.Status)}
+		bAry, _ := io.ReadAll(resp.Body)
 		if resPtr == nil {
-			return err
+			return &url.Error{URL: in.Url, Err: saError.New(err, string(bAry))}
 		}
 
-		if bAry, e := io.ReadAll(resp.Body); e == nil {
-			if b, ok := resPtr.(*[]byte); ok {
-				*b = bAry
-			} else {
-				e = saData.BytesToModel(bAry, resPtr)
-				if e != nil {
-					saLog.Err(e)
-					saLog.Err(string(bAry))
+		if b, ok := resPtr.(*[]byte); ok {
+			*b = bAry
+		} else {
+			var e = saData.BytesToModel(bAry, resPtr)
+			if e != nil {
+				var str = string(bAry)
+				if strings.HasPrefix(str, "<!DOCTYPE html>") == false && strings.HasPrefix(str, `invalid character '<' looking for beginning of value`) == false {
+					return saError.New(e, str)
 				}
+				return e
 			}
 		}
 		return err

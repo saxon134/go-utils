@@ -88,3 +88,12 @@ func Float64(ok bool, a float64, b float64) float64 {
 		return b
 	}
 }
+
+func OrFloat64(values ...float64) float64 {
+	for _, v := range values {
+		if v != 0 {
+			return v
+		}
+	}
+	return 0
+}

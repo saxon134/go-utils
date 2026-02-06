@@ -2,7 +2,7 @@ package saHttp
 
 import (
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/saxon134/go-utils/saData/saError"
 	"time"
 )

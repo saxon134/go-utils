@@ -158,7 +158,10 @@ func _log(level string, a ...interface{}) {
 		caller = strings.TrimSuffix(caller, "=> ")
 	}
 
-	for _, v := range a {
+	for i, v := range a {
+		if i == 0 && s != "" {
+			continue
+		}
 		s += fmt.Sprint(v) + " "
 	}
 
