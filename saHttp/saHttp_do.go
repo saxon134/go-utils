@@ -2,6 +2,7 @@ package saHttp
 
 import (
 	"bytes"
+	"encoding/xml"
 	"errors"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saError"
@@ -212,7 +213,13 @@ func _do(in Params, resPtr interface{}) (err error) {
 				return nil
 			}
 
-			err = saData.BytesToModel(bAry, resPtr)
+			if len(bAry) > 0 && bAry[0] == byte('<') {
+				decoder := xml.NewDecoder(resp.Body)
+				err = decoder.Decode(resp)
+
+			} else {
+				err = saData.BytesToModel(bAry, resPtr)
+			}
 			if err != nil {
 				var str = string(bAry)
 				if strings.HasPrefix(str, "<!DOCTYPE html>") == false && strings.HasPrefix(str, `invalid character '<' looking for beginning of value`) == false {

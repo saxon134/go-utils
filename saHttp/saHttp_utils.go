@@ -9,27 +9,26 @@ import (
 	"github.com/saxon134/go-utils/saData/saError"
 	"github.com/saxon134/go-utils/saData/saUrl"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 )
 
-func Get(url string, params map[string]string) (res string, err error) {
-	return ToRequest("GET", url, params, nil)
+func Get(url string, query map[string]string) (res string, err error) {
+	return ToRequest("GET", url, query, nil)
 }
 
 func Post(url string, params map[string]string) (res string, err error) {
 	return ToRequest("POST", url, params, nil)
 }
 
-func PostRequest(uri string, obj interface{}, headers map[string]string) (res string, err error) {
-	var data = saData.String(obj)
-	var body = bytes.NewBuffer([]byte(data))
+func PostRequest(uri string, body interface{}, headers map[string]string) (res string, err error) {
+	var data = saData.String(body)
+	var bodyBuffer = bytes.NewBuffer([]byte(data))
 
 	client := &http.Client{}
 	var request *http.Request
-	request, err = http.NewRequest("POST", uri, io.Reader(body))
+	request, err = http.NewRequest("POST", uri, io.Reader(bodyBuffer))
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +49,7 @@ func PostRequest(uri string, obj interface{}, headers map[string]string) (res st
 	status := response.StatusCode
 	if status == 200 {
 		var resData []byte
-		resData, err = ioutil.ReadAll(response.Body)
+		resData, err = io.ReadAll(response.Body)
 		if err != nil {
 			return "", err
 		} else {
@@ -209,7 +208,7 @@ func ToRequest(method string, url string, params map[string]string, header map[s
 	status := httpRes.StatusCode
 	if status == 200 {
 		var resData []byte
-		resData, err = ioutil.ReadAll(httpRes.Body)
+		resData, err = io.ReadAll(httpRes.Body)
 		if err != nil {
 			return "", err
 		} else {

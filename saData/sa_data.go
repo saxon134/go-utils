@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+type JSONEncodeOption int
+
+var JSONEncodeWithOutHtml = JSONEncodeOption(1)
+
 func ToBytes(data interface{}) ([]byte, error) {
 	if data == nil {
 		return []byte{}, nil
@@ -26,7 +30,7 @@ func ToBytes(data interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func ToStr(data interface{}) (string, error) {
+func ToStr(data interface{}, options ...any) (string, error) {
 	if data == nil {
 		return "", nil
 	}
@@ -49,28 +53,36 @@ func ToStr(data interface{}) (string, error) {
 		return string(v), nil
 	}
 
-	bAry, err := json.Marshal(data)
-	if err == nil && bAry != nil {
-		s := BytesToStr(bAry)
-		if s == "null" {
-			s = ""
+	var withoutXML = false
+	for _, v := range options {
+		if value, ok := v.(JSONEncodeOption); ok && value == 1 {
+			withoutXML = true
+			break
 		}
-		return s, nil
 	}
 
-	////转成json
-	//bf := bytes.NewBuffer([]byte{})
-	//encoder := json.NewEncoder(bf)
-	////encoder.SetEscapeHTML(false)
-	//if err := encoder.Encode(data); err == nil {
-	//	return bf.String(), nil
-	//}
-
+	if withoutXML {
+		bf := bytes.NewBuffer([]byte{})
+		encoder := json.NewEncoder(bf)
+		encoder.SetEscapeHTML(false)
+		if err := encoder.Encode(data); err == nil {
+			return bf.String(), nil
+		}
+	} else {
+		bAry, err := json.Marshal(data)
+		if err == nil && bAry != nil {
+			s := BytesToStr(bAry)
+			if s == "null" {
+				s = ""
+			}
+			return s, nil
+		}
+	}
 	return fmt.Sprint(data), nil
 }
 
-func String(data interface{}) string {
-	s, _ := ToStr(data)
+func String(data interface{}, options ...any) string {
+	s, _ := ToStr(data, options...)
 	return s
 }
 
@@ -348,6 +360,17 @@ func ToInt(d interface{}) (int, error) {
 		return i, nil
 	}
 
+	if i, ok := d.(json.Number); ok {
+		var v, e = i.Int64()
+		if e != nil {
+			var f float64
+			f, e = i.Float64()
+			return int(f), nil
+		} else {
+			return int(v), nil
+		}
+	}
+
 	if s, ok := d.(string); ok {
 		s = strings.TrimSuffix(s, ".0")
 		s = strings.TrimSuffix(s, ".00")
@@ -442,6 +465,17 @@ func ToInt32(d interface{}) (int32, error) {
 }
 
 func ToInt64(d interface{}) (int64, error) {
+	if i, ok := d.(json.Number); ok {
+		var v, e = i.Int64()
+		if e != nil {
+			var f float64
+			f, e = i.Float64()
+			return int64(f), nil
+		} else {
+			return v, nil
+		}
+	}
+
 	if i, ok := d.(int64); ok {
 		return i, nil
 	}
