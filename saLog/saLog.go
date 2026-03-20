@@ -15,6 +15,7 @@ const (
 	NullType LogType = iota
 	LocalType
 	ZapType
+	GoType = 3
 )
 
 type LogLevel int8
@@ -28,12 +29,18 @@ const (
 )
 
 func Init(l LogLevel, t LogType) {
+	InitWithLogPath(l, t, "")
+}
+
+func InitWithLogPath(l LogLevel, t LogType, dir string) {
 	if t == LocalType {
-		log = initLocalLog()
+		log = initLocalLog(dir)
 		log.Log("local log初始化成功~")
 	} else if t == ZapType {
-		log = initZapLog()
+		log = initZapLog(dir)
 		log.Log("zap log初始化成功~")
+	} else if t == GoType {
+		initGoLog(dir)
 	}
 
 	if log == nil {

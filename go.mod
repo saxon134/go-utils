@@ -1,6 +1,6 @@
 module github.com/saxon134/go-utils
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.63.107
@@ -12,7 +12,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/shopspring/decimal v1.4.0
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.1
 )

@@ -12,17 +12,18 @@ import (
 
 type zapLog struct {
 	logger *zap.Logger
+	dir    string
 }
 
 func (m *zapLog) Log(a ...interface{}) {
 	m.logger.Info(fmt.Sprint(a...))
 }
 
-func initZapLog() *zapLog {
+func initZapLog(dir string) *zapLog {
 	m := new(zapLog)
-
+	m.dir = dir
 	fileWriter, err := zaprotatelogs.New(
-		path.Join("logs", "%Y-%m-%d.log"),
+		path.Join(dir, "logs", "%Y-%m-%d.log"),
 		zaprotatelogs.WithLinkName("latest_log"),
 		zaprotatelogs.WithMaxAge(7*24*time.Hour),
 		zaprotatelogs.WithRotationTime(24*time.Hour),
