@@ -21,7 +21,7 @@ type Txt struct {
 	Secret  string `json:"secret"`
 }
 
-func (m *Txt) Send() (err error) {
+func (m Txt) Send() (err error) {
 	if m.Msg == "" {
 		return saError.New("msg cannot be empty")
 	}
