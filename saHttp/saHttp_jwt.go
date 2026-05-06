@@ -37,12 +37,12 @@ func JwtParse(token string, key string, ptr interface{}) (err error) {
 		return []byte(key), nil
 	})
 	if err != nil {
-		return saError.Error{Code: saError.UnAuthedErrorCode}
+		return saError.Error{Code: saError.UnAuthedErrorCode, Msg: err.Error()}
 	}
 
 	claims, ok = t.Claims.(jwt.MapClaims)
 	if !ok || !t.Valid {
-		return saError.Error{Code: saError.UnAuthedErrorCode}
+		return saError.Error{Code: saError.UnAuthedErrorCode, Msg: err.Error()}
 	}
 
 	value := claims["jti"]
@@ -56,7 +56,7 @@ func JwtParse(token string, key string, ptr interface{}) (err error) {
 
 	err = json.Unmarshal(bAry, ptr)
 	if err != nil {
-		return saError.Error{Code: saError.UnAuthedErrorCode}
+		return saError.Error{Code: saError.UnAuthedErrorCode, Msg: err.Error()}
 	}
 	return
 }

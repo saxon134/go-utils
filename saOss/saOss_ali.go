@@ -211,7 +211,7 @@ func (m *SaOss) GetTxt(uri string) (res string, err error) {
 	return string(v), nil
 }
 
-func (m *SaOss) UploadTxt(destination string, v string) (path string, err error) {
+func (m *SaOss) UploadTxt(destination string, v string, options ...interface{}) (path string, err error) {
 	if destination == "" || v == "" {
 		return "", errors.New("缺参数")
 	}
@@ -222,7 +222,18 @@ func (m *SaOss) UploadTxt(destination string, v string) (path string, err error)
 		destination += saData.I64tos(t) + saData.Itos(r)
 	}
 
-	err = m.PutObject(destination, strings.NewReader(v))
+	var optionAry = make([]oss.Option, 0, 5)
+	for _, v := range options {
+		if value, ok := v.(TageKey); ok && len(value) > 0 {
+			var tags = make([]oss.Tag, 0, len(value))
+			for tagK, tagV := range value {
+				tags = append(tags, oss.Tag{Key: tagK, Value: tagV})
+			}
+			optionAry = append(optionAry, oss.SetTagging(oss.Tagging{Tags: tags}))
+		}
+	}
+
+	err = m.PutObject(destination, strings.NewReader(v), optionAry...)
 	return destination, err
 }
 

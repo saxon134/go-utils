@@ -1,7 +1,7 @@
 package saLog
 
 import (
-	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saOs"
 	"io"
 	golanglog "log"
 	"os"
@@ -14,7 +14,7 @@ type goLog struct {
 
 func (m *goLog) Log(a ...interface{}) {
 	if m.dir != "" {
-		var logpath = saData.AbsPath(m.dir + "/" + time.Now().Format(time.DateOnly) + ".log")
+		var logpath = saOs.AbsPath(m.dir + "/" + time.Now().Format(time.DateOnly) + ".log")
 		var info, _ = os.Stat(logpath)
 		if info == nil || info.Name() == "" {
 			file, err := os.OpenFile(logpath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)

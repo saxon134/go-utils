@@ -2,7 +2,7 @@ package saLog
 
 import (
 	"fmt"
-	"github.com/saxon134/go-utils/saData"
+	"github.com/saxon134/go-utils/saOs"
 	"os"
 	"time"
 )
@@ -13,7 +13,7 @@ type localLog struct {
 
 func (m *localLog) Log(a ...interface{}) {
 	if m.dir != "" {
-		var fullpath = saData.AbsPath(m.dir + "/" + time.Now().Format(time.DateOnly) + ".txt")
+		var fullpath = saOs.AbsPath(m.dir + "/" + time.Now().Format(time.DateOnly) + ".txt")
 		var fileinfo, err = os.Stat(fullpath)
 		if err != nil || fileinfo.Name() == "" {
 			var file, _ = os.OpenFile(fullpath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)

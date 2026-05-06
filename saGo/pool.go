@@ -33,14 +33,18 @@ type Pool struct {
 }
 
 // size - 并发执行数量
-// qps - 秒限制，必须大于0；0-1，如0.2，表示4秒允许执行一次
+// qps - 秒限制，必须大于0；如：0.2，表示4秒允许执行一次
 // fc - 执行接口
 // 注意：size最节省资源的计算公式： size = qps * 每次执行的耗时
 // 假如qps为20，执行耗时0.2秒，则size设置为4最节省资源
 // size如果设置较大，不影响qps，只是浪费了些资源，如果执行比较费时可以通过加大size值改善执行速度
 func NewPool(size int, qps float32, fn func(p *Pool, args interface{})) *Pool {
-	if size <= 0 || qps <= 0 {
-		return nil
+	if size <= 0 {
+		size = 1
+	}
+
+	if qps <= 0 {
+		qps = 1
 	}
 
 	var b = &Pool{

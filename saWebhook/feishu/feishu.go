@@ -48,7 +48,7 @@ func (m *FeiShu) SendTxtWithTitle(title string, txt string) error {
 	var contents = make([]*PostItem, 0, 1)
 	contents = append(contents, &PostItem{Tag: "text", Text: txt})
 	var args = map[string]interface{}{
-		"msg_type": saHttp.MethodPost,
+		"msg_type": "post",
 		"content": map[string]interface{}{
 			"post": map[string]interface{}{
 				"zh_cn": map[string]interface{}{
@@ -77,7 +77,7 @@ func (m *FeiShu) SendTxtWithTitle(title string, txt string) error {
 // @Description: 发送富文本
 func (m *FeiShu) SendPostTxt(title string, contents []*PostItem) error {
 	var args = map[string]interface{}{
-		"msg_type": saHttp.MethodPost,
+		"msg_type": "post",
 		"content": map[string]interface{}{
 			"post": map[string]interface{}{
 				"zh_cn": map[string]interface{}{

@@ -162,7 +162,7 @@ func SubIndex(s string, sub string) int {
 }
 
 func SubStr(s string, start int, cnt int) string {
-	var r = []rune(string(s))
+	var r = []rune(s)
 	var strLen = len(r)
 	if start < 0 || cnt <= 0 || start >= strLen {
 		return ""
@@ -173,6 +173,16 @@ func SubStr(s string, start int, cnt int) string {
 	}
 
 	return string(r[start : start+cnt])
+}
+
+// 从尾部截图指定长度的字符串
+func SuffixStr(s string, cnt int) string {
+	var r = []rune(s)
+	var strLen = len(r)
+	if strLen <= cnt {
+		return s
+	}
+	return string(r[strLen-cnt:])
 }
 
 // rune长度
