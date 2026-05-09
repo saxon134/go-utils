@@ -98,9 +98,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 		return errors.New("缺少URL")
 	}
 
-	if in.Method == "" {
-		in.Method = "GET"
-	}
+	in.Method = saHit.OrStr(in.Method, "GET")
 	in.Method = strings.ToUpper(in.Method)
 	if in.Method != "GET" && in.Method != "POST" && in.Method != "PUT" {
 		return errors.New("只支持GET/POST/PUT方法")
@@ -109,8 +107,6 @@ func _do(in Params, resPtr interface{}) (err error) {
 	if in.Timeout == 0 {
 		in.Timeout = time.Second * 60
 	}
-	client := &http.Client{Timeout: in.Timeout, Transport: &http.Transport{DisableKeepAlives: true, DisableCompression: false}}
-	var request *http.Request
 
 	//绑定query参数
 	var urlAry = strings.Split(in.Url, "#")
@@ -124,17 +120,19 @@ func _do(in Params, resPtr interface{}) (err error) {
 			queryValues = in.QueryValues
 		}
 
-		if len(urlAry) == 2 {
-			if strings.Contains(urlAry[1], "?") {
-				in.Url += "&" + queryValues.Encode()
+		if len(queryValues) > 0 {
+			if len(urlAry) == 2 {
+				if strings.Contains(urlAry[1], "?") {
+					in.Url += "&" + queryValues.Encode()
+				} else {
+					in.Url += "?" + queryValues.Encode()
+				}
 			} else {
-				in.Url += "?" + queryValues.Encode()
-			}
-		} else {
-			if strings.Contains(in.Url, "?") {
-				in.Url += "&" + queryValues.Encode()
-			} else {
-				in.Url += "?" + queryValues.Encode()
+				if strings.Contains(in.Url, "?") {
+					in.Url += "&" + queryValues.Encode()
+				} else {
+					in.Url += "?" + queryValues.Encode()
+				}
 			}
 		}
 	}
@@ -175,6 +173,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 	}
 
 	//初始化请求，并传入body参数
+	var request *http.Request
 	if bodyStr != "" {
 		request, err = http.NewRequest(in.Method, in.Url, strings.NewReader(bodyStr))
 	} else {
@@ -189,6 +188,14 @@ func _do(in Params, resPtr interface{}) (err error) {
 		if k != "" && v != nil {
 			request.Header.Set(k, saData.String(v))
 		}
+	}
+
+	//新建client
+	client := &http.Client{
+		Timeout: in.Timeout,
+		Transport: &http.Transport{
+			DisableKeepAlives: true, DisableCompression: false,
+		},
 	}
 
 	//发送请求
