@@ -19,6 +19,7 @@ import (
 
 const MethodPost = "POST"
 const MethodGet = "GET"
+const MethodPut = "PUT"
 
 type Limiter struct {
 	Key         string
@@ -101,8 +102,8 @@ func _do(in Params, resPtr interface{}) (err error) {
 		in.Method = "GET"
 	}
 	in.Method = strings.ToUpper(in.Method)
-	if in.Method != "GET" && in.Method != "POST" {
-		return errors.New("只支持GET/POST方法")
+	if in.Method != "GET" && in.Method != "POST" && in.Method != "PUT" {
+		return errors.New("只支持GET/POST/PUT方法")
 	}
 
 	if in.Timeout == 0 {
