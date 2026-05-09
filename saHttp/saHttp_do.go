@@ -109,7 +109,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 	if in.Timeout == 0 {
 		in.Timeout = time.Second * 60
 	}
-	client := &http.Client{Timeout: in.Timeout}
+	client := &http.Client{Timeout: in.Timeout, Transport: &http.Transport{DisableKeepAlives: true}}
 	var request *http.Request
 
 	//绑定query参数
