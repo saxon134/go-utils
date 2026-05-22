@@ -74,52 +74,79 @@ func NewPool(size int, qps float32, fn func(p *Pool, args interface{})) *Pool {
 	//消耗
 	for i := 0; i < size; i++ {
 		Go(func() {
-			for {
-				if args, ok := <-b.ch; ok {
-					if b.fn != nil {
-						var begin = time.Now().UnixMilli()
-						b.fn(b, args)
-						var diff = time.Now().UnixMilli() - begin
-						b.totalTime += diff
-						if diff > b.expectTime {
-							b.slow++
-						}
-						if diff > b.maxTime {
-							b.maxTime = diff
-						}
-					}
-					b.wg.Done()
-				} else {
-					break
-				}
+			for args := range b.ch {
+				b.run(args)
 			}
 		})
 	}
 	return b
 }
 
+func (b *Pool) run(args interface{}) {
+	var begin = time.Now().UnixMilli()
+	var ran bool
+	defer func() {
+		if e := recover(); e != nil {
+			saLog.Err(e)
+			saLog.Err(string(debug.Stack()))
+		}
+		if ran {
+			b.recordCost(time.Now().UnixMilli() - begin)
+		}
+		b.wg.Done()
+	}()
+
+	if b.fn != nil {
+		ran = true
+		b.fn(b, args)
+	}
+}
+
+func (b *Pool) recordCost(diff int64) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.totalTime += diff
+	if diff > b.expectTime {
+		b.slow++
+	}
+	if diff > b.maxTime {
+		b.maxTime = diff
+	}
+}
+
 // 执行
 func (b *Pool) Invoke(args interface{}) {
-	if e := recover(); e != nil {
-		saLog.Err(e)
-		saLog.Err(string(debug.Stack()))
-		return
-	}
+	var added bool
+	defer func() {
+		if e := recover(); e != nil {
+			if added {
+				b.wg.Done()
+			}
+			saLog.Err(e)
+			saLog.Err(string(debug.Stack()))
+		}
+	}()
 
 	b.Consume()
 	b.wg.Add(1)
+	added = true
 	b.ch <- args
+	added = false
+
+	b.lock.Lock()
 	b.doneCnt++
+	b.lock.Unlock()
 }
 
 // 消耗，阻塞，消耗成功才能执行
 func (b *Pool) Consume() {
 	for {
+		b.lock.Lock()
 		if b.isDone {
+			b.lock.Unlock()
 			return
 		}
-
-		b.lock.Lock()
 		var now = time.Now().UnixMicro()
 		var second = now / 1000000
 		if second != b.second {
@@ -162,6 +189,11 @@ func (b *Pool) Wait() {
 	}
 
 	b.wg.Wait()
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if b.isDone {
+		return
+	}
 	close(b.ch)
 	b.isDone = true
 }

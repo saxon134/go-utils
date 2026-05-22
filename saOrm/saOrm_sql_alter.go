@@ -360,7 +360,7 @@ func AlterTbl(db *DB, tblName string, obj interface{}) {
 		}
 		if len(delColumns) > 0 {
 			fmt.Println("-- 表结构已删除字段（注意：也有可能是修改了字段名称，请自行判断）")
-			fmt.Println("-- ", tblName, ":", delColumns, "\n")
+			fmt.Println("-- ", tblName, ":", delColumns)
 		}
 	}
 }

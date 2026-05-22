@@ -27,6 +27,7 @@ func clean() {
 	if now.Unix()-lastCleanTime < 10 {
 		return
 	}
+	lastCleanTime = now.Unix()
 
 	var keys = make([]string, 0, len(caches))
 	for k, _ := range caches {
@@ -54,7 +55,7 @@ func clean() {
 		var keys = make([]string, 0, 100)
 		for k, v := range caches {
 			if v.Count < avage {
-				if v.GetAt.Before(now.Add(time.Second * 30)) {
+				if v.GetAt.Before(now.Add(-time.Second * 30)) {
 					keys = append(keys, k)
 				}
 			}
@@ -84,7 +85,7 @@ func GetCache(key string, expireTime time.Duration, fn CacheHandler) interface{}
 
 	if value == nil {
 		if fn != nil {
-			var v = fn(key,expireTime)
+			var v = fn(key, expireTime)
 			if v != nil {
 				value = &CacheItem{
 					Value:    v,
@@ -128,7 +129,7 @@ func SetCache(key string, value interface{}, duration time.Duration) {
 	caches[key] = item
 }
 
-func ClearCache(key string)  {
+func ClearCache(key string) {
 	if key == "" {
 		return
 	}

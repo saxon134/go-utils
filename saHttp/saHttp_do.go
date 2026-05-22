@@ -222,9 +222,7 @@ func _do(in Params, resPtr interface{}) (err error) {
 			}
 
 			if len(bAry) > 0 && bAry[0] == byte('<') {
-				decoder := xml.NewDecoder(resp.Body)
-				err = decoder.Decode(resp)
-
+				err = xml.Unmarshal(bAry, resPtr)
 			} else {
 				err = saData.BytesToModel(bAry, resPtr)
 			}

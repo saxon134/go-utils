@@ -1,6 +1,7 @@
 package saGo
 
 import (
+	"github.com/gomodule/redigo/redis"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saHit"
 	"github.com/saxon134/go-utils/saRedis"
@@ -45,7 +46,11 @@ func NewBucket(qps int, qpm int, args ...any) *Bucket {
 	if qpm > 0 {
 		m2 = 36000 / qpm // (1000*60/qpm)*60%
 	}
-	b.minIntervalMillisecond = int64(saHit.Int(m1 > 0 && m1 < m2, m1, m2)) //最小间隔取小的值
+	if m1 > 0 && m2 > 0 {
+		b.minIntervalMillisecond = int64(saHit.Int(m1 < m2, m1, m2)) //最小间隔取小的值
+	} else {
+		b.minIntervalMillisecond = int64(saHit.OrInt(m1, m2))
+	}
 
 	for _, v := range args {
 		if redis, ok := v.(*saRedis.Redis); ok == true {
@@ -97,17 +102,14 @@ func (b *Bucket) Consume() {
 		//本地拿到了令牌，再去读Redis令牌
 		if b.redis != nil {
 			var key = b.key + ":" + saData.String(now)
-			var count, err = b.redis.GetInt64(key)
-			if err == nil {
-				if count >= int64(limit) {
-					b.locker.Unlock()
-					var r = int64(float64(b.minIntervalMillisecond)*0.01) + int64(b.count%5)
-					time.Sleep(time.Duration(b.minIntervalMillisecond+r) * time.Millisecond)
-					continue
-				}
+			var count, err = redis.Int64(b.redis.Do("EVAL", tokenBucketConsumeScript, 1, key, saHit.Int(b.qps > 0, 1, 60)))
+			if err == nil && count > int64(limit) {
+				b.locker.Unlock()
+				var r = int64(float64(b.minIntervalMillisecond)*0.01) + int64(b.count%5)
+				time.Sleep(time.Duration(b.minIntervalMillisecond+r) * time.Millisecond)
+				continue
 			}
 
-			_, _ = b.redis.Do("INCR", key, 1, "EX", saHit.Int(b.qps > 0, 1, 60), "NX")
 			b.locker.Unlock()
 			break
 		}
@@ -116,6 +118,14 @@ func (b *Bucket) Consume() {
 		break
 	}
 }
+
+const tokenBucketConsumeScript = `
+local count = redis.call("INCR", KEYS[1])
+if count == 1 then
+	redis.call("EXPIRE", KEYS[1], ARGV[1])
+end
+return count
+`
 
 // 无需实例化
 func BucketConsume(name string, qps int, qpm int) {

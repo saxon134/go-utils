@@ -37,24 +37,13 @@ func LimiterLock(key string, minSecond float32, maxSecond float32, options ...an
 	limiterLocker.Lock()
 	var lm = limiterDIC[key]
 	var now = time.Now().UnixMilli()
-	var needLock = true
 	if lm == nil {
 		lm = &limiter{lastTime: now}
 		limiterDIC[key] = lm
-	} else
-	//判断是否超出最大等待时间
-	{
-		if maxMilSecond > 0 && now-lm.lastTime >= maxMilSecond {
-			lm.lastTime = now
-			lm.locker.TryLock()
-			needLock = false
-		}
 	}
 	limiterLocker.Unlock()
 
-	if needLock {
-		lm.locker.Lock()
-	}
+	lm.locker.Lock()
 
 	now = time.Now().UnixMilli()
 	var diff = minMilSecond - (now - lm.lastTime)
@@ -134,7 +123,8 @@ func LimiterTryLock(key string, minSecond float32, options ...any) bool {
 	}
 	var diff = minMilliSecond - (now - lastTime)
 	if diff > 0 {
-		time.Sleep(time.Millisecond * time.Duration(diff))
+		lm.locker.Unlock()
+		return false
 	}
 	lm.lastTime = lastTime
 
