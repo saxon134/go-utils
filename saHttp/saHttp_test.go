@@ -50,3 +50,29 @@ func TestDoDecodesXMLResponse(t *testing.T) {
 		t.Fatalf("Message = %q, want ok", out.Message)
 	}
 }
+
+func TestDoFormRejectsEmptyURLWithoutPanic(t *testing.T) {
+	defer func() {
+		if e := recover(); e != nil {
+			t.Fatalf("DoForm panicked for empty URL: %v", e)
+		}
+	}()
+
+	err := DoForm(FormParams{}, nil)
+	if err == nil {
+		t.Fatal("DoForm returned nil error for empty URL")
+	}
+}
+
+func TestDoFormReturnsErrorForMalformedURLWithoutPanic(t *testing.T) {
+	defer func() {
+		if e := recover(); e != nil {
+			t.Fatalf("DoForm panicked for malformed URL: %v", e)
+		}
+	}()
+
+	err := DoForm(FormParams{Url: "\n"}, nil)
+	if err == nil {
+		t.Fatal("DoForm returned nil error for malformed URL")
+	}
+}

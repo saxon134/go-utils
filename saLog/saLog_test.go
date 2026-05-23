@@ -12,6 +12,35 @@ func TestSaLog(t *testing.T) {
 	Err(err)
 }
 
+func TestInitGoTypeDoesNotPanic(t *testing.T) {
+	log = nil
+	defer func() {
+		if e := recover(); e != nil {
+			t.Fatalf("Init GoType panicked: %v", e)
+		}
+	}()
+	Init(InfoLevel, GoType)
+	if log == nil {
+		t.Fatal("Init GoType left log nil")
+	}
+}
+
+func TestInfoWithoutInitDoesNotPanic(t *testing.T) {
+	oldLog := log
+	oldLevel := logLevel
+	log = nil
+	logLevel = InfoLevel
+	defer func() {
+		log = oldLog
+		logLevel = oldLevel
+		if e := recover(); e != nil {
+			t.Fatalf("Info panicked without initialized logger: %v", e)
+		}
+	}()
+
+	Info("hello")
+}
+
 func f1() error {
 	fmt.Println("f1")
 	return f2()

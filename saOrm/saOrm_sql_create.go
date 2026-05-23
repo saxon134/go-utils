@@ -6,6 +6,7 @@ import (
 	"github.com/saxon134/go-utils/saData/saHit"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 )
@@ -401,7 +402,7 @@ func CreateTbl(obj interface{}) {
 	// 生成controller代码
 	if strings.Contains(set.Options, "controller") {
 		//todo 换成网络地址
-		tpl_f, err := os.OpenFile("/Users/jiang/go.yf/go-utils/saGen/template/controller.tpl", os.O_RDONLY, 0600)
+		tpl_f, err := os.OpenFile(filepath.Join("saOrm", "template", "controller.tpl"), os.O_RDONLY, 0600)
 		if err != nil {
 			fmt.Println(err.Error())
 			return

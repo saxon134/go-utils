@@ -33,19 +33,19 @@ func Init(l LogLevel, t LogType) {
 }
 
 func InitWithLogPath(l LogLevel, t LogType, dir string) {
+	SetLogLevel(l)
 	if t == LocalType {
 		log = initLocalLog(dir)
-		log.Log("local log初始化成功~")
 	} else if t == ZapType {
 		log = initZapLog(dir)
-		log.Log("zap log初始化成功~")
 	} else if t == GoType {
-		initGoLog(dir)
+		log = initGoLog(dir)
 	}
 
 	if log == nil {
 		panic("log初始化失败~")
 	}
+	log.Log("log初始化成功~")
 }
 
 func SetPkg(pkgPath string, ignore ...string) {
@@ -115,6 +115,10 @@ func Warn(a ...interface{}) {
 }
 
 func Info(a ...interface{}) {
+	if log == nil {
+		return
+	}
+
 	if logLevel > InfoLevel {
 		return
 	}
@@ -123,6 +127,9 @@ func Info(a ...interface{}) {
 }
 
 func _log(level string, a ...interface{}) {
+	logLocker.Lock()
+	defer logLocker.Unlock()
+
 	var now = time.Now()
 	var timestamp = now.Unix()
 	if timestamp <= lastLogTimestamp+1 {

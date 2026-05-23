@@ -368,15 +368,15 @@ func StartTask() {
 
 func run() {
 	var now = time.Now().Local()
-	for _, t := range AdminTaskList {
+	for _, t := range taskSnapshot() {
 		t.SetNext(now)
 	}
 
 	for {
-		sortList := NewMapSorter(AdminTaskList)
+		sortList := NewMapSorter(taskMapSnapshot())
 		sortList.Sort()
 		var effective time.Time
-		if len(AdminTaskList) == 0 || sortList.Vals[0].GetNext().IsZero() {
+		if len(sortList.Vals) == 0 || sortList.Vals[0].GetNext().IsZero() {
 			effective = now.AddDate(10, 0, 0)
 		} else {
 			effective = sortList.Vals[0].GetNext()
@@ -402,7 +402,7 @@ func run() {
 			continue
 		case <-changed:
 			now = time.Now().Local()
-			for _, t := range AdminTaskList {
+			for _, t := range taskSnapshot() {
 				t.SetNext(now)
 			}
 			continue
@@ -410,6 +410,28 @@ func run() {
 			return
 		}
 	}
+}
+
+func taskSnapshot() []*Task {
+	taskLock.Lock()
+	defer taskLock.Unlock()
+
+	tasks := make([]*Task, 0, len(AdminTaskList))
+	for _, t := range AdminTaskList {
+		tasks = append(tasks, t)
+	}
+	return tasks
+}
+
+func taskMapSnapshot() map[string]*Task {
+	taskLock.Lock()
+	defer taskLock.Unlock()
+
+	tasks := make(map[string]*Task, len(AdminTaskList))
+	for name, t := range AdminTaskList {
+		tasks[name] = t
+	}
+	return tasks
 }
 
 func StopTask() {
@@ -445,7 +467,7 @@ func SetTaskEnable(taskname string, enable bool) {
 	defer taskLock.Unlock()
 	var t = AdminTaskList[taskname]
 	if t != nil {
-		t.GetStatus()
+		t.SetEnable(enable)
 	}
 	if isstart {
 		changed <- true

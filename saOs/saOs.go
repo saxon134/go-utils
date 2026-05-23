@@ -8,7 +8,6 @@ import (
 	"image/png"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -82,7 +81,10 @@ func Unzip(fileFullPath string) error {
 
 	// 第二步，遍历 zip 中的文件
 	for _, f := range zipFile.File {
-		filePath := f.Name
+		filePath, err := safeZipPath(f.Name)
+		if err != nil {
+			return err
+		}
 		if f.FileInfo().IsDir() {
 			_ = os.MkdirAll(filePath, os.ModePerm)
 			continue
@@ -98,20 +100,37 @@ func Unzip(fileFullPath string) error {
 		}
 		file, err := f.Open()
 		if err != nil {
+			dstFile.Close()
 			return err
 		}
 		// 写入到解压到的目标文件
 		if _, err := io.Copy(dstFile, file); err != nil {
+			dstFile.Close()
+			file.Close()
 			return err
 		}
-		dstFile.Close()
-		file.Close()
+		if err := dstFile.Close(); err != nil {
+			file.Close()
+			return err
+		}
+		if err := file.Close(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
+func safeZipPath(name string) (string, error) {
+	name = strings.ReplaceAll(name, "\\", "/")
+	clean := filepath.Clean(name)
+	if clean == "." || filepath.IsAbs(clean) || strings.HasPrefix(clean, ".."+string(filepath.Separator)) || clean == ".." {
+		return "", errors.New("zip entry path is unsafe")
+	}
+	return clean, nil
+}
+
 func Zip(dir string, zipName string) error {
-	zipFile, err := os.OpenFile(zipName, os.O_WRONLY|os.O_CREATE, 0660)
+	zipFile, err := os.OpenFile(zipName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0660)
 	if err != nil {
 		return err
 	}
@@ -119,12 +138,21 @@ func Zip(dir string, zipName string) error {
 	archive := zip.NewWriter(zipFile)
 	defer archive.Close()
 	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if path == dir {
 			return nil
 		}
 
-		info, _ := d.Info()
-		h, _ := zip.FileInfoHeader(info)
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+		h, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
 		h.Name = strings.TrimPrefix(path, dir)
 		h.Name = strings.TrimPrefix(h.Name, "/")
 		h.Name = strings.TrimPrefix(h.Name, "\\")
@@ -133,11 +161,22 @@ func Zip(dir string, zipName string) error {
 		} else {
 			h.Method = zip.Deflate
 		}
-		writer, _ := archive.CreateHeader(h)
+		writer, err := archive.CreateHeader(h)
+		if err != nil {
+			return err
+		}
 		if !info.IsDir() {
-			srcFile, _ := os.Open(path)
-			defer srcFile.Close()
-			io.Copy(writer, srcFile)
+			srcFile, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(writer, srcFile)
+			if closeErr := srcFile.Close(); err == nil {
+				err = closeErr
+			}
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -151,6 +190,7 @@ func ResizeImg(src string, width uint, dest string) error {
 
 	img, err := png.Decode(file)
 	if err != nil {
+		file.Close()
 		return err
 	}
 	file.Close()
@@ -158,9 +198,8 @@ func ResizeImg(src string, width uint, dest string) error {
 	m := resize.Resize(width, 0, img, resize.Lanczos3)
 	out, err := os.Create(dest)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer out.Close()
-	jpeg.Encode(out, m, nil)
-	return nil
+	return jpeg.Encode(out, m, nil)
 }

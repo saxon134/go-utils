@@ -36,3 +36,33 @@ func TestDB(t *testing.T) {
 	fmt.Println(m.Img)
 	fmt.Println(m.ImgAry[0])
 }
+
+func TestToDBValidatesGreaterOrEqualTag(t *testing.T) {
+	type model struct {
+		Count int `type:">=3"`
+	}
+
+	if err := ToDB(&model{Count: 2}); err == nil {
+		t.Fatal("ToDB accepted a value below >= constraint")
+	}
+}
+
+func TestToDBValidatesLessThanTag(t *testing.T) {
+	type model struct {
+		Count int `type:"<3"`
+	}
+
+	if err := ToDB(&model{Count: 2}); err != nil {
+		t.Fatalf("ToDB rejected a value below < constraint: %v", err)
+	}
+}
+
+func TestToDBValidatesEnumTag(t *testing.T) {
+	type model struct {
+		Status string `type:"enum(a:A,b:B)"`
+	}
+
+	if err := ToDB(&model{Status: "c"}); err == nil {
+		t.Fatal("ToDB accepted a value outside enum constraint")
+	}
+}

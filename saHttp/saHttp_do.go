@@ -271,7 +271,7 @@ func DoForm(in FormParams, resPtr interface{}) (err error) {
 		}()
 	}
 
-	if in.Url == "s" {
+	if in.Url == "" {
 		return errors.New("缺少URL")
 	}
 
@@ -312,10 +312,12 @@ func DoForm(in FormParams, resPtr interface{}) (err error) {
 		}
 
 		if in.LocalPath != "" {
-			in.FileReader, err = os.Open(in.LocalPath)
+			fileReader, err := os.Open(in.LocalPath)
 			if err != nil {
 				return err
 			}
+			defer fileReader.Close()
+			in.FileReader = fileReader
 
 			var part io.Writer
 			part, err = writer.CreateFormFile(in.Key, in.FileName)
@@ -349,7 +351,7 @@ func DoForm(in FormParams, resPtr interface{}) (err error) {
 	var req *http.Request
 	req, err = http.NewRequest("POST", in.Url, requestBody)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// 设置 header
@@ -365,7 +367,7 @@ func DoForm(in FormParams, resPtr interface{}) (err error) {
 	}
 
 	// 发送请求
-	client := &http.Client{}
+	client := &http.Client{Timeout: in.Timeout}
 	var resp *http.Response
 	resp, err = client.Do(req)
 	if err != nil {
@@ -399,9 +401,10 @@ func DoForm(in FormParams, resPtr interface{}) (err error) {
 			return nil
 		}
 	} else {
+		err = &url.Error{Op: "POST", URL: in.Url, Err: errors.New(resp.Status)}
 		bAry, _ := io.ReadAll(resp.Body)
 		if resPtr == nil {
-			return &url.Error{URL: in.Url, Err: saError.New(err, string(bAry))}
+			return &url.Error{Op: "POST", URL: in.Url, Err: saError.New(err, string(bAry))}
 		}
 
 		if b, ok := resPtr.(*[]byte); ok {

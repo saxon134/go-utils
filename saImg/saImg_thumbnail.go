@@ -26,7 +26,10 @@ func calculateRatioFit(srcWidth, srcHeight, maxWidth int) (int, int) {
 
 // MakeThumbnail 生成缩略图
 func MakeThumbnail(imagePath, savePath string, maxWidth int) error {
-	file, _ := os.Open(imagePath)
+	file, err := os.Open(imagePath)
+	if err != nil {
+		return err
+	}
 	defer file.Close()
 
 	img, _, err := image.Decode(file)
@@ -44,7 +47,10 @@ func MakeThumbnail(imagePath, savePath string, maxWidth int) error {
 	m := resize.Resize(uint(w), uint(h), img, resize.Lanczos3)
 
 	// 需要保存的文件
-	imgfile, _ := os.Create(savePath)
+	imgfile, err := os.Create(savePath)
+	if err != nil {
+		return err
+	}
 	defer imgfile.Close()
 
 	// 以PNG格式保存文件

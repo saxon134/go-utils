@@ -152,9 +152,8 @@ func (m *SaOss) CopyWithBucket(src, destination string) error {
 		if strings.HasSuffix(destination, "/") {
 			_ary := strings.Split(src, "/")
 			destination += _ary[len(_ary)-1]
-		} else {
-			_, err = m.CopyObject(src, destination)
 		}
+		_, err = m.CopyObject(src, destination)
 
 		if err != nil {
 			return err

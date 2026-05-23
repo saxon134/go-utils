@@ -54,10 +54,13 @@ func (r Redis) TryLockWithMinTime(resource string, minTimeSecond int) (lock *Loc
 
 func (lock *Lock) Unlock() (err error) {
 	if lock.startTimeSecond <= 0 {
-		_, err = lock.conn.Do("del", lock.key())
+		_, err = lock.conn.Do("EVAL", redisUnlockScript, 1, lock.key(), lock.code)
 	}
 	if lock.c != nil {
-		lock.c <- 1 //退出刷新时间协程
+		select {
+		case lock.c <- 1: //退出刷新时间协程
+		default:
+		}
 	}
 	return
 }
@@ -77,7 +80,7 @@ func (lock *Lock) tryLock() (err error) {
 	}
 
 	if strings.ToUpper(res) == "OK" {
-		lock.c = make(chan int)
+		lock.c = make(chan int, 1)
 		go lock.refreshTimeout()
 
 		return nil
@@ -114,14 +117,10 @@ func (lock *Lock) refreshTimeout() {
 				return
 			}
 
-			s, err := redis.String(lock.conn.Do("GET", lock.key()))
+			_, err := lock.conn.Do("EVAL", redisRefreshScript, 1, lock.key(), lock.code, lock.second)
 			if err != nil {
 				t.Stop()
 				return
-			}
-
-			if lock.code == s {
-				_, err = lock.conn.Do("EXPIRE", lock.key(), lock.second)
 			}
 		}
 	}
@@ -130,3 +129,17 @@ func (lock *Lock) refreshTimeout() {
 func (lock *Lock) key() string {
 	return fmt.Sprintf("lock:%s", lock.resource)
 }
+
+const redisUnlockScript = `
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+	return redis.call("DEL", KEYS[1])
+end
+return 0
+`
+
+const redisRefreshScript = `
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+	return redis.call("EXPIRE", KEYS[1], ARGV[2])
+end
+return 0
+`

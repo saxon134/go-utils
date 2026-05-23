@@ -401,7 +401,7 @@ func MatchEmail(text string) string {
 	// 查找匹配的邮箱地址
 	matches := re.FindAllString(text, -1)
 
-	if matches != nil && len(matches) >= 0 {
+	if len(matches) > 0 {
 		return matches[0]
 	}
 	return ""

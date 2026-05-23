@@ -62,3 +62,15 @@ func TestId2Code(t *testing.T) {
 		fmt.Println(id, " => ", encoded, " => ", decoded)
 	}
 }
+
+func TestMatchEmailReturnsEmptyWhenNoMatch(t *testing.T) {
+	defer func() {
+		if e := recover(); e != nil {
+			t.Fatalf("MatchEmail panicked without a match: %v", e)
+		}
+	}()
+
+	if got := MatchEmail("no email here"); got != "" {
+		t.Fatalf("MatchEmail = %q, want empty", got)
+	}
+}

@@ -155,24 +155,26 @@ func ToDB(obj interface{}) error {
 				isOss = true
 			} else if tag == "phone" {
 				isPhone = true
-			} else if strings.HasPrefix(tag, ">") {
-				s := strings.TrimPrefix(tag, ">")
-				gt, _ = saData.ToInt64(s)
 			} else if strings.HasPrefix(tag, ">=") {
 				s := strings.TrimPrefix(tag, ">=")
 				gte, _ = saData.ToInt64(s)
-			} else if strings.HasPrefix(tag, "<") {
-				s := strings.TrimPrefix(tag, "<")
-				lt, _ = saData.ToInt64(s)
 			} else if strings.HasPrefix(tag, "<=") {
 				s := strings.TrimPrefix(tag, "<=")
 				lte, _ = saData.ToInt64(s)
 			} else if strings.HasPrefix(tag, "<>") {
 				s := strings.TrimPrefix(tag, "<>")
 				gtlt, _ = saData.ToInt64(s)
+			} else if strings.HasPrefix(tag, ">") {
+				s := strings.TrimPrefix(tag, ">")
+				gt, _ = saData.ToInt64(s)
+			} else if strings.HasPrefix(tag, "<") {
+				s := strings.TrimPrefix(tag, "<")
+				lt, _ = saData.ToInt64(s)
 			} else if strings.HasPrefix(tag, "enum(") {
+				tag = strings.TrimPrefix(tag, "enum(")
+				tag = strings.TrimSuffix(tag, ")")
 				if ary := strings.Split(tag, ","); len(ary) > 0 {
-					in := make([]string, 0, len(ary))
+					in = make([]string, 0, len(ary))
 					for _, s := range ary {
 						ary2 := strings.Split(s, ":")
 						if len(ary2) > 0 {
@@ -189,14 +191,14 @@ func ToDB(obj interface{}) error {
 			reflect.Int32, reflect.Uint32,
 			reflect.Int16, reflect.Uint16:
 
-			value := reflectValue.Field(i).Int()
+			value := fieldInt64(reflectValue.Field(i))
 			if lte > 0 {
 				if value > lte {
 					return errors.New(columnName + "超出长度")
 				}
 			}
 			if lt > 0 {
-				if value >= lte {
+				if value >= lt {
 					return errors.New(columnName + "超出长度")
 				}
 			}
@@ -248,7 +250,7 @@ func ToDB(obj interface{}) error {
 				}
 			}
 			if lt > 0 {
-				if length >= lte {
+				if length >= lt {
 					return errors.New(columnName + "超出长度")
 				}
 			}
@@ -314,6 +316,15 @@ func ToDB(obj interface{}) error {
 		}
 	}
 	return nil
+}
+
+func fieldInt64(v reflect.Value) int64 {
+	switch v.Kind() {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return int64(v.Uint())
+	default:
+		return v.Int()
+	}
 }
 
 func (m *DB) Insert(obj interface{}) (tx *gorm.DB) {
