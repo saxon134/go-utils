@@ -9,9 +9,9 @@ require (
 	github.com/gomodule/redigo v1.9.3
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/shopspring/decimal v1.4.0
+	github.com/volcengine/ve-tos-golang-sdk/v2 v2.9.5
 	go.uber.org/zap v1.27.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.1
@@ -29,7 +29,9 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/time v0.2.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
