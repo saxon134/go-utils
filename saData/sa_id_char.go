@@ -1,7 +1,5 @@
 package saData
 
-import "strings"
-
 ////////////////////////////////////////////////////////////////
 // int64和字符串互转，转成的字符串
 // 可指定最小长度，字符长度不固定
@@ -34,12 +32,13 @@ func IdToCharWithSource(v int64, minLen int, source string) string {
 
 	var axis string
 	var sLen = int64(len(source))
+	var zeroChars = zeroCharsForSource(source)
 	var zeroIdx = 0 //控制零值时在zeroAry间轮询
 	for {
 		if v%sLen == 0 {
-			axis = zeroAry[zeroIdx] + axis
+			axis = string(zeroChars[zeroIdx]) + axis
 			zeroIdx++
-			if zeroIdx+1 >= len(zeroAry) {
+			if zeroIdx+1 >= len(zeroChars) {
 				zeroIdx = 0
 			}
 		} else {
@@ -54,9 +53,9 @@ func IdToCharWithSource(v int64, minLen int, source string) string {
 
 	for i := 0; i < minLen; i++ {
 		if len(axis) < minLen {
-			axis = zeroAry[zeroIdx] + axis
+			axis = string(zeroChars[zeroIdx]) + axis
 			zeroIdx++
-			if zeroIdx+1 >= len(zeroAry) {
+			if zeroIdx+1 >= len(zeroChars) {
 				zeroIdx = 0
 			}
 		}
@@ -74,23 +73,56 @@ func CharToIdWithSource(str string, source string) int64 {
 		source = defaultSource
 	}
 
-	//所有零值都替换成第一个
-	for _, s := range zeroAry {
-		str = strings.Replace(str, s, zeroAry[0], -1)
-	}
-
 	var v int64
+	var zeroChars = zeroCharsForSource(source)
 	for i := 0; i < len(str); i++ {
-		for j := 0; j < len(source); j++ {
-			if source[j] == str[i] {
-				r := j
-				for k := 0; k < len(str)-1-i; k++ {
-					r *= len(source)
+		r := 0
+		if !isZeroChar(str[i], zeroChars) {
+			for j := 0; j < len(source); j++ {
+				if source[j] == str[i] {
+					r = j
+					break
 				}
-				v += int64(r)
-				break
 			}
 		}
+		for k := 0; k < len(str)-1-i; k++ {
+			r *= len(source)
+		}
+		v += int64(r)
 	}
 	return v
+}
+
+func zeroCharsForSource(source string) []byte {
+	var zeroChars []byte
+	for _, zero := range zeroAry {
+		if len(zero) != 1 {
+			continue
+		}
+		if !containsByte(source[1:], zero[0]) {
+			zeroChars = append(zeroChars, zero[0])
+		}
+	}
+	if len(zeroChars) == 0 {
+		zeroChars = append(zeroChars, source[0])
+	}
+	return zeroChars
+}
+
+func isZeroChar(v byte, zeroChars []byte) bool {
+	for _, zero := range zeroChars {
+		if v == zero {
+			return true
+		}
+	}
+	return false
+}
+
+func containsByte(str string, v byte) bool {
+	for i := 0; i < len(str); i++ {
+		if str[i] == v {
+			return true
+		}
+	}
+	return false
 }

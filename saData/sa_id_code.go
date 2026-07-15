@@ -57,8 +57,9 @@ func IdToCodeWithSource(id int64, length int, source []string) (code string) {
 
 	// p-box
 	result := make([]string, length)
+	step := codePermutationStep(length)
 	for i := 0; i < length; i++ {
-		result[i] = source[numberResult[i*prime2%length]]
+		result[i] = source[numberResult[i*step%length]]
 	}
 
 	code = strings.Join(result, "")
@@ -90,22 +91,46 @@ func CodeToIdWithSource(code string, length int, source []string) (id int64) {
 		numberResult[i] = int64(index)
 	}
 
+	step := codePermutationStep(length)
 	for i := 0; i < length; i++ {
-		numbers[i] = numberResult[i*prime2%length]
+		numbers[i*step%length] = numberResult[i]
 	}
 
 	SourceLen := int64(len(source))
 	b := make([]int64, length)
 	for i := length - 2; i >= 0; i-- {
-		b[i] = (numbers[i] - numbers[0]*int64(i) + SourceLen*int64(i)) % SourceLen
+		b[i] = (numbers[i] - numbers[0]*int64(i)) % SourceLen
+		if b[i] < 0 {
+			b[i] += SourceLen
+		}
 	}
 
-	for i := length - 2; i > 0; i-- {
-		id += b[i]
-		id *= SourceLen
+	id = numbers[length-1]
+	for i := length - 2; i >= 0; i-- {
+		id = id*SourceLen + b[i]
 	}
-	id = (id + b[0] - salt) / prime1
+	id = (id - salt) / prime1
 	return
+}
+
+func codePermutationStep(length int) int {
+	if length <= 1 {
+		return 1
+	}
+	if gcd(prime2, length) == 1 {
+		return prime2
+	}
+	return length - 1
+}
+
+func gcd(a int, b int) int {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	if a < 0 {
+		return -a
+	}
+	return a
 }
 
 func findIndexOf(source []string, v string) (int, error) {
