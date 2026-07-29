@@ -166,10 +166,10 @@ func _log(level string, a ...interface{}) {
 			var file, line = f.FileLine(pc[i])
 			file = formatCaller(file)
 			if file != "" {
-				caller += fmt.Sprintf("%s:%d => ", file, line)
+				caller += fmt.Sprintf("%s:%d \n ", file, line)
 			}
 		}
-		caller = strings.TrimSuffix(caller, "=> ")
+		caller = strings.TrimSuffix(caller, " \n ")
 	}
 
 	for i, v := range a {

@@ -156,7 +156,7 @@ func Stack(errs ...interface{}) error {
 			var file, line = f.FileLine(pc[0])
 			file = formatCaller(file)
 			if file != "" {
-				resErr.Caller += fmt.Sprintf(" => %s:%d", file, line)
+				resErr.Caller += fmt.Sprintf(" \n %s:%d", file, line)
 			}
 		}
 	} else {
@@ -165,10 +165,10 @@ func Stack(errs ...interface{}) error {
 			var file, line = f.FileLine(pc[i])
 			file = formatCaller(file)
 			if file != "" {
-				resErr.Caller += fmt.Sprintf("%s:%d => ", file, line)
+				resErr.Caller += fmt.Sprintf("%s:%d \n ", file, line)
 			}
 		}
-		resErr.Caller = strings.TrimSuffix(resErr.Caller, " => ")
+		resErr.Caller = strings.TrimSuffix(resErr.Caller, " \n ")
 	}
 
 	return &resErr
