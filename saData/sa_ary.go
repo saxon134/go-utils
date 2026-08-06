@@ -352,16 +352,9 @@ func InInt64(item int64, ary []int64) (exist bool) {
 }
 
 // 注意：只支持基础类型数据，会排除已存在的
-func AppendId(ary []int64, ids ...interface{}) []int64 {
+func AppendId(ary []int64, ids ...int64) []int64 {
 	for _, id := range ids {
-		var value int64
-		if v, ok := id.(int64); ok {
-			value = v
-		} else if v, ok := id.(string); ok {
-			value = Stoi64(v)
-		}
-
-		if value > 0 {
+		if id > 0 {
 			exist := false
 			for _, v := range ary {
 				if v == id {
@@ -371,23 +364,16 @@ func AppendId(ary []int64, ids ...interface{}) []int64 {
 			}
 
 			if exist == false {
-				ary = append(ary, value)
+				ary = append(ary, id)
 			}
 		}
 	}
 	return ary
 }
 
-func AppendInt(ary []int, ids ...interface{}) []int {
+func AppendInt(ary []int, ids ...int) []int {
 	for _, id := range ids {
-		var value int
-		if v, ok := id.(int); ok {
-			value = v
-		} else if v, ok := id.(string); ok {
-			value = Stoi(v)
-		}
-
-		if value > 0 {
+		if id > 0 {
 			exist := false
 			for _, v := range ary {
 				if v == id {
@@ -397,17 +383,16 @@ func AppendInt(ary []int, ids ...interface{}) []int {
 			}
 
 			if exist == false {
-				ary = append(ary, value)
+				ary = append(ary, id)
 			}
 		}
 	}
 	return ary
 }
 
-func AppendStr(ary []string, strs ...interface{}) []string {
+func AppendStr(ary []string, strs ...string) []string {
 	for _, s := range strs {
-		var value = String(s)
-		if value != "" {
+		if s != "" {
 			exist := false
 			for _, v := range ary {
 				if v == s {
@@ -417,7 +402,7 @@ func AppendStr(ary []string, strs ...interface{}) []string {
 			}
 
 			if exist == false {
-				ary = append(ary, value)
+				ary = append(ary, s)
 			}
 		}
 	}
