@@ -149,6 +149,7 @@ func _log(level string, a ...interface{}) {
 
 	//获取调用栈
 	var caller = ""
+	var lastCaller = ""
 	if len(a) > 0 {
 		if e, ok := a[0].(saError.Error); ok == true {
 			if e.Caller != "" {
@@ -166,7 +167,13 @@ func _log(level string, a ...interface{}) {
 			var file, line = f.FileLine(pc[i])
 			file = formatCaller(file)
 			if file != "" {
-				caller += fmt.Sprintf("%s:%d \n ", file, line)
+				if lastCaller == file {
+					caller = strings.TrimSuffix(caller, "\n ")
+					caller += fmt.Sprintf("-> %d \n ", line)
+				} else {
+					lastCaller = file
+					caller += fmt.Sprintf("%s:%d \n ", file, line)
+				}
 			}
 		}
 		caller = strings.TrimSuffix(caller, " \n ")

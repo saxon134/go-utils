@@ -160,12 +160,19 @@ func Stack(errs ...interface{}) error {
 			}
 		}
 	} else {
+		var lastCaller = ""
 		for i := n - 1; i >= 0; i-- {
 			var f = runtime.FuncForPC(pc[i])
 			var file, line = f.FileLine(pc[i])
 			file = formatCaller(file)
 			if file != "" {
-				resErr.Caller += fmt.Sprintf("%s:%d \n ", file, line)
+				if lastCaller == file {
+					resErr.Caller = strings.TrimSuffix(resErr.Caller, "\n ")
+					resErr.Caller += fmt.Sprintf("-> %d \n ", line)
+				} else {
+					lastCaller = file
+					resErr.Caller += fmt.Sprintf("%s:%d \n ", file, line)
+				}
 			}
 		}
 		resErr.Caller = strings.TrimSuffix(resErr.Caller, " \n ")
