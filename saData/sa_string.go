@@ -1,13 +1,12 @@
 package saData
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 	"unsafe"
 )
 
@@ -237,10 +236,9 @@ func TrimH5Tags(src string) (str string) {
 
 /** 返回20位字符串 */
 func RandomStr() string {
-	var t = time.Now().UnixMilli()
-	var r1 = rand.Int64N(100000)
-	var r2 = rand.Int64N(10000)
-	return IdToCharWithSource(r1, 3, MaxSource) + IdToCharWithSource(r2, 4, MaxSource) + I64tos(t)
+	var b [15]byte
+	mustReadCryptoRand(b[:])
+	return base64.RawURLEncoding.EncodeToString(b[:])
 }
 
 // 通过内存操作，效率极高，但是有风险。只在数据量很大、效率要求高的场景使用

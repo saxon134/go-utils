@@ -2,15 +2,15 @@ package saData
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type JSONEncodeOption int
@@ -712,8 +712,14 @@ func unmarshal(data []byte, v any) error {
 	return err
 }
 
-// 短期多次调用可能会有重复
 func RandomInt64() int64 {
-	var t = time.Now().UnixMilli()
-	return ((t/1000)%86400)*10000 + (t%10)*1000 + rand.Int63n(1000)
+	var b [8]byte
+	mustReadCryptoRand(b[:])
+	return int64(binary.BigEndian.Uint64(b[:]) & ((uint64(1) << 63) - 1))
+}
+
+func mustReadCryptoRand(b []byte) {
+	if _, err := rand.Read(b); err != nil {
+		panic(err)
+	}
 }
