@@ -124,6 +124,107 @@ func TestLimiterTryLockDoesNotSleepWhenIntervalNotElapsed(t *testing.T) {
 	LimiterUnLock(key)
 }
 
+func TestLimiterUnLockDoesNotDeleteAnotherRedisOwnerLock(t *testing.T) {
+	store := newLimiterRedisStore()
+	oldRedis := _redis
+	_redis = newLimiterTestRedis(store)
+	defer func() {
+		_redis = oldRedis
+	}()
+
+	key := uniqueTestKey("limiter-redis-owner")
+	if !LimiterTryLock(key, 0, LimiterGlobalOption, 1) {
+		t.Fatal("LimiterTryLock did not acquire the Redis lock")
+	}
+
+	redisKey := "saGo:limiter:" + key
+	store.Set(redisKey, "another-owner")
+	LimiterUnLock(key)
+
+	if got := store.Get(redisKey); got != "another-owner" {
+		t.Fatalf("Redis lock value = %q, want %q", got, "another-owner")
+	}
+}
+
+func TestLimiterUnLockDeletesMatchingRedisOwnerLock(t *testing.T) {
+	store := newLimiterRedisStore()
+	oldRedis := _redis
+	_redis = newLimiterTestRedis(store)
+	defer func() {
+		_redis = oldRedis
+	}()
+
+	key := uniqueTestKey("limiter-redis-release")
+	if !LimiterTryLock(key, 0, LimiterGlobalOption, 1) {
+		t.Fatal("LimiterTryLock did not acquire the Redis lock")
+	}
+
+	redisKey := "saGo:limiter:" + key
+	LimiterUnLock(key)
+
+	if got := store.Get(redisKey); got != "" {
+		t.Fatalf("Redis lock value = %q, want empty", got)
+	}
+}
+
+func TestLimiterLockUnLockDoesNotDeleteAnotherRedisOwnerLock(t *testing.T) {
+	store := newLimiterRedisStore()
+	oldRedis := _redis
+	_redis = newLimiterTestRedis(store)
+	defer func() {
+		_redis = oldRedis
+	}()
+
+	key := uniqueTestKey("limiter-lock-redis-owner")
+	LimiterLock(key, 0, 1, LimiterGlobalOption)
+
+	redisKey := "saGo:limiter:" + key
+	store.Set(redisKey, "another-owner")
+	LimiterUnLock(key)
+
+	if got := store.Get(redisKey); got != "another-owner" {
+		t.Fatalf("Redis lock value = %q, want %q", got, "another-owner")
+	}
+}
+
+func TestLimiterLockUsesTenMinuteDefaultRedisLease(t *testing.T) {
+	store := newLimiterRedisStore()
+	oldRedis := _redis
+	_redis = newLimiterTestRedis(store)
+	defer func() {
+		_redis = oldRedis
+	}()
+
+	key := uniqueTestKey("limiter-default-lease")
+	LimiterLock(key, 0, 0, LimiterGlobalOption)
+	defer LimiterUnLock(key)
+
+	redisKey := "saGo:limiter:" + key
+	if got := store.Expire(redisKey); got != "600" {
+		t.Fatalf("Redis lease = %s seconds, want 600", got)
+	}
+}
+
+func TestLimiterUnLockLocalLockDoesNotDeleteRedisLock(t *testing.T) {
+	store := newLimiterRedisStore()
+	oldRedis := _redis
+	_redis = newLimiterTestRedis(store)
+	defer func() {
+		_redis = oldRedis
+	}()
+
+	key := uniqueTestKey("limiter-local-owner")
+	redisKey := "saGo:limiter:" + key
+	store.Set(redisKey, "another-owner")
+
+	LimiterLock(key, 0, 0)
+	LimiterUnLock(key)
+
+	if got := store.Get(redisKey); got != "another-owner" {
+		t.Fatalf("Redis lock value = %q, want %q", got, "another-owner")
+	}
+}
+
 func TestNewBucketSetsPositiveIntervalForQPSOnly(t *testing.T) {
 	oldRedis := _redis
 	_redis = nil
@@ -265,3 +366,96 @@ func (c *fakeRedisConn) Flush() error {
 func (c *fakeRedisConn) Receive() (interface{}, error) {
 	return nil, nil
 }
+
+type limiterRedisStore struct {
+	lock    sync.Mutex
+	values  map[string]string
+	expires map[string]string
+}
+
+func newLimiterRedisStore() *limiterRedisStore {
+	return &limiterRedisStore{
+		values:  map[string]string{},
+		expires: map[string]string{},
+	}
+}
+
+func (s *limiterRedisStore) Set(key, value string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.values[key] = value
+}
+
+func (s *limiterRedisStore) Get(key string) string {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.values[key]
+}
+
+func (s *limiterRedisStore) Expire(key string) string {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.expires[key]
+}
+
+func newLimiterTestRedis(store *limiterRedisStore) *saRedis.Redis {
+	return &saRedis.Redis{Pool: &redis.Pool{
+		Dial: func() (redis.Conn, error) {
+			return &limiterRedisConn{store: store}, nil
+		},
+	}}
+}
+
+type limiterRedisConn struct {
+	store *limiterRedisStore
+}
+
+func (c *limiterRedisConn) Close() error { return nil }
+func (c *limiterRedisConn) Err() error   { return nil }
+
+func (c *limiterRedisConn) Do(commandName string, args ...interface{}) (interface{}, error) {
+	switch strings.ToUpper(commandName) {
+	case "SET":
+		key := fmt.Sprint(args[0])
+		value := fmt.Sprint(args[1])
+		c.store.lock.Lock()
+		defer c.store.lock.Unlock()
+		if _, ok := c.store.values[key]; ok {
+			return nil, redis.ErrNil
+		}
+		c.store.values[key] = value
+		c.store.expires[key] = fmt.Sprint(args[3])
+		return "OK", nil
+	case "GET":
+		key := fmt.Sprint(args[0])
+		c.store.lock.Lock()
+		defer c.store.lock.Unlock()
+		value, ok := c.store.values[key]
+		if !ok {
+			return nil, redis.ErrNil
+		}
+		return value, nil
+	case "DEL":
+		key := fmt.Sprint(args[0])
+		c.store.lock.Lock()
+		defer c.store.lock.Unlock()
+		delete(c.store.values, key)
+		return int64(1), nil
+	case "EVAL":
+		key := fmt.Sprint(args[2])
+		token := fmt.Sprint(args[3])
+		c.store.lock.Lock()
+		defer c.store.lock.Unlock()
+		if c.store.values[key] == token {
+			delete(c.store.values, key)
+			return int64(1), nil
+		}
+		return int64(0), nil
+	default:
+		return nil, fmt.Errorf("unexpected command %s", commandName)
+	}
+}
+
+func (c *limiterRedisConn) Send(commandName string, args ...interface{}) error { return nil }
+func (c *limiterRedisConn) Flush() error                                       { return nil }
+func (c *limiterRedisConn) Receive() (interface{}, error)                      { return nil, nil }

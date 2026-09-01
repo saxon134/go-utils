@@ -2,16 +2,20 @@ package saGo
 
 import (
 	"github.com/gomodule/redigo/redis"
+	uuid "github.com/satori/go.uuid"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saHit"
+	"github.com/saxon134/go-utils/saRedis"
 	"strings"
 	"sync"
 	"time"
 )
 
 type limiter struct {
-	lastTime int64 //毫秒
-	locker   sync.Mutex
+	lastTime   int64 //毫秒
+	locker     sync.Mutex
+	redis      *saRedis.Redis
+	redisValue string
 }
 
 var limiterDIC = map[string]*limiter{}
@@ -62,11 +66,14 @@ func LimiterLock(key string, minSecond float32, maxSecond float32, options ...an
 
 	if _redis != nil && isGlobal {
 		var redisKey = "saGo:limiter:" + key
+		var redisValue = strings.Replace(uuid.NewV4().String(), "-", "", -1)
 		for {
-			//最大10小时
-			var expireSecond = saHit.Int64(maxMilSecond > 0, maxMilSecond/1000+1, 36000)
-			var res, _ = redis.String(_redis.Do("SET", redisKey, now, "EX", expireSecond, "NX"))
+			//默认10分钟
+			var expireSecond = saHit.Int64(maxMilSecond > 0, maxMilSecond/1000+1, 600)
+			var res, _ = redis.String(_redis.Do("SET", redisKey, redisValue, "EX", expireSecond, "NX"))
 			if strings.ToUpper(res) == "OK" {
+				lm.redis = _redis
+				lm.redisValue = redisValue
 				break
 			}
 			time.Sleep(time.Millisecond * time.Duration(saHit.OrInt64(minMilSecond, 100)))
@@ -113,14 +120,7 @@ func LimiterTryLock(key string, minSecond float32, options ...any) bool {
 		}
 	}
 
-	var redisKey = "saGo:limiter:" + key
 	var lastTime = lm.lastTime
-	if _redis != nil && isGlobal {
-		var t, _ = redis.Int64(_redis.Do("GET", redisKey))
-		if t > 0 && lm.lastTime < t {
-			lastTime = t
-		}
-	}
 	var diff = minMilliSecond - (now - lastTime)
 	if diff > 0 {
 		lm.locker.Unlock()
@@ -132,9 +132,13 @@ func LimiterTryLock(key string, minSecond float32, options ...any) bool {
 	if _redis != nil && isGlobal {
 		now = time.Now().UnixMilli()
 		var expireSecond = saHit.Int64(maxMilliSecond > 0, maxMilliSecond/1000+1, 600)
-		var res, _ = redis.String(_redis.Do("SET", redisKey, now, "EX", expireSecond, "NX"))
+		var redisKey = "saGo:limiter:" + key
+		var redisValue = strings.Replace(uuid.NewV4().String(), "-", "", -1)
+		var res, _ = redis.String(_redis.Do("SET", redisKey, redisValue, "EX", expireSecond, "NX"))
 		if strings.ToUpper(res) == "OK" {
 			lm.lastTime = now
+			lm.redis = _redis
+			lm.redisValue = redisValue
 			return true
 		} else {
 			lm.locker.Unlock()
@@ -148,13 +152,27 @@ func LimiterTryLock(key string, minSecond float32, options ...any) bool {
 func LimiterUnLock(key string) {
 	limiterLocker.Lock()
 	var lm = limiterDIC[key]
-	if lm != nil {
-		lm.lastTime = time.Now().UnixMilli()
-		lm.locker.Unlock()
+	limiterLocker.Unlock()
+	if lm == nil {
+		return
 	}
 
-	if _redis != nil {
-		_, _ = _redis.Do("DEL", "saGo:limiter:"+key)
+	var redisConn = lm.redis
+	var redisValue = lm.redisValue
+	lm.redis = nil
+	lm.redisValue = ""
+
+	if redisConn != nil && redisValue != "" {
+		_, _ = redisConn.Do("EVAL", limiterRedisUnlockScript, 1, "saGo:limiter:"+key, redisValue)
 	}
-	limiterLocker.Unlock()
+
+	lm.lastTime = time.Now().UnixMilli()
+	lm.locker.Unlock()
 }
+
+const limiterRedisUnlockScript = `
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+	return redis.call("DEL", KEYS[1])
+end
+return 0
+`
