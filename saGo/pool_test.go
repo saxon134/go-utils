@@ -51,6 +51,72 @@ func TestPoolWaitReturnsWhenTaskPanics(t *testing.T) {
 	}
 }
 
+func TestPoolWaitDoesNotReturnBeforeConcurrentInvoke(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var releaseOnce sync.Once
+	releaseTask := func() {
+		releaseOnce.Do(func() { close(release) })
+	}
+	t.Cleanup(releaseTask)
+	pool := NewPool(1, 1000, func(p *Pool, args interface{}) {
+		close(started)
+		<-release
+	})
+
+	// Keep submission in Consume so Wait cannot observe the task through the
+	// WaitGroup until the submission is allowed to continue.
+	pool.lock.Lock()
+	invokeDone := make(chan struct{})
+	go func() {
+		pool.Invoke(1)
+		close(invokeDone)
+	}()
+	time.Sleep(10 * time.Millisecond)
+
+	waitDone := make(chan struct{})
+	go func() {
+		pool.Wait()
+		close(waitDone)
+	}()
+	time.Sleep(10 * time.Millisecond)
+	pool.lock.Unlock()
+
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("concurrent Invoke was not submitted")
+	}
+
+	select {
+	case <-waitDone:
+		t.Fatal("Pool.Wait returned before the concurrently submitted task completed")
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	releaseTask()
+	select {
+	case <-waitDone:
+	case <-time.After(time.Second):
+		t.Fatal("Pool.Wait did not return after the task completed")
+	}
+	<-invokeDone
+}
+
+func TestPoolInvokeAfterWaitIsIgnored(t *testing.T) {
+	var calls int
+	pool := NewPool(1, 1000, func(p *Pool, args interface{}) {
+		calls++
+	})
+
+	pool.Wait()
+	pool.Invoke(1)
+
+	if calls != 0 {
+		t.Fatalf("Invoke after Wait executed callback %d times, want 0", calls)
+	}
+}
+
 func TestGoWithParamsRecoversPanic(t *testing.T) {
 	if os.Getenv("SAGO_GO_WITH_PARAMS_PANIC") == "1" {
 		done := make(chan struct{})

@@ -17,6 +17,8 @@ type Pool struct {
 	qpm int
 
 	lock                   sync.Mutex
+	submitLock             sync.RWMutex
+	closeOnce              sync.Once
 	lastMicrosecond        int64
 	minIntervalMicrosecond int64
 	second                 int64
@@ -85,6 +87,7 @@ func NewPool(size int, qps float32, fn func(p *Pool, args interface{})) *Pool {
 func (b *Pool) run(args interface{}) {
 	var begin = time.Now().UnixMilli()
 	var ran bool
+	defer b.wg.Done()
 	defer func() {
 		if e := recover(); e != nil {
 			saLog.Err(e)
@@ -93,7 +96,6 @@ func (b *Pool) run(args interface{}) {
 		if ran {
 			b.recordCost(time.Now().UnixMilli() - begin)
 		}
-		b.wg.Done()
 	}()
 
 	if b.fn != nil {
@@ -117,6 +119,12 @@ func (b *Pool) recordCost(diff int64) {
 
 // 执行
 func (b *Pool) Invoke(args interface{}) {
+	// Serialize submissions with Wait so WaitGroup.Add cannot race with
+	// WaitGroup.Wait, and the channel cannot be closed between the state check
+	// and the send.
+	b.submitLock.RLock()
+	defer b.submitLock.RUnlock()
+
 	var added bool
 	defer func() {
 		if e := recover(); e != nil {
@@ -129,8 +137,14 @@ func (b *Pool) Invoke(args interface{}) {
 	}()
 
 	b.Consume()
+	b.lock.Lock()
+	if b.isDone {
+		b.lock.Unlock()
+		return
+	}
 	b.wg.Add(1)
 	added = true
+	b.lock.Unlock()
 	b.ch <- args
 	added = false
 
@@ -188,12 +202,16 @@ func (b *Pool) Wait() {
 		return
 	}
 
+	// Prevent new submissions from entering while waiting for the current
+	// tasks. This keeps Add and Wait on the same side of the lifecycle barrier.
+	b.submitLock.Lock()
+	defer b.submitLock.Unlock()
+
 	b.wg.Wait()
-	b.lock.Lock()
-	defer b.lock.Unlock()
-	if b.isDone {
-		return
-	}
-	close(b.ch)
-	b.isDone = true
+	b.closeOnce.Do(func() {
+		b.lock.Lock()
+		defer b.lock.Unlock()
+		close(b.ch)
+		b.isDone = true
+	})
 }
