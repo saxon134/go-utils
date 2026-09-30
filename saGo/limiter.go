@@ -1,14 +1,16 @@
 package saGo
 
 import (
+	"math"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/gomodule/redigo/redis"
 	uuid "github.com/satori/go.uuid"
 	"github.com/saxon134/go-utils/saData"
 	"github.com/saxon134/go-utils/saData/saHit"
 	"github.com/saxon134/go-utils/saRedis"
-	"strings"
-	"sync"
-	"time"
 )
 
 type limiter struct {
@@ -16,10 +18,11 @@ type limiter struct {
 	locker     sync.Mutex
 	redis      *saRedis.Redis
 	redisValue string
-}
 
-var limiterDIC = map[string]*limiter{}
-var limiterLocker = sync.Mutex{}
+	// Protected by limiterRegistry.mu, including while locker is held.
+	refs      int
+	idleSince time.Time
+}
 
 type LimiterOption string
 
@@ -29,6 +32,7 @@ const LimiterGlobalOption = LimiterOption("global")
 // milliSecond 2次执行最小间隔（秒，可以是小数）
 // maxMilliSecond  锁最大时间（秒），防止死锁
 // 默认只本地锁
+// 启用自动回收后，minSecond 超过保留窗口或不是有限值时 panic。
 func LimiterLock(key string, minSecond float32, maxSecond float32, options ...any) {
 	if key == "" {
 		return
@@ -36,20 +40,15 @@ func LimiterLock(key string, minSecond float32, maxSecond float32, options ...an
 
 	//防止负数
 	var minMilSecond = int64(saHit.Float(minSecond >= 0, minSecond, 0) * 1000)
-	var maxMilSecond = int64(saHit.Float(maxSecond >= 0, maxSecond, 0) * 1000)
 
-	limiterLocker.Lock()
-	var lm = limiterDIC[key]
-	var now = time.Now().UnixMilli()
-	if lm == nil {
-		lm = &limiter{lastTime: now}
-		limiterDIC[key] = lm
+	lm, ok := limiters.acquire(key, minSecond, true)
+	if !ok {
+		panic("saGo: minSecond must be finite and must not exceed the limiter cleanup retention")
 	}
-	limiterLocker.Unlock()
 
 	lm.locker.Lock()
 
-	now = time.Now().UnixMilli()
+	now := time.Now().UnixMilli()
 	var diff = minMilSecond - (now - lm.lastTime)
 	if diff > 0 {
 		time.Sleep(time.Millisecond * time.Duration(diff))
@@ -67,9 +66,12 @@ func LimiterLock(key string, minSecond float32, maxSecond float32, options ...an
 	if _redis != nil && isGlobal {
 		var redisKey = "saGo:limiter:" + key
 		var redisValue = strings.Replace(uuid.NewV4().String(), "-", "", -1)
+		expireSecond := int64(600)
+		if seconds, ok := limiterLeaseSeconds(maxSecond); ok {
+			expireSecond = seconds
+		}
 		for {
 			//默认10分钟
-			var expireSecond = saHit.Int64(maxMilSecond > 0, maxMilSecond/1000+1, 600)
 			var res, _ = redis.String(_redis.Do("SET", redisKey, redisValue, "EX", expireSecond, "NX"))
 			if strings.ToUpper(res) == "OK" {
 				lm.redis = _redis
@@ -84,6 +86,7 @@ func LimiterLock(key string, minSecond float32, maxSecond float32, options ...an
 }
 
 // 不阻塞
+// 启用自动回收后，minSecond 超过保留窗口或不是有限值时返回 false。
 func LimiterTryLock(key string, minSecond float32, options ...any) bool {
 	if key == "" {
 		return false
@@ -92,46 +95,42 @@ func LimiterTryLock(key string, minSecond float32, options ...any) bool {
 	//防止负数
 	var minMilliSecond = int64(saHit.Float(minSecond >= 0, minSecond, 0) * 1000)
 
-	limiterLocker.Lock()
-	var lm = limiterDIC[key]
-	var now = time.Now().UnixMilli()
-	if lm == nil {
-		lm = &limiter{}
-		limiterDIC[key] = lm
-	}
-	limiterLocker.Unlock()
-
-	var ok = lm.locker.TryLock()
-	if ok == false {
-		return false
-	}
-
 	//默认仅本地锁
 	var isGlobal = false
-	var maxMilliSecond int64
+	expireSecond := int64(600)
 	for _, v := range options {
-		if opt, ok := v.(LimiterOption); ok && opt == LimiterGlobalOption {
-			isGlobal = true
-		} else {
-			var maxSecond = saData.Float32(opt)
-			if maxSecond > 0 {
-				maxMilliSecond = int64(saHit.Float(maxSecond >= 0, maxSecond, 0) * 1000)
-			}
+		if opt, ok := v.(LimiterOption); ok {
+			isGlobal = isGlobal || opt == LimiterGlobalOption
+		} else if seconds, ok := limiterLeaseSeconds(v); ok {
+			expireSecond = seconds
 		}
 	}
 
-	var lastTime = lm.lastTime
-	var diff = minMilliSecond - (now - lastTime)
-	if diff > 0 {
-		lm.locker.Unlock()
+	lm, ok := limiters.acquire(key, minSecond, false)
+	if !ok {
 		return false
 	}
-	lm.lastTime = lastTime
+	if !lm.locker.TryLock() {
+		limiters.release(lm)
+		return false
+	}
+	acquired := false
+	defer func() {
+		if !acquired {
+			lm.locker.Unlock()
+			limiters.release(lm)
+		}
+	}()
 
-	//最大10分钟
+	now := time.Now().UnixMilli()
+	var diff = minMilliSecond - (now - lm.lastTime)
+	if diff > 0 {
+		return false
+	}
+
+	//默认10分钟
 	if _redis != nil && isGlobal {
 		now = time.Now().UnixMilli()
-		var expireSecond = saHit.Int64(maxMilliSecond > 0, maxMilliSecond/1000+1, 600)
 		var redisKey = "saGo:limiter:" + key
 		var redisValue = strings.Replace(uuid.NewV4().String(), "-", "", -1)
 		var res, _ = redis.String(_redis.Do("SET", redisKey, redisValue, "EX", expireSecond, "NX"))
@@ -139,20 +138,19 @@ func LimiterTryLock(key string, minSecond float32, options ...any) bool {
 			lm.lastTime = now
 			lm.redis = _redis
 			lm.redisValue = redisValue
+			acquired = true
 			return true
 		} else {
-			lm.locker.Unlock()
 			return false
 		}
 	}
+	acquired = true
 	return true
 }
 
 // 解锁，不阻塞
 func LimiterUnLock(key string) {
-	limiterLocker.Lock()
-	var lm = limiterDIC[key]
-	limiterLocker.Unlock()
+	lm := limiters.lookup(key)
 	if lm == nil {
 		return
 	}
@@ -168,6 +166,18 @@ func LimiterUnLock(key string) {
 
 	lm.lastTime = time.Now().UnixMilli()
 	lm.locker.Unlock()
+	limiters.release(lm)
+}
+
+// Return whole seconds for Redis EX without losing sub-millisecond leases.
+// Invalid options are ignored. Bound leases to the range of time.Duration.
+func limiterLeaseSeconds(value any) (int64, bool) {
+	seconds, err := saData.ToFloat64(value)
+	if err != nil || math.IsNaN(seconds) || seconds <= 0 ||
+		seconds > float64((1<<63-1)/int64(time.Second)) {
+		return 0, false
+	}
+	return int64(math.Ceil(seconds)), true
 }
 
 const limiterRedisUnlockScript = `
