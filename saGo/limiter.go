@@ -96,7 +96,7 @@ func LimiterTryLock(key string, minSecond float32, options ...any) bool {
 	var lm = limiterDIC[key]
 	var now = time.Now().UnixMilli()
 	if lm == nil {
-		lm = &limiter{lastTime: now}
+		lm = &limiter{}
 		limiterDIC[key] = lm
 	}
 	limiterLocker.Unlock()

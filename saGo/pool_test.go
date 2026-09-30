@@ -190,6 +190,27 @@ func TestLimiterTryLockDoesNotSleepWhenIntervalNotElapsed(t *testing.T) {
 	LimiterUnLock(key)
 }
 
+func TestLimiterTryLockFirstCallWithMinSecond(t *testing.T) {
+	key := uniqueTestKey("limiter-first")
+
+	if !LimiterTryLock(key, 0.1) {
+		t.Fatal("first TryLock should succeed")
+	}
+	LimiterUnLock(key)
+
+	if LimiterTryLock(key, 0.1) {
+		LimiterUnLock(key)
+		t.Fatal("TryLock should fail before interval elapsed")
+	}
+
+	time.Sleep(120 * time.Millisecond)
+
+	if !LimiterTryLock(key, 0.1) {
+		t.Fatal("TryLock should succeed after interval elapsed")
+	}
+	LimiterUnLock(key)
+}
+
 func TestLimiterUnLockDoesNotDeleteAnotherRedisOwnerLock(t *testing.T) {
 	store := newLimiterRedisStore()
 	oldRedis := _redis
